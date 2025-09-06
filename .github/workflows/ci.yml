@@ -1,0 +1,130 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: theaxis_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: |
+          backend/package-lock.json
+          theaxis_frontend/package-lock.json
+    
+    - name: Install Backend Dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Install Frontend Dependencies
+      run: |
+        cd theaxis_frontend
+        npm ci
+    
+    - name: Setup Backend Environment
+      run: |
+        cd backend
+        cp env.example .env
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/theaxis_test" >> .env
+        echo "JWT_SECRET=test-secret-key" >> .env
+        echo "NODE_ENV=test" >> .env
+    
+    - name: Generate Prisma Client
+      run: |
+        cd backend
+        npx prisma generate
+    
+    - name: Run Database Migrations
+      run: |
+        cd backend
+        npx prisma db push
+    
+    - name: Run Backend Tests
+      run: |
+        cd backend
+        npm test
+    
+    - name: Run Frontend Tests
+      run: |
+        cd theaxis_frontend
+        npm test -- --coverage --watchAll=false
+    
+    - name: Build Frontend
+      run: |
+        cd theaxis_frontend
+        npm run build
+    
+    - name: Lint Backend
+      run: |
+        cd backend
+        npm run lint
+    
+    - name: Lint Frontend
+      run: |
+        cd theaxis_frontend
+        npm run lint
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Security Audit
+      run: |
+        cd backend
+        npm audit --audit-level moderate
+        cd ../theaxis_frontend
+        npm audit --audit-level moderate
+
+  deploy-staging:
+    needs: [test, security]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to Staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your staging deployment commands here
+        # Example: docker build, docker push, kubectl apply, etc.
+
+  deploy-production:
+    needs: [test, security]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to Production
+      run: |
+        echo "Deploying to production environment..."
+        # Add your production deployment commands here
+        # Example: docker build, docker push, kubectl apply, etc.

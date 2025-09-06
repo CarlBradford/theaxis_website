@@ -1,0 +1,225 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("TEST_DATABASE_URL")
+}
+
+enum UserRole {
+  READER
+  STAFF
+  SECTION_HEAD
+  EDITOR_IN_CHIEF
+  ADVISER
+}
+
+enum ArticleStatus {
+  DRAFT
+  IN_REVIEW
+  NEEDS_REVISION
+  APPROVED
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  username          String    @unique
+  firstName         String
+  lastName          String
+  passwordHash      String
+  role              UserRole  @default(READER)
+  isActive          Boolean   @default(true)
+  emailVerified     Boolean   @default(false)
+  emailVerificationToken String?
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+  profileImage      String?
+  bio               String?
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  comments          Comment[]
+  editorialNotes    EditorialNote[]
+  auditLogs         AuditLog[]
+  createdArticles   Article[] @relation("ArticleCreator")
+  reviewedArticles  Article[] @relation("ArticleReviewer")
+
+  // Indexes
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+model Article {
+  id                String        @id @default(cuid())
+  title             String
+  slug              String        @unique
+  excerpt           String?
+  content           String
+  featuredImage     String?
+  status            ArticleStatus @default(DRAFT)
+  publishedAt       DateTime?
+  scheduledAt       DateTime?
+  archivedAt        DateTime?
+  viewCount         Int           @default(0)
+  likeCount         Int           @default(0)
+  commentCount      Int           @default(0)
+  seoTitle          String?
+  seoDescription    String?
+  seoKeywords       String[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  authorId          String
+  author            User          @relation("ArticleCreator", fields: [authorId], references: [id])
+  reviewerId        String?
+  reviewer          User?         @relation("ArticleReviewer", fields: [reviewerId], references: [id])
+  comments          Comment[]
+  editorialNotes    EditorialNote[]
+  tags              Tag[]
+  categories        Category[]
+
+  // Indexes
+  @@index([authorId])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([createdAt])
+  @@index([slug])
+}
+
+model Comment {
+  id                String    @id @default(cuid())
+  content           String
+  isPublic          Boolean   @default(true)
+  isApproved        Boolean   @default(false)
+  isModerated       Boolean   @default(false)
+  moderationReason  String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  authorId          String
+  author            User      @relation(fields: [authorId], references: [id])
+  articleId         String
+  article           Article   @relation(fields: [articleId], references: [id])
+  parentCommentId   String?
+  parentComment     Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies           Comment[] @relation("CommentReplies")
+
+  // Indexes
+  @@index([authorId])
+  @@index([articleId])
+  @@index([isApproved])
+  @@index([createdAt])
+}
+
+model EditorialNote {
+  id                String    @id @default(cuid())
+  content           String
+  isInternal        Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  authorId          String
+  author            User      @relation(fields: [authorId], references: [id])
+  articleId         String
+  article           Article   @relation(fields: [articleId], references: [id])
+
+  // Indexes
+  @@index([authorId])
+  @@index([articleId])
+  @@index([createdAt])
+}
+
+model Tag {
+  id                String    @id @default(cuid())
+  name              String    @unique
+  slug              String    @unique
+  description       String?
+  color             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  articles          Article[]
+
+  // Indexes
+  @@index([name])
+  @@index([slug])
+}
+
+model Category {
+  id                String    @id @default(cuid())
+  name              String    @unique
+  slug              String    @unique
+  description       String?
+  parentCategoryId  String?
+  parentCategory    Category? @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  subCategories     Category[] @relation("CategoryHierarchy")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  articles          Article[]
+
+  // Indexes
+  @@index([name])
+  @@index([slug])
+  @@index([parentCategoryId])
+}
+
+model AuditLog {
+  id                String    @id @default(cuid())
+  userId            String?
+  action            String
+  resourceType      String
+  resourceId        String?
+  details           Json?
+  ipAddress         String?
+  userAgent         String?
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  user              User?     @relation(fields: [userId], references: [id])
+
+  // Indexes
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([createdAt])
+}
+
+model Media {
+  id                String    @id @default(cuid())
+  filename          String
+  originalName      String
+  mimeType          String
+  size              Int
+  path              String
+  url               String
+  altText           String?
+  caption           String?
+  uploadedBy        String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Indexes
+  @@index([uploadedBy])
+  @@index([mimeType])
+  @@index([createdAt])
+}

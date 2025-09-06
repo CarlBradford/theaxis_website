@@ -1,0 +1,57 @@
+{
+  "name": "theaxis-website",
+  "version": "1.0.0",
+  "description": "The AXIS - Student Publication Platform",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npm run dev:backend",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd theaxis_frontend && npm run dev",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd theaxis_frontend && npm run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd theaxis_frontend && npm test",
+    "test:unit": "npm run test:unit:backend",
+    "test:unit:backend": "cd backend && npm run test:unit",
+    "test:integration": "npm run test:integration:backend",
+    "test:integration:backend": "cd backend && npm run test:integration",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd theaxis_frontend && npm run lint",
+    "lint:fix": "npm run lint:fix:backend && npm run lint:fix:frontend",
+    "lint:fix:backend": "cd backend && npm run lint:fix",
+    "lint:fix:frontend": "cd theaxis_frontend && npm run lint:fix",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d",
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:seed": "cd backend && npm run db:seed",
+    "db:studio": "cd backend && npm run db:studio",
+    "install:all": "npm install && cd backend && npm install && cd ../theaxis_frontend && npm install",
+    "clean": "npm run clean:backend",
+    "clean:backend": "cd backend && npm run clean"
+  },
+  "keywords": [
+    "student-publication",
+    "cms",
+    "content-management",
+    "editorial-system",
+    "analytics"
+  ],
+  "author": "The AXIS Development Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "workspaces": [
+    "backend",
+    "theaxis_frontend"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
