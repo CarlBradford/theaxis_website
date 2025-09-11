@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const { logger } = require('../utils/logger');
 const { AppError, createPermissionError } = require('./errorHandler');
+const { hasPermission, hasAnyPermission, hasAllPermissions, canManageRole, canCreateUserRole } = require('../config/permissions');
 const config = require('../config');
 
 const prisma = new PrismaClient();
@@ -133,11 +134,131 @@ const requireRole = (...roles) => {
   };
 };
 
+// Permission-based access control middleware
+const requirePermission = (permission) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    if (!hasPermission(req.user.role, permission)) {
+      logger.warn('Insufficient permission access', {
+        userId: req.user.id,
+        userRole: req.user.role,
+        requiredPermission: permission,
+        action: req.method,
+        resource: req.originalUrl,
+      });
+
+      return next(createPermissionError('access', 'this resource'));
+    }
+
+    next();
+  };
+};
+
+const requireAnyPermission = (...permissions) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    if (!hasAnyPermission(req.user.role, permissions)) {
+      logger.warn('Insufficient permission access', {
+        userId: req.user.id,
+        userRole: req.user.role,
+        requiredPermissions: permissions,
+        action: req.method,
+        resource: req.originalUrl,
+      });
+
+      return next(createPermissionError('access', 'this resource'));
+    }
+
+    next();
+  };
+};
+
+const requireAllPermissions = (...permissions) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
+    if (!hasAllPermissions(req.user.role, permissions)) {
+      logger.warn('Insufficient permission access', {
+        userId: req.user.id,
+        userRole: req.user.role,
+        requiredPermissions: permissions,
+        action: req.method,
+        resource: req.originalUrl,
+      });
+
+      return next(createPermissionError('access', 'this resource'));
+    }
+
+    next();
+  };
+};
+
+// Role management middleware
+const canManageUserRole = (req, res, next) => {
+  if (!req.user) {
+    return next(new AppError('Authentication required', 401));
+  }
+
+  const targetRole = req.body.role || req.params.role;
+  
+  console.log('canManageUserRole check:', { 
+    userRole: req.user.role, 
+    targetRole, 
+    canManage: canManageRole(req.user.role, targetRole) 
+  });
+  
+  if (!canManageRole(req.user.role, targetRole)) {
+    logger.warn('Insufficient role management access', {
+      userId: req.user.id,
+      userRole: req.user.role,
+      targetRole: targetRole,
+      action: req.method,
+      resource: req.originalUrl,
+    });
+
+    return next(createPermissionError('manage', 'this user role'));
+  }
+
+  next();
+};
+
+// User creation role validation middleware
+const canCreateUserWithRole = (req, res, next) => {
+  if (!req.user) {
+    return next(new AppError('Authentication required', 401));
+  }
+
+  const targetRole = req.body.role;
+  
+  if (!canCreateUserRole(req.user.role, targetRole)) {
+    logger.warn('Insufficient user creation access', {
+      userId: req.user.id,
+      userRole: req.user.role,
+      targetRole: targetRole,
+      action: req.method,
+      resource: req.originalUrl,
+    });
+
+    return next(createPermissionError('create', `users with ${targetRole} role`));
+  }
+
+  next();
+};
+
 // Specific role middleware functions
 const requireAdviser = requireRole('ADVISER');
-const requireEditorInChief = requireRole('ADVISER', 'EDITOR_IN_CHIEF');
-const requireSectionHead = requireRole('ADVISER', 'EDITOR_IN_CHIEF', 'SECTION_HEAD');
-const requireStaff = requireRole('ADVISER', 'EDITOR_IN_CHIEF', 'SECTION_HEAD', 'STAFF');
+const requireSystemAdmin = requireRole('SYSTEM_ADMIN');
+const requireEditorInChief = requireRole('EDITOR_IN_CHIEF');
+const requireSectionHead = requireRole('SECTION_HEAD');
+const requireStaff = requireRole('STAFF');
 
 // Resource ownership middleware
 const requireOwnership = (resourceType, resourceIdField = 'id') => {
@@ -269,7 +390,13 @@ module.exports = {
   authenticateToken,
   optionalAuth,
   requireRole,
+  requirePermission,
+  requireAnyPermission,
+  requireAllPermissions,
+  canManageUserRole,
+  canCreateUserWithRole,
   requireAdviser,
+  requireSystemAdmin,
   requireEditorInChief,
   requireSectionHead,
   requireStaff,

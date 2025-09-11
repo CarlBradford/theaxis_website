@@ -2,12 +2,6 @@ import api from './api';
 
 // Authentication API
 export const authAPI = {
-  // Register a new user
-  register: async (userData) => {
-    const response = await api.post('/auth/register', userData);
-    return response.data;
-  },
-
   // Login user
   login: async (credentials) => {
     const response = await api.post('/auth/login', credentials);
@@ -40,9 +34,65 @@ export const authAPI = {
 
   // Logout (client-side)
   logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
+    // Note: AuthContext handles the actual logout logic and navigation
+    // This is just for any additional cleanup if needed
+  }
+};
+
+// Users API
+export const usersAPI = {
+  // Get all users
+  getUsers: async (params = {}) => {
+    const response = await api.get('/users', { params });
+    return response.data;
+  },
+
+  // Get user by ID
+  getUser: async (id) => {
+    const response = await api.get(`/users/${id}`);
+    return response.data;
+  },
+
+  // Create new user
+  createUser: async (userData) => {
+    const response = await api.post('/users', userData);
+    return response.data;
+  },
+
+  // Update user
+  updateUser: async (id, userData) => {
+    const response = await api.put(`/users/${id}`, userData);
+    return response.data;
+  },
+
+  // Update user role
+  updateUserRole: async (id, role) => {
+    const response = await api.put(`/users/${id}/role`, { role });
+    return response.data;
+  },
+
+  // Activate user
+  activateUser: async (id) => {
+    const response = await api.post(`/users/${id}/activate`);
+    return response.data;
+  },
+
+  // Deactivate user
+  deactivateUser: async (id) => {
+    const response = await api.post(`/users/${id}/deactivate`);
+    return response.data;
+  },
+
+  // Delete user
+  deleteUser: async (id) => {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+  },
+
+  // Toggle user status (activate/deactivate)
+  toggleUserStatus: async (id) => {
+    const response = await api.patch(`/users/${id}/toggle-status`);
+    return response.data;
   }
 };
 
@@ -51,6 +101,12 @@ export const articlesAPI = {
   // Get all articles
   getArticles: async (params = {}) => {
     const response = await api.get('/articles', { params });
+    return response.data;
+  },
+
+  // Get current user's articles
+  getMyArticles: async (params = {}) => {
+    const response = await api.get('/articles/my', { params });
     return response.data;
   },
 
@@ -300,38 +356,6 @@ export const mediaAPI = {
   }
 };
 
-// Users API (Admin only)
-export const usersAPI = {
-  // Get all users
-  getUsers: async (params = {}) => {
-    const response = await api.get('/users', { params });
-    return response.data;
-  },
-
-  // Get single user
-  getUser: async (id) => {
-    const response = await api.get(`/users/${id}`);
-    return response.data;
-  },
-
-  // Update user
-  updateUser: async (id, userData) => {
-    const response = await api.put(`/users/${id}`, userData);
-    return response.data;
-  },
-
-  // Delete user
-  deleteUser: async (id) => {
-    const response = await api.delete(`/users/${id}`);
-    return response.data;
-  },
-
-  // Activate/deactivate user
-  toggleUserStatus: async (id) => {
-    const response = await api.patch(`/users/${id}/toggle-status`);
-    return response.data;
-  }
-};
 
 // Utility functions
 export const utils = {

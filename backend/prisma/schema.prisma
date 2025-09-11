@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,15 +5,326 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  shadowDatabaseUrl = env("TEST_DATABASE_URL")
+}
+
+model User {
+  id                     String               @id @default(cuid())
+  email                  String               @unique
+  username               String               @unique
+  firstName              String
+  lastName               String
+  passwordHash           String
+  role                   UserRole             @default(STAFF)
+  isActive               Boolean              @default(true)
+  emailVerified          Boolean              @default(false)
+  emailVerificationToken String?
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
+  profileImage           String?
+  bio                    String?
+  lastLoginAt            DateTime?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  createdArticles        Article[]            @relation("ArticleCreator")
+  reviewedArticles       Article[]            @relation("ArticleReviewer")
+  articleAuthors         ArticleAuthor[]
+  likeHistory            ArticleLikeHistory[]
+  viewHistory            ArticleViewHistory[]
+  auditLogs              AuditLog[]
+  comments               Comment[]
+  editorialNotes         EditorialNote[]
+  reviewFeedback         ReviewFeedback[]
+
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+model Article {
+  // Core Content Fields
+  id              String               @id @default(cuid())
+  title           String
+  slug            String               @unique
+  content         String
+  excerpt         String?
+  
+  // Media Fields
+  featuredImage   String?
+  mediaCaption    String?
+  
+  // Status and Workflow
+  status          ArticleStatus        @default(DRAFT)
+  publicationDate DateTime?
+  publishedAt     DateTime?
+  scheduledAt     DateTime?
+  archivedAt      DateTime?
+  
+  // Analytics and Engagement
+  viewCount       Int                  @default(0)
+  likeCount       Int                  @default(0)
+  dislikeCount    Int                  @default(0)
+  commentCount    Int                  @default(0)
+  socialShares    Int                  @default(0)
+  readingTime     Int?
+  
+  // Content Management
+  featured        Boolean              @default(false)
+  priority        Int                  @default(0)
+  
+  // Timestamps
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  
+  // Author and Reviewer
+  authorId        String
+  reviewerId      String?
+  
+  // Relationships
+  author          User                 @relation("ArticleCreator", fields: [authorId], references: [id])
+  reviewer        User?                @relation("ArticleReviewer", fields: [reviewerId], references: [id])
+  analytics       ArticleAnalytics[]
+  articleAuthors  ArticleAuthor[]
+  likeHistory     ArticleLikeHistory[]
+  additionalMedia ArticleMedia[]
+  viewHistory     ArticleViewHistory[]
+  comments        Comment[]
+  editorialNotes  EditorialNote[]
+  reviewFeedback  ReviewFeedback[]
+  categories      Category[]           @relation("ArticleToCategory")
+  tags            Tag[]                @relation("ArticleToTag")
+
+  // Indexes for Performance
+  @@index([authorId])
+  @@index([status])
+  @@index([publicationDate])
+  @@index([publishedAt])
+  @@index([featured])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([slug])
+}
+
+model Comment {
+  id               String    @id @default(cuid())
+  content          String
+  isPublic         Boolean   @default(true)
+  isApproved       Boolean   @default(false)
+  isModerated      Boolean   @default(false)
+  moderationReason String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  authorId         String
+  articleId        String
+  parentCommentId  String?
+  article          Article   @relation(fields: [articleId], references: [id])
+  author           User      @relation(fields: [authorId], references: [id])
+  parentComment    Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies          Comment[] @relation("CommentReplies")
+
+  @@index([authorId])
+  @@index([articleId])
+  @@index([isApproved])
+  @@index([createdAt])
+}
+
+model EditorialNote {
+  id         String   @id @default(cuid())
+  content    String
+  isInternal Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  authorId   String
+  articleId  String
+  article    Article  @relation(fields: [articleId], references: [id])
+  author     User     @relation(fields: [authorId], references: [id])
+
+  @@index([authorId])
+  @@index([articleId])
+  @@index([createdAt])
+}
+
+model Tag {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  color       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  articles    Article[] @relation("ArticleToTag")
+
+  @@index([name])
+  @@index([slug])
+}
+
+model Category {
+  id               String     @id @default(cuid())
+  name             String     @unique
+  slug             String     @unique
+  description      String?
+  parentCategoryId String?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  parentCategory   Category?  @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
+  subCategories    Category[] @relation("CategoryHierarchy")
+  articles         Article[]  @relation("ArticleToCategory")
+
+  @@index([name])
+  @@index([slug])
+  @@index([parentCategoryId])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  action       String
+  resourceType String
+  resourceId   String?
+  details      Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([createdAt])
+}
+
+model Media {
+  id           String         @id @default(cuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  path         String
+  url          String
+  altText      String?
+  caption      String?
+  uploadedBy   String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  articleMedia ArticleMedia[]
+
+  @@index([uploadedBy])
+  @@index([mimeType])
+  @@index([createdAt])
+}
+
+model ArticleAuthor {
+  id        String   @id @default(cuid())
+  role      String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  articleId String
+  userId    String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([articleId, userId])
+  @@index([articleId])
+  @@index([userId])
+}
+
+model ArticleViewHistory {
+  id        String   @id @default(cuid())
+  viewedAt  DateTime @default(now())
+  ipAddress String?
+  userAgent String?
+  articleId String
+  userId    String?
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([articleId])
+  @@index([userId])
+  @@index([viewedAt])
+}
+
+model ArticleLikeHistory {
+  id        String   @id @default(cuid())
+  isLike    Boolean
+  likedAt   DateTime @default(now())
+  ipAddress String?
+  userAgent String?
+  articleId String
+  userId    String?
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@unique([articleId, userId])
+  @@index([articleId])
+  @@index([userId])
+  @@index([likedAt])
+}
+
+model ReviewFeedback {
+  id           String     @id @default(cuid())
+  feedback     String
+  feedbackType ReviewType @default(COMMENT)
+  isApproved   Boolean?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  articleId    String
+  reviewerId   String
+  article      Article    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  reviewer     User       @relation(fields: [reviewerId], references: [id])
+
+  @@index([articleId])
+  @@index([reviewerId])
+  @@index([createdAt])
+}
+
+model ArticleMedia {
+  id        String   @id @default(cuid())
+  mediaId   String
+  order     Int      @default(0)
+  caption   String?
+  createdAt DateTime @default(now())
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  media     Media    @relation(fields: [mediaId], references: [id])
+
+  @@index([articleId])
+  @@index([mediaId])
+}
+
+model ArticleAnalytics {
+  id             String   @id @default(cuid())
+  date           DateTime @default(now())
+  views          Int      @default(0)
+  likes          Int      @default(0)
+  dislikes       Int      @default(0)
+  comments       Int      @default(0)
+  socialShares   Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  avgTimeOnPage  Float?
+  bounceRate     Float?
+  articleId      String
+  article        Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, date])
+  @@index([articleId])
+  @@index([date])
 }
 
 enum UserRole {
-  READER
   STAFF
   SECTION_HEAD
   EDITOR_IN_CHIEF
   ADVISER
+  SYSTEM_ADMIN
+}
+
+enum ReviewType {
+  COMMENT
+  APPROVAL
+  REJECTION
+  REVISION_REQUEST
+  PUBLICATION_READY
 }
 
 enum ArticleStatus {
@@ -27,199 +335,4 @@ enum ArticleStatus {
   SCHEDULED
   PUBLISHED
   ARCHIVED
-}
-
-model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  username          String    @unique
-  firstName         String
-  lastName          String
-  passwordHash      String
-  role              UserRole  @default(READER)
-  isActive          Boolean   @default(true)
-  emailVerified     Boolean   @default(false)
-  emailVerificationToken String?
-  passwordResetToken String?
-  passwordResetExpires DateTime?
-  profileImage      String?
-  bio               String?
-  lastLoginAt       DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // Relations
-  comments          Comment[]
-  editorialNotes    EditorialNote[]
-  auditLogs         AuditLog[]
-  createdArticles   Article[] @relation("ArticleCreator")
-  reviewedArticles  Article[] @relation("ArticleReviewer")
-
-  // Indexes
-  @@index([email])
-  @@index([username])
-  @@index([role])
-  @@index([isActive])
-  @@index([createdAt])
-}
-
-model Article {
-  id                String        @id @default(cuid())
-  title             String
-  slug              String        @unique
-  excerpt           String?
-  content           String
-  featuredImage     String?
-  status            ArticleStatus @default(DRAFT)
-  publishedAt       DateTime?
-  scheduledAt       DateTime?
-  archivedAt        DateTime?
-  viewCount         Int           @default(0)
-  likeCount         Int           @default(0)
-  commentCount      Int           @default(0)
-  seoTitle          String?
-  seoDescription    String?
-  seoKeywords       String[]
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-
-  // Relations
-  authorId          String
-  author            User          @relation("ArticleCreator", fields: [authorId], references: [id])
-  reviewerId        String?
-  reviewer          User?         @relation("ArticleReviewer", fields: [reviewerId], references: [id])
-  comments          Comment[]
-  editorialNotes    EditorialNote[]
-  tags              Tag[]
-  categories        Category[]
-
-  // Indexes
-  @@index([authorId])
-  @@index([status])
-  @@index([publishedAt])
-  @@index([createdAt])
-  @@index([slug])
-}
-
-model Comment {
-  id                String    @id @default(cuid())
-  content           String
-  isPublic          Boolean   @default(true)
-  isApproved        Boolean   @default(false)
-  isModerated       Boolean   @default(false)
-  moderationReason  String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // Relations
-  authorId          String
-  author            User      @relation(fields: [authorId], references: [id])
-  articleId         String
-  article           Article   @relation(fields: [articleId], references: [id])
-  parentCommentId   String?
-  parentComment     Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
-  replies           Comment[] @relation("CommentReplies")
-
-  // Indexes
-  @@index([authorId])
-  @@index([articleId])
-  @@index([isApproved])
-  @@index([createdAt])
-}
-
-model EditorialNote {
-  id                String    @id @default(cuid())
-  content           String
-  isInternal        Boolean   @default(true)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // Relations
-  authorId          String
-  author            User      @relation(fields: [authorId], references: [id])
-  articleId         String
-  article           Article   @relation(fields: [articleId], references: [id])
-
-  // Indexes
-  @@index([authorId])
-  @@index([articleId])
-  @@index([createdAt])
-}
-
-model Tag {
-  id                String    @id @default(cuid())
-  name              String    @unique
-  slug              String    @unique
-  description       String?
-  color             String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // Relations
-  articles          Article[]
-
-  // Indexes
-  @@index([name])
-  @@index([slug])
-}
-
-model Category {
-  id                String    @id @default(cuid())
-  name              String    @unique
-  slug              String    @unique
-  description       String?
-  parentCategoryId  String?
-  parentCategory    Category? @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
-  subCategories     Category[] @relation("CategoryHierarchy")
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // Relations
-  articles          Article[]
-
-  // Indexes
-  @@index([name])
-  @@index([slug])
-  @@index([parentCategoryId])
-}
-
-model AuditLog {
-  id                String    @id @default(cuid())
-  userId            String?
-  action            String
-  resourceType      String
-  resourceId        String?
-  details           Json?
-  ipAddress         String?
-  userAgent         String?
-  createdAt         DateTime  @default(now())
-
-  // Relations
-  user              User?     @relation(fields: [userId], references: [id])
-
-  // Indexes
-  @@index([userId])
-  @@index([action])
-  @@index([resourceType])
-  @@index([createdAt])
-}
-
-model Media {
-  id                String    @id @default(cuid())
-  filename          String
-  originalName      String
-  mimeType          String
-  size              Int
-  path              String
-  url               String
-  altText           String?
-  caption           String?
-  uploadedBy        String
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // Indexes
-  @@index([uploadedBy])
-  @@index([mimeType])
-  @@index([createdAt])
 }

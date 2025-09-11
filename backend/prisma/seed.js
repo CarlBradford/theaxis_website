@@ -1,298 +1,132 @@
 const { PrismaClient } = require('@prisma/client');
-const argon2 = require('argon2');
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting database seeding...');
+  console.log('ℹ️  Note: Default categories, tags, users, and sample content are now handled by database migrations.');
+  console.log('ℹ️  This seed file is kept for any additional development data you might want to add.');
 
   try {
-    // Create default categories
-    console.log('📂 Creating default categories...');
-    const categories = await Promise.all([
-      prisma.category.upsert({
-        where: { slug: 'news' },
-        update: {},
-        create: {
-          name: 'News',
-          slug: 'news',
-          description: 'Latest news and current events',
-        },
-      }),
-      prisma.category.upsert({
-        where: { slug: 'opinion' },
-        update: {},
-        create: {
-          name: 'Opinion',
-          slug: 'opinion',
-          description: 'Editorials and opinion pieces',
-        },
-      }),
-      prisma.category.upsert({
-        where: { slug: 'features' },
-        update: {},
-        create: {
-          name: 'Features',
-          slug: 'features',
-          description: 'In-depth feature articles',
-        },
-      }),
-      prisma.category.upsert({
-        where: { slug: 'sports' },
-        update: {},
-        create: {
-          name: 'Sports',
-          slug: 'sports',
-          description: 'Sports coverage and analysis',
-        },
-      }),
-      prisma.category.upsert({
-        where: { slug: 'arts-culture' },
-        update: {},
-        create: {
-          name: 'Arts & Culture',
-          slug: 'arts-culture',
-          description: 'Arts, entertainment, and cultural coverage',
-        },
-      }),
-    ]);
-
-    console.log(`✅ Created ${categories.length} categories`);
-
-    // Create default tags
-    console.log('🏷️ Creating default tags...');
-    const tags = await Promise.all([
-      prisma.tag.upsert({
-        where: { slug: 'breaking-news' },
-        update: {},
-        create: {
-          name: 'Breaking News',
-          slug: 'breaking-news',
-          description: 'Urgent and time-sensitive news',
-          color: '#dc2626',
-        },
-      }),
-      prisma.tag.upsert({
-        where: { slug: 'exclusive' },
-        update: {},
-        create: {
-          name: 'Exclusive',
-          slug: 'exclusive',
-          description: 'Exclusive content and interviews',
-          color: '#7c3aed',
-        },
-      }),
-      prisma.tag.upsert({
-        where: { slug: 'investigation' },
-        update: {},
-        create: {
-          name: 'Investigation',
-          slug: 'investigation',
-          description: 'Investigative journalism pieces',
-          color: '#059669',
-        },
-      }),
-      prisma.tag.upsert({
-        where: { slug: 'student-life' },
-        update: {},
-        create: {
-          name: 'Student Life',
-          slug: 'student-life',
-          description: 'Content related to student experiences',
-          color: '#ea580c',
-        },
-      }),
-    ]);
-
-    console.log(`✅ Created ${tags.length} tags`);
-
-    // Create default admin user
-    console.log('👤 Creating default admin user...');
-    const adminPassword = await argon2.hash('admin123', {
-      type: argon2.argon2id,
-      memoryCost: 65536,
-      timeCost: 3,
-      parallelism: 1,
-    });
-
-    const adminUser = await prisma.user.upsert({
-      where: { email: 'admin@theaxis.local' },
-      update: {},
-      create: {
-        email: 'admin@theaxis.local',
-        username: 'admin',
-        firstName: 'System',
-        lastName: 'Administrator',
-        passwordHash: adminPassword,
-        role: 'ADVISER',
-        isActive: true,
-        emailVerified: true,
-        bio: 'System administrator for The AXIS platform',
-      },
-    });
-
-    console.log('✅ Created admin user:', adminUser.email);
-
-    // Create default editor-in-chief
-    console.log('👑 Creating default editor-in-chief...');
-    const eicPassword = await argon2.hash('eic123', {
-      type: argon2.argon2id,
-      memoryCost: 65536,
-      timeCost: 3,
-      parallelism: 1,
-    });
-
-    const eicUser = await prisma.user.upsert({
-      where: { email: 'eic@theaxis.local' },
-      update: {},
-      create: {
-        email: 'eic@theaxis.local',
-        username: 'editorinchief',
-        firstName: 'Editor',
-        lastName: 'In Chief',
-        passwordHash: eicPassword,
-        role: 'EDITOR_IN_CHIEF',
-        isActive: true,
-        emailVerified: true,
-        bio: 'Editor-in-Chief of The AXIS publication',
-      },
-    });
-
-    console.log('✅ Created editor-in-chief:', eicUser.email);
-
-    // Create default section head
-    console.log('📰 Creating default section head...');
-    const sectionHeadPassword = await argon2.hash('section123', {
-      type: argon2.argon2id,
-      memoryCost: 65536,
-      timeCost: 3,
-      parallelism: 1,
-    });
-
-    const sectionHeadUser = await prisma.user.upsert({
-      where: { email: 'section@theaxis.local' },
-      update: {},
-      create: {
-        email: 'section@theaxis.local',
-        username: 'sectionhead',
-        firstName: 'Section',
-        lastName: 'Head',
-        passwordHash: sectionHeadPassword,
-        role: 'SECTION_HEAD',
-        isActive: true,
-        emailVerified: true,
-        bio: 'Section Head for The AXIS publication',
-      },
-    });
-
-    console.log('✅ Created section head:', sectionHeadUser.email);
-
-    // Create default staff writer
-    console.log('✍️ Creating default staff writer...');
-    const staffPassword = await argon2.hash('staff123', {
-      type: argon2.argon2id,
-      memoryCost: 65536,
-      timeCost: 3,
-      parallelism: 1,
-    });
-
-    const staffUser = await prisma.user.upsert({
-      where: { email: 'staff@theaxis.local' },
-      update: {},
-      create: {
-        email: 'staff@theaxis.local',
-        username: 'staffwriter',
-        firstName: 'Staff',
-        lastName: 'Writer',
-        passwordHash: staffPassword,
-        role: 'STAFF',
-        isActive: true,
-        emailVerified: true,
-        bio: 'Staff writer for The AXIS publication',
-      },
-    });
-
-    console.log('✅ Created staff writer:', staffUser.email);
-
-    // Create sample article
-    console.log('📄 Creating sample article...');
-    const sampleArticle = await prisma.article.upsert({
-      where: { slug: 'welcome-to-the-axis' },
-      update: {},
-      create: {
-        title: 'Welcome to The AXIS',
-        slug: 'welcome-to-the-axis',
-        excerpt: 'A new era of student journalism begins with The AXIS platform.',
-        content: `
-          <h1>Welcome to The AXIS</h1>
-          <p>Welcome to The AXIS, your comprehensive student publication platform. This platform represents a new era of student journalism, combining modern technology with traditional editorial values.</p>
+    // Add sample data for Content Management Phase models
+    
+    // Get existing users and articles for sample data
+    const users = await prisma.user.findMany();
+    const articles = await prisma.article.findMany();
+    
+    if (users.length > 0 && articles.length > 0) {
+      console.log('📝 Adding sample Content Management Phase data...');
+      
+      // Add sample article authors (multiple authors per article)
+      for (let i = 0; i < Math.min(3, articles.length); i++) {
+        const article = articles[i];
+        const availableUsers = users.filter(u => u.id !== article.authorId);
+        
+        if (availableUsers.length > 0) {
+          // Add a co-author
+          await prisma.articleAuthor.create({
+            data: {
+              articleId: article.id,
+              userId: availableUsers[0].id,
+              role: 'Co-Author',
+              order: 1
+            }
+          });
+        }
+      }
+      
+      // Add sample view history
+      for (let i = 0; i < Math.min(5, articles.length); i++) {
+        const article = articles[i];
+        const randomUsers = users.slice(0, Math.floor(Math.random() * 3) + 1);
+        
+        for (const user of randomUsers) {
+          await prisma.articleViewHistory.create({
+            data: {
+              articleId: article.id,
+              userId: user.id,
+              viewedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Random time in last week
+              ipAddress: `192.168.1.${Math.floor(Math.random() * 255)}`,
+              userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          });
+        }
+      }
+      
+      // Add sample like/dislike history
+      for (let i = 0; i < Math.min(3, articles.length); i++) {
+        const article = articles[i];
+        const randomUsers = users.slice(0, Math.floor(Math.random() * 2) + 1);
+        
+        for (const user of randomUsers) {
+          await prisma.articleLikeHistory.create({
+            data: {
+              articleId: article.id,
+              userId: user.id,
+              isLike: Math.random() > 0.3, // 70% chance of like
+              likedAt: new Date(Date.now() - Math.random() * 3 * 24 * 60 * 60 * 1000), // Random time in last 3 days
+              ipAddress: `192.168.1.${Math.floor(Math.random() * 255)}`,
+              userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          });
+        }
+      }
+      
+      // Add sample review feedback
+      const editors = users.filter(u => u.role === 'EDITOR_IN_CHIEF' || u.role === 'SECTION_HEAD');
+      if (editors.length > 0) {
+        for (let i = 0; i < Math.min(2, articles.length); i++) {
+          const article = articles[i];
+          const editor = editors[Math.floor(Math.random() * editors.length)];
           
-          <h2>What is The AXIS?</h2>
-          <p>The AXIS is a web-based content management system designed specifically for student publications. It provides tools for article submission, editorial review, publication management, and audience engagement.</p>
+          await prisma.reviewFeedback.create({
+            data: {
+              articleId: article.id,
+              reviewerId: editor.id,
+              feedback: 'Great article! Minor grammar fixes needed.',
+              feedbackType: 'COMMENT',
+              isApproved: null
+            }
+          });
+        }
+      }
+      
+      // Add sample analytics data
+      for (let i = 0; i < Math.min(3, articles.length); i++) {
+        const article = articles[i];
+        
+        // Add analytics for the last 7 days
+        for (let day = 0; day < 7; day++) {
+          const date = new Date();
+          date.setDate(date.getDate() - day);
+          date.setHours(0, 0, 0, 0);
           
-          <h2>Key Features</h2>
-          <ul>
-            <li><strong>Content Management:</strong> Streamlined article workflow from draft to publication</li>
-            <li><strong>Role-Based Access:</strong> Secure access control for different user roles</li>
-            <li><strong>Feedback System:</strong> Public comments and internal editorial notes</li>
-            <li><strong>Analytics Dashboard:</strong> Insights into readership and engagement</li>
-          </ul>
-          
-          <h2>Getting Started</h2>
-          <p>Whether you're a student writer, editor, or publication adviser, The AXIS provides the tools you need to create, manage, and publish high-quality content.</p>
-          
-          <p>This is just the beginning. The platform will continue to evolve with new features and improvements based on user feedback and needs.</p>
-        `,
-        status: 'PUBLISHED',
-        publishedAt: new Date(),
-        authorId: adminUser.id,
-        seoTitle: 'Welcome to The AXIS - Student Publication Platform',
-        seoDescription: 'Discover The AXIS, the comprehensive student publication platform for modern journalism.',
-        seoKeywords: ['student publication', 'journalism', 'content management', 'editorial platform'],
-      },
-    });
-
-    console.log('✅ Created sample article:', sampleArticle.title);
-
-    // Create sample comment
-    console.log('💬 Creating sample comment...');
-    const sampleComment = await prisma.comment.upsert({
-      where: { id: 'sample-comment-1' },
-      update: {},
-      create: {
-        id: 'sample-comment-1',
-        content: 'This is an exciting new platform! Looking forward to seeing how it develops.',
-        isPublic: true,
-        isApproved: true,
-        authorId: staffUser.id,
-        articleId: sampleArticle.id,
-      },
-    });
-
-    console.log('✅ Created sample comment');
-
-    // Create sample editorial note
-    console.log('📝 Creating sample editorial note...');
-    const sampleNote = await prisma.editorialNote.upsert({
-      where: { id: 'sample-note-1' },
-      update: {},
-      create: {
-        id: 'sample-note-1',
-        content: 'This welcome article sets a good foundation for the platform. Consider adding more specific examples of how students can use the system.',
-        isInternal: true,
-        authorId: eicUser.id,
-        articleId: sampleArticle.id,
-      },
-    });
-
-    console.log('✅ Created sample editorial note');
-
-    console.log('🎉 Database seeding completed successfully!');
-    console.log('\n📋 Default Login Credentials:');
+          await prisma.articleAnalytics.create({
+            data: {
+              articleId: article.id,
+              date: date,
+              views: Math.floor(Math.random() * 100) + 10,
+              likes: Math.floor(Math.random() * 20) + 1,
+              dislikes: Math.floor(Math.random() * 5),
+              comments: Math.floor(Math.random() * 10),
+              socialShares: Math.floor(Math.random() * 15),
+              uniqueVisitors: Math.floor(Math.random() * 50) + 5,
+              avgTimeOnPage: Math.random() * 300 + 30, // 30-330 seconds
+              bounceRate: Math.random() * 0.4 + 0.1 // 10-50%
+            }
+          });
+        }
+      }
+      
+      console.log('✅ Sample Content Management Phase data added successfully!');
+    }
+    
+    console.log('✅ Database seeding completed successfully!');
+    console.log('\n📋 Default Login Credentials (now permanent via migrations):');
     console.log('👤 Admin: admin@theaxis.local / admin123');
     console.log('👑 Editor-in-Chief: eic@theaxis.local / eic123');
     console.log('📰 Section Head: section@theaxis.local / section123');
-    console.log('✍️ Staff Writer: staff@theaxis.local / staff123');
+    console.log('✍️ Publication Staff: staff@theaxis.local / staff123');
     console.log('\n⚠️  IMPORTANT: Change these passwords in production!');
 
   } catch (error) {

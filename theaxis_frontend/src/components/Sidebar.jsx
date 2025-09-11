@@ -1,76 +1,184 @@
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
+import { hasPermission, ROLE_DISPLAY_NAMES } from '../config/permissions';
 import { 
   HomeIcon,
   DocumentTextIcon,
   PhotoIcon,
   UserGroupIcon,
   ChartBarIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  ShieldCheckIcon,
+  BellIcon,
+  ClipboardDocumentListIcon,
+  DocumentCheckIcon,
+  ExclamationTriangleIcon,
+  ServerIcon,
+  ArchiveBoxIcon,
+  TagIcon,
+  FolderIcon,
+  ChevronDownIcon,
+  QuestionMarkCircleIcon,
+  ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
+import '../styles/dashboard.css';
+import theaxisLogo from '../assets/theaxis_logo.png';
 
 const Sidebar = () => {
   const { user, hasRole } = useAuth();
   const location = useLocation();
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { name: 'Articles', href: '/articles', icon: DocumentTextIcon },
-    ...(hasRole('STAFF') ? [{ name: 'Media', href: '/media', icon: PhotoIcon }] : []),
-    ...(hasRole('SECTION_HEAD') ? [{ name: 'Users', href: '/users', icon: UserGroupIcon }] : []),
-    ...(hasRole('EDITOR_IN_CHIEF') ? [{ name: 'Analytics', href: '/analytics', icon: ChartBarIcon }] : []),
-    { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+  // Define navigation items with permissions
+  const navigationItems = [
+    {
+      name: 'Dashboard',
+      href: '/dashboard',
+      icon: HomeIcon,
+      permission: null, // Always visible to authenticated users
+    },
+    {
+      name: 'Users',
+      href: '/users',
+      icon: UserGroupIcon,
+      permission: 'user:read',
+    },
+    {
+      name: 'Content',
+      href: '/articles',
+      icon: DocumentTextIcon,
+      permission: 'article:read',
+      subItems: [
+        {
+          name: 'My Content',
+          href: '/articles/my',
+          permission: 'article:read',
+        },
+        {
+          name: 'Review Queue',
+          href: '/articles/pending',
+          permission: 'article:review',
+        },
+      ]
+    },
+    {
+      name: 'Comments',
+      href: '/comments',
+      icon: ClipboardDocumentListIcon,
+      permission: 'comment:read',
+    },
+    {
+      name: 'Analytics',
+      href: '/analytics',
+      icon: ChartBarIcon,
+      permission: 'analytics:read',
+    },
+    {
+      name: 'Site Settings',
+      href: '/settings',
+      icon: Cog6ToothIcon,
+      permission: null, // Always visible to authenticated users
+    },
   ];
 
-  return (
-    <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-      <div className="flex-1 flex flex-col min-h-0 bg-white/80 backdrop-blur-md border-r border-gray-100">
-        <div className="flex-1 flex flex-col pt-6 pb-4 overflow-y-auto">
-          <nav className="mt-5 flex-1 px-2 space-y-1">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`${
-                    isActive
-                      ? 'bg-primary-100 text-primary-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
-                >
-                  <item.icon
-                    className={`${
-                      isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
-                    } mr-3 flex-shrink-0 h-6 w-6`}
-                    aria-hidden="true"
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+  // Filter navigation items based on user permissions
+  const filteredNavigation = navigationItems.filter(item => {
+    if (!item.permission) return true;
+    return hasPermission(user?.role, item.permission);
+  }).map(item => ({
+    ...item,
+    subItems: item.subItems?.filter(subItem => 
+      !subItem.permission || hasPermission(user?.role, subItem.permission)
+    )
+  }));
+
+  const isActive = (href) => {
+    return location.pathname === href || location.pathname.startsWith(href + '/');
+  };
+
+  const NavItem = ({ item, level = 0 }) => {
+    const [isExpanded, setIsExpanded] = React.useState(false);
+    const hasSubItems = item.subItems && item.subItems.length > 0;
+    const isItemActive = isActive(item.href);
+    const isSubItemActive = hasSubItems && item.subItems.some(subItem => isActive(subItem.href));
+
+    const handleMainItemClick = (e) => {
+      if (hasSubItems) {
+        e.preventDefault();
+        setIsExpanded(!isExpanded);
+      }
+    };
+
+    return (
+      <div>
+        <Link
+          to={item.href}
+          className={`nav-item ${isItemActive || isSubItemActive ? 'active' : ''}`}
+          onClick={handleMainItemClick}
+        >
+          <item.icon className="nav-item-icon" />
+          <span className="nav-item-text">{item.name}</span>
+          {hasSubItems && (
+            <ChevronDownIcon
+              className={`nav-item-arrow ${isExpanded ? 'expanded' : ''}`}
+            />
+          )}
+        </Link>
         
-        <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center">
-                <span className="text-sm font-medium text-white">
-                  {user?.firstName?.[0]}{user?.lastName?.[0]}
-                </span>
-              </div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-700">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="text-xs text-gray-500 capitalize">
-                {user?.role?.toLowerCase().replace('_', ' ')}
-              </p>
-            </div>
+        {hasSubItems && isExpanded && (
+          <div className="nav-submenu">
+            {item.subItems.map((subItem) => (
+              <Link
+                key={subItem.href}
+                to={subItem.href}
+                className={`nav-subitem ${isActive(subItem.href) ? 'active' : ''}`}
+              >
+                {subItem.name}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="sidebar-container">
+      {/* Logo */}
+      <div className="sidebar-logo">
+        <div className="sidebar-logo-container">
+          <div className="sidebar-logo-icon">
+            <img 
+              src={theaxisLogo} 
+              alt="The AXIS Logo" 
+              className="sidebar-logo-image"
+            />
+          </div>
+          <div className="sidebar-logo-text">
+            <span className="logo-the">The</span>
+            <span className="logo-axis">AXIS</span>
+            <span className="logo-group">GROUP OF PUBLICATIONS</span>
           </div>
         </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="sidebar-nav">
+        {filteredNavigation.map((item) => (
+          <NavItem key={item.href} item={item} />
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div className="sidebar-footer">
+        <Link to="/help" className="footer-item">
+          <QuestionMarkCircleIcon className="footer-item-icon" />
+          Help
+        </Link>
+        <button className="footer-item">
+          <ArrowRightOnRectangleIcon className="footer-item-icon" />
+          Log Out
+        </button>
       </div>
     </div>
   );

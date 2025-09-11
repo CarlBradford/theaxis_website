@@ -1,17 +1,10 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/apiService';
+import { hasPermission as checkPermission, hasAnyPermission as checkAnyPermission, hasAllPermissions as checkAllPermissions } from '../config/permissions';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -36,9 +29,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (usernameOrEmail, password) => {
     try {
-      const response = await authAPI.login({ email, password });
+      const response = await authAPI.login({ usernameOrEmail, password });
       const { token: newToken, user: userData } = response.data;
       
       setToken(newToken);
@@ -54,18 +47,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (userData) => {
-    try {
-      const response = await authAPI.register(userData);
-      return { success: true, data: response.data };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.message || 'Registration failed' 
-      };
-    }
-  };
-
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -77,23 +58,40 @@ export const AuthProvider = ({ children }) => {
     if (!user) return false;
     
     const roleHierarchy = {
-      'READER': 0,
-      'STAFF': 1,
-      'SECTION_HEAD': 2,
-      'EDITOR_IN_CHIEF': 3,
-      'ADVISER': 4
+      'STAFF': 0,
+      'SECTION_HEAD': 1,
+      'EDITOR_IN_CHIEF': 2,
+      'ADVISER': 3,
+      'SYSTEM_ADMIN': 4
     };
     
     return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
+  };
+
+  const hasPermission = (permission) => {
+    if (!user) return false;
+    return checkPermission(user.role, permission);
+  };
+
+  const hasAnyPermission = (permissions) => {
+    if (!user) return false;
+    return checkAnyPermission(user.role, permissions);
+  };
+
+  const hasAllPermissions = (permissions) => {
+    if (!user) return false;
+    return checkAllPermissions(user.role, permissions);
   };
 
   const value = {
     user,
     loading,
     login,
-    register,
     logout,
     hasRole,
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
     isAuthenticated: !!user
   };
 
@@ -102,4 +100,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}

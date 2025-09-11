@@ -1,18 +1,23 @@
-import { Outlet } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import '../styles/dashboard.css';
 
 const Layout = () => {
   const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  
+  // Hide navbar on login and register pages
+  const hideNavbar = location.pathname === '/login' || location.pathname === '/register';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <Navbar />
-      <div className="flex">
-        {isAuthenticated && <Sidebar />}
-        <main className={`flex-1 p-8 transition-all duration-300 ${isAuthenticated ? 'md:ml-64' : ''}`}>
-          <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen">
+      {!hideNavbar && <Navbar />}
+      <div className={hideNavbar ? '' : 'flex'}>
+        {isAuthenticated && !hideNavbar && <Sidebar />}
+        <main className={`main-content ${hideNavbar ? 'w-full' : ''}`}>
+          <div className={hideNavbar ? '' : 'p-8'}>
             <Outlet />
           </div>
         </main>

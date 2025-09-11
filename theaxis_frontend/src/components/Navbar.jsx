@@ -1,155 +1,115 @@
-import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { ROLE_DISPLAY_NAMES } from '../config/permissions';
 import { 
   Bars3Icon, 
   XMarkIcon,
   UserCircleIcon,
-  ArrowRightOnRectangleIcon 
+  ArrowRightOnRectangleIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import '../styles/dashboard.css';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const location = useLocation();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (userMenuOpen && !event.target.closest('.user-profile') && !event.target.closest('.dropdown-menu')) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [userMenuOpen]);
 
   const handleLogout = () => {
     logout();
   };
 
+  // Get current page title based on location
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path === '/dashboard') return 'Dashboard';
+    if (path === '/users') return 'Users';
+    if (path === '/articles') return 'Content Management';
+    if (path === '/articles/my') return 'My Content';
+    if (path === '/articles/pending') return 'Review Queue';
+    if (path === '/comments') return 'Comments';
+    if (path === '/analytics') return 'Analytics';
+    if (path === '/settings') return 'Site Settings';
+    return 'Dashboard';
+  };
+
   return (
-    <nav className="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100">
-      <div className="max-w-6xl mx-auto px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-600 rounded-sm flex items-center justify-center">
-                <span className="text-white font-bold text-sm">A</span>
-              </div>
-              <h1 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">The AXIS</h1>
-            </Link>
-          </div>
+    <nav className="navbar-container">
+      {/* Page Title */}
+      <h1 className="navbar-title">
+        {getPageTitle()}
+      </h1>
 
-          <div className="hidden md:flex items-center space-x-4">
-            <Link 
-              to="/articles" 
-              className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+      {/* Right side - User Profile */}
+      <div className="navbar-right">
+        {/* User Profile */}
+        {isAuthenticated ? (
+          <div className="relative">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setUserMenuOpen(!userMenuOpen);
+              }}
+              className="user-profile"
             >
-              Articles
-            </Link>
-            
-            {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                <Link 
-                  to="/dashboard" 
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Dashboard
-                </Link>
-                <div className="relative">
-                  <button className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-                    <UserCircleIcon className="h-5 w-5" />
-                    <span>{user?.firstName} {user?.lastName}</span>
-                  </button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                    <Link 
-                      to="/profile" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Profile
-                    </Link>
-                    <button 
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                </div>
+              <div className="user-avatar">
+                {user?.firstName?.[0]}{user?.lastName?.[0]}
               </div>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <Link 
-                  to="/login" 
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Login
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="btn-primary text-sm"
-                >
-                  Register
-                </Link>
+              <div className="user-info">
+                <p className="user-name">{user?.firstName} {user?.lastName}</p>
+                <p className="user-role">
+                  {ROLE_DISPLAY_NAMES[user?.role] || user?.role}
+                </p>
               </div>
-            )}
-          </div>
-
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-700 hover:text-blue-600 p-2"
-            >
-              {mobileMenuOpen ? (
-                <XMarkIcon className="h-6 w-6" />
-              ) : (
-                <Bars3Icon className="h-6 w-6" />
-              )}
+              <ChevronDownIcon className={`user-dropdown-arrow ${userMenuOpen ? 'open' : ''}`} />
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
-            <Link 
-              to="/articles" 
-              className="block px-3 py-2 text-gray-700 hover:text-blue-600"
-            >
-              Articles
-            </Link>
             
-            {isAuthenticated ? (
-              <>
-                <Link 
-                  to="/dashboard" 
-                  className="block px-3 py-2 text-gray-700 hover:text-blue-600"
-                >
-                  Dashboard
-                </Link>
+            {userMenuOpen && (
+              <div className="dropdown-menu">
                 <Link 
                   to="/profile" 
-                  className="block px-3 py-2 text-gray-700 hover:text-blue-600"
+                  className="dropdown-item"
+                  onClick={() => setUserMenuOpen(false)}
                 >
                   Profile
                 </Link>
                 <button 
-                  onClick={handleLogout}
-                  className="block w-full text-left px-3 py-2 text-gray-700 hover:text-blue-600"
+                  onClick={() => {
+                    handleLogout();
+                    setUserMenuOpen(false);
+                  }}
+                  className="dropdown-item"
                 >
                   Logout
                 </button>
-              </>
-            ) : (
-              <>
-                <Link 
-                  to="/login" 
-                  className="block px-3 py-2 text-gray-700 hover:text-blue-600"
-                >
-                  Login
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="block px-3 py-2 text-gray-700 hover:text-blue-600"
-                >
-                  Register
-                </Link>
-              </>
+              </div>
             )}
           </div>
-        </div>
-      )}
+        ) : (
+          <Link 
+            to="/login" 
+            className="dropdown-item"
+          >
+            Login
+          </Link>
+        )}
+      </div>
     </nav>
   );
 };

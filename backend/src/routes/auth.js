@@ -259,7 +259,7 @@ router.post('/register', [
  */
 router.post('/login', [
   authRateLimit,
-  body('email')
+  body('usernameOrEmail')
     .notEmpty()
     .withMessage('Email or username is required'),
   body('password')

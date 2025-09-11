@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { articlesAPI } from '../services/apiService';
 import { DocumentTextIcon, EyeIcon, HeartIcon, ChatBubbleLeftIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 const Articles = () => {
   const [articles, setArticles] = useState([]);

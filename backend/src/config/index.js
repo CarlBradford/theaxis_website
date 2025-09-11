@@ -4,12 +4,12 @@ const config = {
   // Server configuration
   port: process.env.PORT || 3001,
   nodeEnv: process.env.NODE_ENV || 'development',
-  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  corsOrigin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:5173', 'http://localhost:5175'],
 
   // Database configuration
   database: {
     url: process.env.DATABASE_URL,
-     tUrl: process.env.TEST_DATABASE_URL,
+    testUrl: process.env.TEST_DATABASE_URL,
   },
 
   // JWT configuration

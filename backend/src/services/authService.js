@@ -115,24 +115,24 @@ class AuthService {
    */
   async login(credentials) {
     try {
-      const { email, password } = credentials;
+      const { usernameOrEmail, password } = credentials;
 
-      if (!email || !password) {
-        throw createValidationError('login', 'Email and password are required');
+      if (!usernameOrEmail || !password) {
+        throw createValidationError('login', 'Username/Email and password are required');
       }
 
       // Find user by email or username
       const user = await prisma.user.findFirst({
         where: {
           OR: [
-            { email: email.toLowerCase() },
-            { username: email.toLowerCase() },
+            { email: usernameOrEmail.toLowerCase() },
+            { username: usernameOrEmail.toLowerCase() },
           ],
         },
       });
 
       if (!user) {
-        logger.warn('Login attempt with non-existent credentials', { email });
+        logger.warn('Login attempt with non-existent credentials', { usernameOrEmail });
         throw createValidationError('credentials', 'Invalid email or password');
       }
 
