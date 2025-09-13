@@ -117,8 +117,10 @@ router.post(
  * @swagger
  * /categories:
  *   get:
- *     summary: List all categories (with hierarchy)
+ *     summary: List all categories (with hierarchy) - All authenticated users
  *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: search
@@ -129,10 +131,12 @@ router.post(
  *     responses:
  *       200:
  *         description: Categories retrieved
+ *       401:
+ *         description: Unauthorized
  */
 router.get(
   '/',
-  [query('search').optional().isString(), query('includeSubcategories').optional().isBoolean()],
+  [authenticateToken, query('search').optional().isString(), query('includeSubcategories').optional().isBoolean()],
   asyncHandler(async (req, res) => {
     const { search, includeSubcategories } = req.query;
     const where = {};

@@ -32,18 +32,27 @@ const config = {
   // Rate limiting
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, // 15 minutes
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || (process.env.NODE_ENV === 'development' ? 1000 : 100), // More lenient in development
   },
 
   // File upload configuration
   upload: {
-    maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 5242880, // 5MB
+    maxFileSize: 104857600, // Force 100MB regardless of environment
     path: process.env.UPLOAD_PATH || './uploads',
     allowedTypes: process.env.ALLOWED_FILE_TYPES?.split(',') || [
       'image/jpeg',
       'image/png',
       'image/gif',
       'image/webp',
+      'image/svg+xml',
+      'video/mp4',
+      'video/avi',
+      'video/mov',
+      'video/webm',
+      'video/quicktime',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ],
   },
 

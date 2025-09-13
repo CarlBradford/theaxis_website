@@ -1,0 +1,128 @@
+/* Simple PublishConfirmationModal Styles */
+.publish-confirm-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1004;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.publish-confirm-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  padding: 0;
+  max-width: 400px;
+  width: 100%;
+  position: relative;
+}
+
+.publish-confirm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 0 24px;
+}
+
+.publish-confirm-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.publish-confirm-close {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.publish-confirm-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.publish-confirm-content {
+  padding: 20px 24px 0 24px;
+}
+
+.publish-confirm-message {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.publish-confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 24px;
+}
+
+.publish-confirm-btn-cancel {
+  padding: 10px 20px;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.publish-confirm-btn-cancel:hover {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.publish-confirm-btn-confirm {
+  padding: 10px 20px;
+  background-color: #215d55;
+  color: #ffffff;
+  border: 1px solid #215d55;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.publish-confirm-btn-confirm:hover {
+  background-color: #1c4643;
+  border-color: #1c4643;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .publish-confirm-modal {
+    max-width: 95vw;
+    margin: 10px;
+  }
+  
+  .publish-confirm-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .publish-confirm-btn-cancel,
+  .publish-confirm-btn-confirm {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -13,6 +13,7 @@ const {
   authenticateToken,
   requireStaff,
   requireSectionHead,
+  requirePermission,
   auditLog, 
 } = require('../middleware/auth');
 const { asyncHandler, sendSuccessResponse, sendErrorResponse, createNotFoundError } = require('../middleware/errorHandler');
@@ -92,7 +93,7 @@ const upload = multer({
  */
 router.post(
   '/',
-  [authenticateToken, requireStaff, upload.single('file')],
+  [authenticateToken, upload.single('file')],
   asyncHandler(async (req, res) => {
     if (!req.file) return sendErrorResponse(res, 400, 'No file uploaded');
 
@@ -157,7 +158,7 @@ router.get(
  * @swagger
  * /media/{id}:
  *   delete:
- *     summary: Delete media (Section Head+)
+ *     summary: Delete media (own files or Section Head+)
  *     tags: [Media]
  *     security:
  *       - bearerAuth: []
@@ -169,15 +170,28 @@ router.get(
  *     responses:
  *       200:
  *         description: Media deleted
+ *       403:
+ *         description: Can only delete your own files
  */
 router.delete(
   '/:id',
-  [authenticateToken, requireSectionHead],
+  [authenticateToken],
   auditLog('delete', 'media'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const media = await prisma.media.findUnique({ where: { id }, select: { id: true, path: true } });
+    const media = await prisma.media.findUnique({ 
+      where: { id }, 
+      select: { id: true, path: true, uploadedBy: true } 
+    });
     if (!media) throw createNotFoundError('Media', id);
+
+    // Allow users to delete their own files, or SECTION_HEAD+ to delete any file
+    const canDelete = media.uploadedBy === req.user.id || 
+                     ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(req.user.role);
+    
+    if (!canDelete) {
+      return sendErrorResponse(res, 403, 'You can only delete your own uploaded files');
+    }
 
     try {
       if (fs.existsSync(media.path)) fs.unlinkSync(media.path);

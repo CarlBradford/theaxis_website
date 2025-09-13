@@ -119,7 +119,7 @@ const HealthCheck = () => {
               <a href="/" className="text-blue-600 hover:text-blue-800 underline">Home</a>
               <a href="/login" className="text-blue-600 hover:text-blue-800 underline">Login</a>
               <a href="/dashboard" className="text-blue-600 hover:text-blue-800 underline">Dashboard</a>
-              <a href="/articles" className="text-blue-600 hover:text-blue-800 underline">Articles</a>
+              <a href="/content" className="text-blue-600 hover:text-blue-800 underline">Articles</a>
             </div>
           </div>
         </div>

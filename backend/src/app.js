@@ -25,6 +25,7 @@ const { logger } = require('./utils/logger');
 
 // Import configuration
 const config = require('./config');
+const { connectWithRetry, checkDatabaseConnection } = require('./config/database');
 
 const app = express();
 
@@ -81,7 +82,18 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Add debugging for development
+  onLimitReached: (req, res, options) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Rate limit reached for IP: ${req.ip}, Path: ${req.path}, Method: ${req.method}`);
+    }
+  },
 });
+
+// Log rate limit settings in development
+if (process.env.NODE_ENV === 'development') {
+  console.log(`Rate limiting: ${config.rateLimit.maxRequests} requests per ${config.rateLimit.windowMs / 1000 / 60} minutes`);
+}
 app.use('/api/', limiter);
 
 // Body parsing middleware
@@ -176,5 +188,20 @@ process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
   process.exit(0);
 });
+
+// Initialize database connection
+const initializeDatabase = async () => {
+  try {
+    logger.info('Initializing database connection...');
+    await connectWithRetry();
+    logger.info('Database connection initialized successfully');
+  } catch (error) {
+    logger.error('Failed to initialize database connection:', error);
+    process.exit(1);
+  }
+};
+
+// Initialize database on startup
+initializeDatabase();
 
 module.exports = app;

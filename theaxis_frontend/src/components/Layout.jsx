@@ -8,15 +8,27 @@ const Layout = () => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
   
-  // Hide navbar on login and register pages
-  const hideNavbar = location.pathname === '/login' || location.pathname === '/register';
+  // Define public/reader routes where navbar and sidebar should be hidden
+  const publicRoutes = [
+    '/',
+    '/login',
+    '/login-debug', 
+    '/health-check'
+  ];
+  
+  // Check if current route is a public route
+  const isPublicRoute = publicRoutes.includes(location.pathname);
+  
+  // Hide navbar and sidebar on public routes
+  const hideNavbar = isPublicRoute;
+  const hideSidebar = isPublicRoute;
 
   return (
     <div className="min-h-screen">
       {!hideNavbar && <Navbar />}
       <div className={hideNavbar ? '' : 'flex'}>
-        {isAuthenticated && !hideNavbar && <Sidebar />}
-        <main className={`main-content ${hideNavbar ? 'w-full' : ''}`}>
+        {isAuthenticated && !hideSidebar && <Sidebar />}
+        <main className={`main-content ${hideNavbar ? 'w-full ml-0 mt-0' : ''}`}>
           <div className={hideNavbar ? '' : 'p-8'}>
             <Outlet />
           </div>

@@ -6,8 +6,9 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Articles from './pages/Articles';
 import ArticleDetail from './pages/ArticleDetail';
-import MyArticles from './pages/MyArticles';
+import MyContent from './pages/MyContent';
 import CreateArticle from './pages/CreateArticle';
+import EditContent from './pages/EditContent';
 import Media from './pages/Media';
 import Profile from './pages/Profile';
 import UserManagement from './pages/UserManagement';
@@ -34,23 +35,23 @@ function App() {
                 </ProtectedRoute>
               } />
               
-              <Route path="articles" element={<Articles />} />
-              <Route path="articles/:id" element={<ArticleDetail />} />
+              <Route path="content" element={<Articles />} />
+              <Route path="content/:id" element={<ArticleDetail />} />
               
               {/* Article Management Routes */}
-              <Route path="articles/my" element={
+              <Route path="content/mycontent" element={
                 <ProtectedRoute requiredRole="STAFF">
-                  <MyArticles />
+                  <MyContent />
                 </ProtectedRoute>
               } />
-              <Route path="articles/create" element={
+              <Route path="content/create" element={
                 <ProtectedRoute requiredRole="STAFF">
                   <CreateArticle />
                 </ProtectedRoute>
               } />
-              <Route path="articles/:id/edit" element={
+              <Route path="content/:id/edit" element={
                 <ProtectedRoute requiredRole="STAFF">
-                  <CreateArticle />
+                  <EditContent />
                 </ProtectedRoute>
               } />
               

@@ -126,7 +126,7 @@ body.user-management-page {
 .user-management-container {
   background-color: #ffffff;
   height: calc(100vh - 112px);
-  padding: 8px 16px 24px 16px;
+  padding: 0px 16px 24px 16px;
   max-width: 100%;
   display: flex;
   flex-direction: column;
@@ -138,7 +138,7 @@ body.user-management-page {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 9px;
   flex-shrink: 0;
 }
 
@@ -179,13 +179,13 @@ body.user-management-page {
 }
 
 .search-input {
-  width: 280px;
-  height: 32px;
-  padding: 0 12px 0 36px;
+  width: 320px;
+  height: 40px;
+  padding: 0 16px 0 44px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background-color: #ffffff;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: #374151;
   position: relative;
@@ -213,11 +213,11 @@ body.user-management-page {
 
 .search-icon {
   position: absolute;
-  left: 12px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   color: #6b7280;
   pointer-events: none;
   transition: color 0.2s ease;
@@ -229,8 +229,8 @@ body.user-management-page {
 }
 
 .filters-button {
-  height: 32px;
-  width: 32px;
+  height: 40px;
+  width: 40px;
   padding: 0;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -268,8 +268,8 @@ body.user-management-page {
 }
 
 .filters-button svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   color: inherit;
 }
 
@@ -293,17 +293,17 @@ body.user-management-page {
 }
 
 .add-user-button {
-  height: 32px;
-  padding: 0 14px;
+  height: 40px;
+  padding: 0 18px;
   border: none;
   border-radius: 8px;
   background: linear-gradient(135deg, #215d55 0%, #1c4643 100%);
   color: #ffffff;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -323,8 +323,8 @@ body.user-management-page {
 }
 
 .add-user-button svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   color: #ffffff;
 }
 
@@ -456,6 +456,7 @@ body.user-management-page {
   margin: 0;
   padding: 0;
   margin-bottom: 25px;
+  margin-top: 8px;
   position: relative;
 }
 

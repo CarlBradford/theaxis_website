@@ -1,11 +1,9 @@
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+const { prisma } = require('../config/database');
 const { logger } = require('../utils/logger');
 const { AppError, createPermissionError } = require('./errorHandler');
 const { hasPermission, hasAnyPermission, hasAllPermissions, canManageRole, canCreateUserRole } = require('../config/permissions');
 const config = require('../config');
-
-const prisma = new PrismaClient();
 
 // JWT token verification middleware
 const authenticateToken = async (req, res, next) => {
@@ -268,8 +266,8 @@ const requireOwnership = (resourceType, resourceIdField = 'id') => {
         return next(new AppError('Authentication required', 401));
       }
 
-      // Advisers and EICs can access all resources
-      if (['ADVISER', 'EDITOR_IN_CHIEF'].includes(req.user.role)) {
+      // Advisers, EICs, and System Admins can access all resources
+      if (['ADVISER', 'EDITOR_IN_CHIEF', 'SYSTEM_ADMIN'].includes(req.user.role)) {
         return next();
       }
 
@@ -310,7 +308,53 @@ const requireOwnership = (resourceType, resourceIdField = 'id') => {
 
       // Check if user owns the resource or is a section head
       const isOwner = resource.authorId === req.user.id || resource.id === req.user.id;
+      
+      // Note: Co-authors are NOT considered owners for editing purposes
+      // They can only view articles they're connected to
+      
       const isSectionHead = req.user.role === 'SECTION_HEAD';
+
+      // For articles, check status-based restrictions for editing and deleting
+      if (resourceType === 'article' && isOwner) {
+        const article = await prisma.article.findUnique({
+          where: { id: resourceId },
+          select: { status: true }
+        });
+        
+        if (article) {
+          // Staff can only edit/delete articles in DRAFT or NEEDS_REVISION status
+          if (req.user.role === 'STAFF' && !['DRAFT', 'NEEDS_REVISION'].includes(article.status)) {
+            const action = req.method === 'DELETE' ? 'delete' : 'edit';
+            logger.warn(`Staff cannot ${action} article in current status`, {
+              userId: req.user.id,
+              userRole: req.user.role,
+              resourceType,
+              resourceId,
+              articleStatus: article.status,
+              action: req.method,
+            });
+
+            return next(createPermissionError(action, `articles in ${article.status} status`));
+          }
+          
+          // Section Head can edit/delete articles in DRAFT or NEEDS_REVISION status only
+          // Cannot edit/delete articles in IN_REVIEW status (waiting for EIC feedback)
+          // Cannot edit/delete after EIC approval (APPROVED, SCHEDULED, PUBLISHED, ARCHIVED)
+          if (req.user.role === 'SECTION_HEAD' && !['DRAFT', 'NEEDS_REVISION'].includes(article.status)) {
+            const action = req.method === 'DELETE' ? 'delete' : 'edit';
+            logger.warn(`Section Head cannot ${action} article in current status`, {
+              userId: req.user.id,
+              userRole: req.user.role,
+              resourceType,
+              resourceId,
+              articleStatus: article.status,
+              action: req.method,
+            });
+
+            return next(createPermissionError(action, `articles in ${article.status} status`));
+          }
+        }
+      }
 
       if (!isOwner && !isSectionHead) {
         logger.warn('Resource access denied', {
@@ -335,7 +379,7 @@ const requireOwnership = (resourceType, resourceIdField = 'id') => {
 // Rate limiting for authentication endpoints
 const authRateLimit = require('express-rate-limit')({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
+  max: process.env.NODE_ENV === 'development' ? 50 : 5, // More lenient in development
   message: {
     error: 'Too many authentication attempts, please try again later.',
     retryAfter: 900, // 15 minutes in seconds

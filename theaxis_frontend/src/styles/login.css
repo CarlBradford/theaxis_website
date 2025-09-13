@@ -301,52 +301,7 @@ body:has(.login-container) {
   font-weight: 400;
 }
 
-/* Password field with toggle */
-.login-password-container {
-  position: relative;
-}
-
-.login-password-toggle {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.5rem;
-  color: #4b5563;
-  transition: color 0.2s ease-in-out;
-  /* Mobile-specific improvements */
-  -webkit-appearance: none;
-  appearance: none;
-  /* Better touch targets */
-  min-width: 44px;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Prevent text selection on tap */
-  -webkit-user-select: none;
-  user-select: none;
-  /* Remove default mobile styling */
-  border-radius: 0.25rem;
-  outline: none;
-}
-
-.login-password-toggle:hover {
-  color: #215d55;
-}
-
-.login-password-toggle.active {
-  color: #215d55;
-}
-
-.login-password-toggle svg {
-  width: 1.5rem;
-  height: 1.5rem;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
-}
+/* Password field styles removed - no toggle needed */
 
 /* Forgot password link */
 .login-forgot-password {
@@ -623,15 +578,7 @@ body:has(.login-container) {
     min-height: 36px;
   }
   
-  .login-password-toggle {
-    right: 1rem;
-    padding: 0.5rem;
-  }
-  
-  .login-password-toggle svg {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
+  /* Password toggle styles removed */
 }
 
 @media (max-width: 480px) {
@@ -725,17 +672,7 @@ body:has(.login-container) {
     min-height: 32px;
   }
   
-  .login-password-toggle {
-    right: 0.75rem;
-    padding: 0.25rem;
-    min-width: 32px;
-    min-height: 32px;
-  }
-  
-  .login-password-toggle svg {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
+  /* Password toggle styles removed */
   
   .login-forgot-password a {
     font-size: 0.7rem;

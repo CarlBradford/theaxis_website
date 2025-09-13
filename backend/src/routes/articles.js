@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const {
   authenticateToken,
   optionalAuth,
+  requireRole,
   requireSectionHead,
   requireEditorInChief,
   requireStaff,
@@ -141,12 +142,13 @@ router.post(
   '/',
   [
     authenticateToken,
-    requireStaff,
+    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
     body('title').isLength({ min: 3 }).withMessage('Title must be at least 3 characters'),
     body('content').isLength({ min: 1 }).withMessage('Content is required'),
     body('featuredImage').optional().isString(),
     body('mediaCaption').optional().isLength({ max: 500 }).withMessage('Media caption max 500 chars'),
     body('publicationDate').optional().isISO8601().withMessage('Invalid publication date format'),
+    body('status').optional().isIn(allowedStatuses).withMessage('Invalid status'),
     body('tags').optional().isArray(),
     body('categories').optional().isArray(),
     body('authors').optional().isArray(),
@@ -163,6 +165,7 @@ router.post(
       featuredImage, 
       mediaCaption,
       publicationDate,
+      status = 'DRAFT',
       tags = [], 
       categories = [],
       authors = []
@@ -176,13 +179,16 @@ router.post(
       slug = `${baseSlug}-${suffix++}`;
     }
 
+    // Filter out the primary author from additional authors to avoid duplicates
+    const additionalAuthors = authors.filter(authorId => authorId !== req.user.id);
+    
     // Validate additional authors exist if provided
-    if (authors.length > 0) {
+    if (additionalAuthors.length > 0) {
       const authorUsers = await prisma.user.findMany({
-        where: { id: { in: authors } },
+        where: { id: { in: additionalAuthors } },
         select: { id: true }
       });
-      if (authorUsers.length !== authors.length) {
+      if (authorUsers.length !== additionalAuthors.length) {
         return sendErrorResponse(res, 400, 'One or more authors not found');
       }
     }
@@ -195,10 +201,19 @@ router.post(
         featuredImage,
         mediaCaption,
         publicationDate: publicationDate ? new Date(publicationDate) : null,
+        status,
         authorId: req.user.id,
         // connect tags/categories if provided as array of slugs
         ...(tags.length > 0 && {
-          tags: { connect: tags.map((s) => ({ slug: s })) },
+          tags: { 
+            connectOrCreate: tags.map((slug) => ({
+              where: { slug },
+              create: { 
+                name: slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                slug 
+              }
+            }))
+          },
         }),
         ...(categories.length > 0 && {
           categories: { connect: categories.map((s) => ({ slug: s })) },
@@ -213,10 +228,10 @@ router.post(
       },
     });
 
-    // Create additional authors if provided
-    if (authors.length > 0) {
+    // Create additional authors if provided (excluding primary author)
+    if (additionalAuthors.length > 0) {
       await prisma.articleAuthor.createMany({
-        data: authors.map((authorId, index) => ({
+        data: additionalAuthors.map((authorId, index) => ({
           articleId: created.id,
           userId: authorId,
           role: index === 0 ? 'Co-Author' : 'Contributor',
@@ -226,6 +241,141 @@ router.post(
     }
 
     sendSuccessResponse(res, created, 'Article created', 201);
+  })
+);
+
+/**
+ * @swagger
+ * /articles/my-content:
+ *   get:
+ *     summary: Get current user's content (as author or co-author)
+ *     tags: [Articles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [DRAFT, IN_REVIEW, NEEDS_REVISION, APPROVED, SCHEDULED, PUBLISHED, ARCHIVED] }
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: User's articles retrieved
+ *       401:
+ *         description: Unauthorized
+ */
+// Get current user's content (as primary author or co-author)
+router.get(
+  '/my-content',
+  [
+    authenticateToken,
+    query('page').optional().isInt({ min: 1 }).toInt(),
+    query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+    query('status').optional().isIn(allowedStatuses),
+    query('search').optional().isString(),
+  ],
+  asyncHandler(async (req, res) => {
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 20;
+    const skip = (page - 1) * limit;
+    const { status, search } = req.query;
+    const userId = req.user.id;
+
+    // Build where clause for articles where user is either primary author or co-author
+    const where = {
+      OR: [
+        { authorId: userId }, // User is primary author
+        { 
+          articleAuthors: {
+            some: {
+              userId: userId // User is co-author
+            }
+          }
+        }
+      ]
+    };
+
+    if (search) {
+      where.AND = [
+        {
+          OR: [
+            { title: { contains: search, mode: 'insensitive' } },
+            { excerpt: { contains: search, mode: 'insensitive' } },
+          ]
+        }
+      ];
+    }
+    if (status) where.status = status;
+
+    const [items, total] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        select: { 
+          id: true, 
+          title: true, 
+          slug: true, 
+          excerpt: true,
+          status: true, 
+          publishedAt: true, 
+          publicationDate: true,
+          viewCount: true,
+          likeCount: true,
+          dislikeCount: true,
+          commentCount: true,
+          socialShares: true,
+          createdAt: true,
+          updatedAt: true,
+          authorId: true,
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true
+            }
+          },
+          articleAuthors: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  username: true
+                }
+              }
+            }
+          },
+          categories: {
+            select: {
+              id: true,
+              name: true,
+              slug: true
+            }
+          },
+          tags: {
+            select: {
+              id: true,
+              name: true,
+              slug: true
+            }
+          }
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.article.count({ where }),
+    ]);
+
+    sendSuccessResponse(res, { items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } }, 'User content retrieved');
   })
 );
 
@@ -261,12 +411,13 @@ router.get(
     query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
     query('status').optional().isIn(allowedStatuses),
     query('search').optional().isString(),
+    query('authorId').optional().isString(),
   ],
   asyncHandler(async (req, res) => {
     const page = req.query.page || 1;
     const limit = req.query.limit || 20;
     const skip = (page - 1) * limit;
-    const { status, search } = req.query;
+    const { status, search, authorId } = req.query;
 
     const where = {};
     if (search) {
@@ -276,6 +427,7 @@ router.get(
       ];
     }
     if (status) where.status = status;
+    if (authorId) where.authorId = authorId;
     if (!req.user) where.status = 'PUBLISHED';
 
     const [items, total] = await Promise.all([
@@ -293,7 +445,21 @@ router.get(
           dislikeCount: true,
           commentCount: true,
           socialShares: true,
-          createdAt: true 
+          createdAt: true,
+          categories: {
+            select: {
+              id: true,
+              name: true,
+              slug: true
+            }
+          },
+          tags: {
+            select: {
+              id: true,
+              name: true,
+              slug: true
+            }
+          }
         },
         skip,
         take: limit,
@@ -323,7 +489,7 @@ router.get(
 // Get article creation form data
 router.get(
   '/create',
-  [authenticateToken, requireStaff],
+  [authenticateToken, requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN')],
   asyncHandler(async (req, res) => {
     // Return form data needed for creating articles
     const formData = {
@@ -379,18 +545,59 @@ router.get(
         excerpt: true,
         content: true,
         featuredImage: true,
+        mediaCaption: true,
+        publicationDate: true,
         status: true,
         publishedAt: true,
         authorId: true,
         createdAt: true,
         updatedAt: true,
+        categories: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        tags: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        articleAuthors: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true
+              }
+            }
+          }
+        },
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true
+          }
+        }
       },
     });
     if (!article) throw createNotFoundError('Article', idOrSlug);
 
     const canView =
       article.status === 'PUBLISHED' ||
-      (req.user && (req.user.id === article.authorId || ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER'].includes(req.user.role)));
+      (req.user && (
+        req.user.id === article.authorId || 
+        ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER'].includes(req.user.role) ||
+        // Check if user is a co-author
+        article.articleAuthors.some(aa => aa.user.id === req.user.id)
+      ));
     if (!canView) {
       return sendErrorResponse(res, 403, 'Article not published');
     }
@@ -434,6 +641,12 @@ router.put(
     requireOwnership('article', 'id'),
     body('title').optional().isLength({ min: 3 }),
     body('content').optional().isLength({ min: 1 }),
+    body('featuredImage').optional().isString(),
+    body('mediaCaption').optional().isLength({ max: 500 }),
+    body('publicationDate').optional().isISO8601(),
+    body('tags').optional().isArray(),
+    body('categories').optional().isArray(),
+    body('authors').optional().isArray(),
   ],
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -445,9 +658,28 @@ router.put(
     const existing = await prisma.article.findUnique({ where: { id }, select: { id: true, title: true } });
     if (!existing) throw createNotFoundError('Article', id);
 
-    const updateData = { ...req.body };
-    if (updateData.title) {
-      const baseSlug = generateSlug(updateData.title);
+    const { 
+      title, 
+      content, 
+      featuredImage, 
+      mediaCaption,
+      publicationDate,
+      tags = [], 
+      categories = [],
+      authors = []
+    } = req.body;
+
+    const updateData = { 
+      title, 
+      content, 
+      featuredImage, 
+      mediaCaption,
+      publicationDate: publicationDate ? new Date(publicationDate) : null
+    };
+
+    // Handle slug update if title changed
+    if (title) {
+      const baseSlug = generateSlug(title);
       let slug = baseSlug;
       let i = 1;
       while (await prisma.article.findUnique({ where: { slug } })) {
@@ -456,11 +688,61 @@ router.put(
       updateData.slug = slug;
     }
 
+    // Handle tags and categories connections
+    if (tags.length > 0) {
+      updateData.tags = { 
+        set: [], // Clear existing tags
+        connectOrCreate: tags.map((slug) => ({
+          where: { slug },
+          create: { 
+            name: slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            slug 
+          }
+        }))
+      };
+    }
+
+    if (categories.length > 0) {
+      updateData.categories = { 
+        set: [], // Clear existing categories
+        connect: categories.map((s) => ({ slug: s }))
+      };
+    }
+
     const updated = await prisma.article.update({
       where: { id },
       data: updateData,
       select: { id: true, title: true, slug: true, updatedAt: true },
     });
+
+    // Handle additional authors (always process, even if empty array)
+    // Filter out the primary author from additional authors to avoid duplicates
+    const additionalAuthors = authors.filter(authorId => authorId !== req.user.id);
+    
+    // Validate additional authors exist if provided
+    if (additionalAuthors.length > 0) {
+      const authorUsers = await prisma.user.findMany({
+        where: { id: { in: additionalAuthors } },
+        select: { id: true }
+      });
+      if (authorUsers.length !== additionalAuthors.length) {
+        return sendErrorResponse(res, 400, 'One or more authors not found');
+      }
+    }
+
+    // Always clear existing additional authors and add new ones (even if empty)
+    await prisma.articleAuthor.deleteMany({ where: { articleId: id } });
+    
+    if (additionalAuthors.length > 0) {
+      await prisma.articleAuthor.createMany({
+        data: additionalAuthors.map((authorId, index) => ({
+          articleId: id,
+          userId: authorId,
+          role: index === 0 ? 'Co-Author' : 'Contributor',
+          order: index + 1
+        }))
+      });
+    }
 
     sendSuccessResponse(res, updated, 'Article updated');
   })
@@ -470,7 +752,7 @@ router.put(
  * @swagger
  * /articles/{id}/status:
  *   patch:
- *     summary: Change article status (workflow)
+ *     summary: Change article status (author ownership or editor-in-chief+)
  *     tags: [Articles]
  *     security:
  *       - bearerAuth: []
@@ -498,13 +780,19 @@ router.put(
  *         description: Status updated
  *       400:
  *         description: Invalid transition
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Can only change status of your own articles
+ *       404:
+ *         description: Article not found
  */
 // Change status (workflow transitions)
 router.patch(
   '/:id/status',
   [
     authenticateToken,
-    requireSectionHead,
+    requireOwnership('article', 'id'),
     body('status').isIn(allowedStatuses),
     body('scheduledAt').optional().isISO8601(),
   ],
@@ -520,13 +808,13 @@ router.patch(
     if (!article) throw createNotFoundError('Article', id);
 
     const transitions = {
-      DRAFT: ['IN_REVIEW'],
+      DRAFT: ['IN_REVIEW', 'PUBLISHED'],
       IN_REVIEW: ['NEEDS_REVISION', 'APPROVED'],
       NEEDS_REVISION: ['IN_REVIEW'],
       APPROVED: ['SCHEDULED', 'PUBLISHED'],
       SCHEDULED: ['PUBLISHED'],
       PUBLISHED: ['ARCHIVED'],
-      ARCHIVED: [],
+      ARCHIVED: ['DRAFT'],
     };
 
     if (!transitions[article.status].includes(status)) {
@@ -547,7 +835,7 @@ router.patch(
  * @swagger
  * /articles/{id}:
  *   delete:
- *     summary: Delete article
+ *     summary: Delete article (author ownership or editor-in-chief+)
  *     tags: [Articles]
  *     security:
  *       - bearerAuth: []
@@ -561,13 +849,15 @@ router.patch(
  *         description: Article deleted
  *       401:
  *         description: Unauthorized
+ *       403:
+ *         description: Can only delete your own articles
  *       404:
  *         description: Not found
  */
-// Delete article (editor-in-chief or adviser)
+// Delete article (author ownership or editor-in-chief+)
 router.delete(
   '/:id',
-  [authenticateToken, requireEditorInChief, param('id').isString()],
+  [authenticateToken, requireOwnership('article', 'id'), param('id').isString()],
   auditLog('delete', 'article'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -655,7 +945,7 @@ router.post(
   '/:id/authors',
   [
     authenticateToken,
-    requireStaff,
+    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
     param('id').isString(),
     body('userId').isString().withMessage('User ID is required'),
     body('role').optional().isString()
@@ -927,7 +1217,7 @@ router.get(
   '/:id/analytics',
   [
     authenticateToken,
-    requireStaff,
+    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
     param('id').isString(),
     query('days').optional().isInt({ min: 1, max: 365 }).toInt()
   ],

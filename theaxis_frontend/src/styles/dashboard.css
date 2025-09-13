@@ -28,6 +28,7 @@ body {
 #root {
   background-color: var(--neutral-light);
   min-height: 100vh;
+  width: 100%;
 }
 
 /* Sidebar Styles */
@@ -189,6 +190,9 @@ body {
 .sidebar-footer {
   padding: 16px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .footer-item {
@@ -204,9 +208,10 @@ body {
   transition: all 0.2s ease;
   background: none;
   border: none;
-  width: 100%;
+  width: calc(100% - 32px);
   text-align: left;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .footer-item:hover {
@@ -317,10 +322,19 @@ body {
   cursor: pointer;
   transition: background-color 0.2s ease;
   position: relative;
+  text-decoration: none;
 }
 
 .user-profile:hover {
   background-color: rgba(33, 93, 85, 0.2);
+}
+
+.user-profile.active {
+  background-color: #215d55;
+}
+
+.user-profile.active:hover {
+  background-color: #215d55;
 }
 
 .user-avatar {
@@ -422,6 +436,14 @@ body {
   padding: 0;
 }
 
+/* Override main-content styles for public routes */
+.main-content.w-full.ml-0.mt-0 {
+  margin-left: 0;
+  margin-top: 0;
+  min-height: 100vh;
+  width: 100%;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .sidebar-container {
@@ -443,6 +465,14 @@ body {
   .main-content {
     margin-left: 0;
     margin-top: 112px;
+  }
+  
+  /* Mobile footer item adjustments */
+  .footer-item {
+    margin: 0 12px;
+    padding: 10px 20px;
+    width: calc(100% - 24px);
+    font-size: 13px;
   }
 }
 

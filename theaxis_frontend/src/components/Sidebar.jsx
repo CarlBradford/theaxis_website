@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { hasPermission, ROLE_DISPLAY_NAMES } from '../config/permissions';
 import { 
@@ -26,8 +26,18 @@ import '../styles/dashboard.css';
 import theaxisLogo from '../assets/theaxis_logo.png';
 
 const Sidebar = () => {
-  const { user, hasRole } = useAuth();
+  const { user, hasRole, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear auth state first
+    logout();
+    // Use setTimeout to ensure the logout completes before navigation
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 100);
+  };
 
   // Define navigation items with permissions
   const navigationItems = [
@@ -45,18 +55,18 @@ const Sidebar = () => {
     },
     {
       name: 'Content',
-      href: '/articles',
+      href: '/content',
       icon: DocumentTextIcon,
       permission: 'article:read',
       subItems: [
         {
           name: 'My Content',
-          href: '/articles/my',
+          href: '/content/mycontent',
           permission: 'article:read',
         },
         {
           name: 'Review Queue',
-          href: '/articles/pending',
+          href: '/content/pending',
           permission: 'article:review',
         },
       ]
@@ -101,6 +111,9 @@ const Sidebar = () => {
     const hasSubItems = item.subItems && item.subItems.length > 0;
     const isItemActive = isActive(item.href);
     const isSubItemActive = hasSubItems && item.subItems.some(subItem => isActive(subItem.href));
+    
+    // Keep submenu open if any subitem is active
+    const shouldBeExpanded = isExpanded || isSubItemActive;
 
     const handleMainItemClick = (e) => {
       if (hasSubItems) {
@@ -120,12 +133,12 @@ const Sidebar = () => {
           <span className="nav-item-text">{item.name}</span>
           {hasSubItems && (
             <ChevronDownIcon
-              className={`nav-item-arrow ${isExpanded ? 'expanded' : ''}`}
+              className={`nav-item-arrow ${shouldBeExpanded ? 'expanded' : ''}`}
             />
           )}
         </Link>
         
-        {hasSubItems && isExpanded && (
+        {hasSubItems && shouldBeExpanded && (
           <div className="nav-submenu">
             {item.subItems.map((subItem) => (
               <Link
@@ -175,7 +188,7 @@ const Sidebar = () => {
           <QuestionMarkCircleIcon className="footer-item-icon" />
           Help
         </Link>
-        <button className="footer-item">
+        <button className="footer-item" onClick={handleLogout}>
           <ArrowRightOnRectangleIcon className="footer-item-icon" />
           Log Out
         </button>
