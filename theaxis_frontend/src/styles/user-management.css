@@ -152,6 +152,12 @@ body.user-management-page {
   gap: 12px;
 }
 
+.user-management-subtitle {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 8px 0 0 0;
+}
+
 .user-count {
   font-size: 24px;
   font-weight: 600;
@@ -1458,6 +1464,151 @@ body.user-management-page {
   
   .delete-modal-button {
     height: 44px;
+  }
+}
+
+/* Simple Delete Modal Styles */
+.simple-delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.simple-delete-modal {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  width: 100%;
+  border: 1px solid #e5e7eb;
+}
+
+.simple-delete-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 0 24px;
+}
+
+.simple-delete-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.simple-delete-modal-close {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.simple-delete-modal-close:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.simple-delete-modal-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.simple-delete-modal-content {
+  padding: 20px 24px;
+}
+
+.simple-delete-warning-text {
+  font-size: 16px;
+  color: #374151;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.simple-delete-details {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.simple-delete-note {
+  font-size: 14px;
+  color: #ef4444;
+  margin: 0;
+  font-weight: 500;
+}
+
+.simple-delete-modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 0 24px 24px 24px;
+}
+
+.simple-delete-modal-button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.simple-delete-modal-button.cancel {
+  background-color: #f9fafb;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.simple-delete-modal-button.cancel:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.simple-delete-modal-button.delete {
+  background-color: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+.simple-delete-modal-button.delete:hover:not(:disabled) {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+.simple-delete-modal-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Mobile responsive for simple delete modal */
+@media (max-width: 480px) {
+  .simple-delete-modal {
+    max-width: 95vw;
+    margin: 10px;
+  }
+  
+  .simple-delete-modal-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .simple-delete-modal-button {
+    width: 100%;
+    justify-content: center;
   }
 }
 

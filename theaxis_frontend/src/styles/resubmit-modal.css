@@ -1,0 +1,244 @@
+/* Resubmit Modal Styles */
+/* Following the project's design system and color scheme */
+
+/* Color Variables */
+:root {
+  --primary-dark: #1c4643;
+  --primary-light: #215d55;
+  --neutral-light: #fefefe;
+  --neutral-medium: #c2c1be;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --info-color: #3b82f6;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --background-white: #ffffff;
+  --background-gray: #f9fafb;
+}
+
+/* Universal Font Family */
+* {
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+/* Resubmit Modal Overlay */
+.resubmit-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Resubmit Modal */
+.resubmit-modal {
+  background: var(--background-white);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  max-width: 450px;
+  width: 100%;
+  border: 1px solid var(--border-color);
+  animation: resubmitModalSlideIn 0.3s ease-out;
+}
+
+@keyframes resubmitModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Resubmit Modal Header */
+.resubmit-modal-header {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px 0 24px;
+  gap: 12px;
+}
+
+.resubmit-modal-icon {
+  width: 40px;
+  height: 40px;
+  background-color: #dbeafe;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--info-color);
+  flex-shrink: 0;
+}
+
+.resubmit-modal-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.resubmit-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.resubmit-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.resubmit-modal-close:hover {
+  background-color: #f3f4f6;
+  color: var(--text-primary);
+}
+
+.resubmit-modal-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Resubmit Modal Content */
+.resubmit-modal-content {
+  padding: 20px 24px;
+}
+
+.resubmit-modal-article-info {
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: var(--background-gray);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.resubmit-modal-article-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.resubmit-modal-article-details {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.resubmit-modal-message {
+  margin-bottom: 24px;
+}
+
+.resubmit-modal-warning-text {
+  font-size: 16px;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.resubmit-modal-note {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Resubmit Modal Actions */
+.resubmit-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.resubmit-modal-btn-cancel {
+  padding: 10px 20px;
+  background-color: #f3f4f6;
+  color: var(--text-secondary);
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resubmit-modal-btn-cancel:hover:not(:disabled) {
+  background-color: #e5e7eb;
+  color: var(--text-primary);
+}
+
+.resubmit-modal-btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resubmit-modal-btn-confirm {
+  padding: 10px 20px;
+  background-color: var(--info-color);
+  color: var(--background-white);
+  border: 1px solid var(--info-color);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resubmit-modal-btn-confirm:hover:not(:disabled) {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.resubmit-modal-btn-confirm:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .resubmit-modal {
+    max-width: 95vw;
+    margin: 10px;
+  }
+  
+  .resubmit-modal-header {
+    padding: 16px 20px 0 20px;
+  }
+  
+  .resubmit-modal-content {
+    padding: 16px 20px;
+  }
+  
+  .resubmit-modal-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .resubmit-modal-btn-cancel,
+  .resubmit-modal-btn-confirm {
+    width: 100%;
+    justify-content: center;
+  }
+}

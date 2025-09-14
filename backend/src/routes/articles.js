@@ -171,6 +171,17 @@ router.post(
       authors = []
     } = req.body;
 
+    // Determine initial status based on user role and action
+    let initialStatus = status;
+    if (req.user.role === 'SECTION_HEAD') {
+      // Section Head content goes directly to EIC only when explicitly submitted for review
+      // "Save as Draft" stays as DRAFT, "Send to EIC" becomes APPROVED
+      if (status === 'IN_REVIEW') {
+        initialStatus = 'APPROVED'; // Send to EIC action
+      }
+      // If status is 'DRAFT', keep it as 'DRAFT' (Save as Draft action)
+    }
+
     const baseSlug = generateSlug(title);
     let slug = baseSlug;
     let suffix = 1;
@@ -179,16 +190,13 @@ router.post(
       slug = `${baseSlug}-${suffix++}`;
     }
 
-    // Filter out the primary author from additional authors to avoid duplicates
-    const additionalAuthors = authors.filter(authorId => authorId !== req.user.id);
-    
     // Validate additional authors exist if provided
-    if (additionalAuthors.length > 0) {
+    if (authors.length > 0) {
       const authorUsers = await prisma.user.findMany({
-        where: { id: { in: additionalAuthors } },
+        where: { id: { in: authors } },
         select: { id: true }
       });
-      if (authorUsers.length !== additionalAuthors.length) {
+      if (authorUsers.length !== authors.length) {
         return sendErrorResponse(res, 400, 'One or more authors not found');
       }
     }
@@ -201,7 +209,7 @@ router.post(
         featuredImage,
         mediaCaption,
         publicationDate: publicationDate ? new Date(publicationDate) : null,
-        status,
+        status: initialStatus,
         authorId: req.user.id,
         // connect tags/categories if provided as array of slugs
         ...(tags.length > 0 && {
@@ -228,10 +236,10 @@ router.post(
       },
     });
 
-    // Create additional authors if provided (excluding primary author)
-    if (additionalAuthors.length > 0) {
+    // Create additional authors if provided
+    if (authors.length > 0) {
       await prisma.articleAuthor.createMany({
-        data: additionalAuthors.map((authorId, index) => ({
+        data: authors.map((authorId, index) => ({
           articleId: created.id,
           userId: authorId,
           role: index === 0 ? 'Co-Author' : 'Contributor',
@@ -241,141 +249,6 @@ router.post(
     }
 
     sendSuccessResponse(res, created, 'Article created', 201);
-  })
-);
-
-/**
- * @swagger
- * /articles/my-content:
- *   get:
- *     summary: Get current user's content (as author or co-author)
- *     tags: [Articles]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema: { type: integer, default: 1 }
- *       - in: query
- *         name: limit
- *         schema: { type: integer, default: 20 }
- *       - in: query
- *         name: status
- *         schema: { type: string, enum: [DRAFT, IN_REVIEW, NEEDS_REVISION, APPROVED, SCHEDULED, PUBLISHED, ARCHIVED] }
- *       - in: query
- *         name: search
- *         schema: { type: string }
- *     responses:
- *       200:
- *         description: User's articles retrieved
- *       401:
- *         description: Unauthorized
- */
-// Get current user's content (as primary author or co-author)
-router.get(
-  '/my-content',
-  [
-    authenticateToken,
-    query('page').optional().isInt({ min: 1 }).toInt(),
-    query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
-    query('status').optional().isIn(allowedStatuses),
-    query('search').optional().isString(),
-  ],
-  asyncHandler(async (req, res) => {
-    const page = req.query.page || 1;
-    const limit = req.query.limit || 20;
-    const skip = (page - 1) * limit;
-    const { status, search } = req.query;
-    const userId = req.user.id;
-
-    // Build where clause for articles where user is either primary author or co-author
-    const where = {
-      OR: [
-        { authorId: userId }, // User is primary author
-        { 
-          articleAuthors: {
-            some: {
-              userId: userId // User is co-author
-            }
-          }
-        }
-      ]
-    };
-
-    if (search) {
-      where.AND = [
-        {
-          OR: [
-            { title: { contains: search, mode: 'insensitive' } },
-            { excerpt: { contains: search, mode: 'insensitive' } },
-          ]
-        }
-      ];
-    }
-    if (status) where.status = status;
-
-    const [items, total] = await Promise.all([
-      prisma.article.findMany({
-        where,
-        select: { 
-          id: true, 
-          title: true, 
-          slug: true, 
-          excerpt: true,
-          status: true, 
-          publishedAt: true, 
-          publicationDate: true,
-          viewCount: true,
-          likeCount: true,
-          dislikeCount: true,
-          commentCount: true,
-          socialShares: true,
-          createdAt: true,
-          updatedAt: true,
-          authorId: true,
-          author: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              username: true
-            }
-          },
-          articleAuthors: {
-            select: {
-              user: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  username: true
-                }
-              }
-            }
-          },
-          categories: {
-            select: {
-              id: true,
-              name: true,
-              slug: true
-            }
-          },
-          tags: {
-            select: {
-              id: true,
-              name: true,
-              slug: true
-            }
-          }
-        },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.article.count({ where }),
-    ]);
-
-    sendSuccessResponse(res, { items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } }, 'User content retrieved');
   })
 );
 
@@ -437,6 +310,9 @@ router.get(
           id: true, 
           title: true, 
           slug: true, 
+          content: true,
+          excerpt: true,
+          featuredImage: true,
           status: true, 
           publishedAt: true, 
           publicationDate: true,
@@ -446,6 +322,15 @@ router.get(
           commentCount: true,
           socialShares: true,
           createdAt: true,
+          updatedAt: true,
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true
+            }
+          },
           categories: {
             select: {
               id: true,
@@ -507,6 +392,309 @@ router.get(
     };
     
     sendSuccessResponse(res, formData, 'Article creation form data');
+  })
+);
+
+/**
+ * @swagger
+ * /articles/review-queue:
+ *   get:
+ *     summary: Get articles for review queue based on user role
+ *     tags: [Articles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: queueType
+ *         schema: { type: string, enum: [section-head, eic] }
+ *       - in: query
+ *         name: status
+ *         schema: { type: string }
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *     responses:
+ *       200:
+ *         description: Review queue articles retrieved
+ *       401:
+ *         description: Unauthorized
+ */
+// Get review queue articles
+router.get(
+  '/review-queue',
+  [
+    authenticateToken,
+    requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
+    query('queueType').optional().isIn(['section-head', 'eic']),
+    query('status').optional().isString(),
+    query('search').optional().isString(),
+    query('page').optional().isInt({ min: 1 }).toInt(),
+    query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  ],
+  asyncHandler(async (req, res) => {
+    const { queueType, status, search, page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Determine queue type based on user role if not specified
+    let effectiveQueueType = queueType;
+    if (!effectiveQueueType) {
+      if (req.user.role === 'EDITOR_IN_CHIEF' || req.user.role === 'ADVISER') {
+        effectiveQueueType = 'eic';
+      } else {
+        effectiveQueueType = 'section-head';
+      }
+    }
+
+    // Build where clause based on queue type
+    let where = {};
+    
+    if (effectiveQueueType === 'section-head') {
+      // Section Head Queue: Show articles submitted by publication staff for review
+      where.status = { in: ['IN_REVIEW', 'NEEDS_REVISION'] };
+    } else if (effectiveQueueType === 'eic') {
+      // EIC Queue: Show articles approved by section heads
+      where.status = 'APPROVED';
+    }
+
+    // Add search filter
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { excerpt: { contains: search, mode: 'insensitive' } },
+        { author: { 
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { username: { contains: search, mode: 'insensitive' } }
+          ]
+        }}
+      ];
+    }
+
+    // Add status filter if specified
+    if (status && status !== 'all') {
+      where.status = status;
+    }
+
+    const [articles, total] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          excerpt: true,
+          featuredImage: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+          readingTime: true,
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true
+            }
+          },
+          reviewer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true
+            }
+          },
+          categories: {
+            select: {
+              id: true,
+              name: true,
+              slug: true
+            }
+          },
+          tags: {
+            select: {
+              id: true,
+              name: true,
+              slug: true
+            }
+          }
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.article.count({ where }),
+    ]);
+
+    // Transform data to match frontend expectations
+    const transformedArticles = articles.map(article => ({
+      id: article.id,
+      title: article.title,
+      author: `${article.author.firstName} ${article.author.lastName}`,
+      category: article.categories[0]?.name || 'Uncategorized',
+      submittedAt: article.createdAt,
+      status: article.status.toLowerCase().replace('_', '-'),
+      wordCount: Math.ceil((article.excerpt?.length || 0) / 5), // Rough word count
+      estimatedReadTime: article.readingTime ? `${article.readingTime} min` : '5 min',
+      tags: article.tags.map(tag => tag.slug),
+      excerpt: article.excerpt || '',
+      featuredImage: article.featuredImage,
+      reviewer: article.reviewer ? `${article.reviewer.firstName} ${article.reviewer.lastName}` : null
+    }));
+
+    sendSuccessResponse(res, {
+      articles: transformedArticles,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    }, 'Review queue articles retrieved');
+  })
+);
+
+/**
+ * @swagger
+ * /articles/{id}/review-action:
+ *   patch:
+ *     summary: Update article status for review workflow
+ *     tags: [Articles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [action]
+ *             properties:
+ *               action:
+ *                 type: string
+ *                 enum: [approve-to-eic, request-revision, publish, return-to-section]
+ *               feedback:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Article status updated
+ *       400:
+ *         description: Invalid action
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Article not found
+ */
+// Update article status for review workflow
+router.patch(
+  '/:id/review-action',
+  [
+    authenticateToken,
+    requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
+    param('id').isString(),
+    body('action').isIn(['approve-to-eic', 'request-revision', 'publish', 'return-to-section']),
+    body('feedback').optional().isString(),
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return sendErrorResponse(res, 400, 'Validation failed', errors.array());
+    }
+
+    const { id } = req.params;
+    const { action, feedback } = req.body;
+
+    const article = await prisma.article.findUnique({ 
+      where: { id }, 
+      select: { 
+        id: true, 
+        status: true, 
+        title: true,
+        authorId: true 
+      } 
+    });
+    
+    if (!article) {
+      throw createNotFoundError('Article', id);
+    }
+
+    let newStatus;
+    let updateData = { reviewerId: req.user.id };
+
+    switch (action) {
+      case 'approve-to-eic':
+        if (article.status !== 'IN_REVIEW') {
+          throw createValidationError('action', 'Can only approve articles that are in review');
+        }
+        newStatus = 'APPROVED';
+        break;
+      
+      case 'request-revision':
+        if (article.status !== 'IN_REVIEW') {
+          throw createValidationError('action', 'Can only request revision for articles that are in review');
+        }
+        newStatus = 'NEEDS_REVISION';
+        break;
+      
+      case 'publish':
+        if (article.status !== 'APPROVED') {
+          throw createValidationError('action', 'Can only publish approved articles');
+        }
+        newStatus = 'PUBLISHED';
+        updateData.publishedAt = new Date();
+        break;
+      
+      case 'return-to-section':
+        if (article.status !== 'APPROVED') {
+          throw createValidationError('action', 'Can only return approved articles to section head');
+        }
+        newStatus = 'IN_REVIEW';
+        break;
+      
+      default:
+        throw createValidationError('action', 'Invalid action');
+    }
+
+    updateData.status = newStatus;
+
+    const updated = await prisma.article.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        reviewerId: true,
+        publishedAt: true
+      }
+    });
+
+    // Create review feedback if provided
+    if (feedback) {
+      await prisma.reviewFeedback.create({
+        data: {
+          articleId: id,
+          reviewerId: req.user.id,
+          feedback,
+          feedbackType: action === 'request-revision' ? 'REVISION_REQUEST' : 
+                       action === 'approve-to-eic' ? 'APPROVAL' : 'COMMENT'
+        }
+      });
+    }
+
+    sendSuccessResponse(res, updated, 'Article status updated');
   })
 );
 
@@ -592,12 +780,7 @@ router.get(
 
     const canView =
       article.status === 'PUBLISHED' ||
-      (req.user && (
-        req.user.id === article.authorId || 
-        ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER'].includes(req.user.role) ||
-        // Check if user is a co-author
-        article.articleAuthors.some(aa => aa.user.id === req.user.id)
-      ));
+      (req.user && (req.user.id === article.authorId || ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER'].includes(req.user.role)));
     if (!canView) {
       return sendErrorResponse(res, 403, 'Article not published');
     }
@@ -715,32 +898,21 @@ router.put(
       select: { id: true, title: true, slug: true, updatedAt: true },
     });
 
-    // Handle additional authors (always process, even if empty array)
-    // Filter out the primary author from additional authors to avoid duplicates
-    const additionalAuthors = authors.filter(authorId => authorId !== req.user.id);
-    
-    // Validate additional authors exist if provided
-    if (additionalAuthors.length > 0) {
+    // Handle additional authors if provided
+    if (authors.length > 0) {
+      // Validate additional authors exist
       const authorUsers = await prisma.user.findMany({
-        where: { id: { in: additionalAuthors } },
+        where: { id: { in: authors } },
         select: { id: true }
       });
-      if (authorUsers.length !== additionalAuthors.length) {
+      if (authorUsers.length !== authors.length) {
         return sendErrorResponse(res, 400, 'One or more authors not found');
       }
-    }
 
-    // Always clear existing additional authors and add new ones (even if empty)
-    await prisma.articleAuthor.deleteMany({ where: { articleId: id } });
-    
-    if (additionalAuthors.length > 0) {
+      // Clear existing additional authors and add new ones
+      await prisma.articleAuthor.deleteMany({ where: { articleId: id } });
       await prisma.articleAuthor.createMany({
-        data: additionalAuthors.map((authorId, index) => ({
-          articleId: id,
-          userId: authorId,
-          role: index === 0 ? 'Co-Author' : 'Contributor',
-          order: index + 1
-        }))
+        data: authors.map(authorId => ({ articleId: id, userId: authorId }))
       });
     }
 
@@ -807,7 +979,8 @@ router.patch(
     const article = await prisma.article.findUnique({ where: { id }, select: { id: true, status: true } });
     if (!article) throw createNotFoundError('Article', id);
 
-    const transitions = {
+    // Define transitions based on user role
+    let transitions = {
       DRAFT: ['IN_REVIEW', 'PUBLISHED'],
       IN_REVIEW: ['NEEDS_REVISION', 'APPROVED'],
       NEEDS_REVISION: ['IN_REVIEW'],
@@ -816,6 +989,11 @@ router.patch(
       PUBLISHED: ['ARCHIVED'],
       ARCHIVED: ['DRAFT'],
     };
+
+    // Section Heads can directly submit to EIC (skip section review)
+    if (req.user.role === 'SECTION_HEAD') {
+      transitions.DRAFT = ['IN_REVIEW', 'APPROVED', 'PUBLISHED'];
+    }
 
     if (!transitions[article.status].includes(status)) {
       throw createValidationError('status', `Cannot transition from ${article.status} to ${status}`);
@@ -830,6 +1008,7 @@ router.patch(
     sendSuccessResponse(res, updated, 'Status updated');
   })
 );
+
 
 /**
  * @swagger

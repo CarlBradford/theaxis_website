@@ -1,0 +1,227 @@
+/* Success Modal Styles */
+/* Following the project's design system and color scheme */
+
+/* Color Variables */
+:root {
+  --primary-dark: #1c4643;
+  --primary-light: #215d55;
+  --success-color: #10b981;
+  --success-light: #d1fae5;
+  --success-dark: #059669;
+  --neutral-light: #fefefe;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --background-white: #ffffff;
+}
+
+/* Universal Font Family */
+* {
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+/* Success Modal Overlay */
+.success-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Success Modal */
+.success-modal {
+  background: var(--background-white);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  width: 100%;
+  border: 1px solid var(--border-color);
+  animation: successModalSlideIn 0.3s ease-out;
+}
+
+@keyframes successModalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Success Modal Header */
+.success-modal-header {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px 0 24px;
+  gap: 12px;
+}
+
+.success-modal-icon {
+  width: 40px;
+  height: 40px;
+  background-color: var(--success-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--success-color);
+  flex-shrink: 0;
+}
+
+.success-modal-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.success-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.success-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.success-modal-close:hover {
+  background-color: #f3f4f6;
+  color: var(--text-primary);
+}
+
+.success-modal-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Success Modal Content */
+.success-modal-content {
+  padding: 20px 24px;
+}
+
+.success-modal-message {
+  font-size: 16px;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Success Modal Buttons */
+.success-modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 0 24px 24px 24px;
+}
+
+.success-modal-button {
+  padding: 10px 20px;
+  background-color: var(--success-color);
+  color: var(--background-white);
+  border: 1px solid var(--success-color);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.success-modal-button:hover {
+  background-color: var(--success-dark);
+  border-color: var(--success-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.success-modal-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .success-modal {
+    max-width: 95vw;
+    margin: 10px;
+  }
+  
+  .success-modal-header {
+    padding: 16px 20px 0 20px;
+  }
+  
+  .success-modal-content {
+    padding: 16px 20px;
+  }
+  
+  .success-modal-buttons {
+    padding: 0 20px 20px 20px;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .success-modal-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .success-modal-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .success-modal-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .success-modal-title {
+    font-size: 16px;
+  }
+  
+  .success-modal-message {
+    font-size: 14px;
+  }
+}
+
+/* Focus States for Accessibility */
+.success-modal-button:focus,
+.success-modal-close:focus {
+  outline: 2px solid var(--success-color);
+  outline-offset: 2px;
+}
+
+/* Animation for success icon */
+.success-modal-icon {
+  animation: successIconPulse 0.6s ease-out;
+}
+
+@keyframes successIconPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

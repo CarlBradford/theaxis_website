@@ -9,6 +9,9 @@ import ArticleDetail from './pages/ArticleDetail';
 import MyContent from './pages/MyContent';
 import CreateArticle from './pages/CreateArticle';
 import EditContent from './pages/EditContent';
+import ReviewEditContent from './pages/ReviewEditContent';
+import ReviewQueuePage from './pages/ReviewQueuePage';
+import ContentStatus from './pages/ContentStatus';
 import Media from './pages/Media';
 import Profile from './pages/Profile';
 import UserManagement from './pages/UserManagement';
@@ -44,6 +47,16 @@ function App() {
                   <MyContent />
                 </ProtectedRoute>
               } />
+              <Route path="content/status" element={
+                <ProtectedRoute requiredRole="STAFF">
+                  <ContentStatus />
+                </ProtectedRoute>
+              } />
+              <Route path="content/pending" element={
+                <ProtectedRoute requiredRole="STAFF">
+                  <ReviewQueuePage />
+                </ProtectedRoute>
+              } />
               <Route path="content/create" element={
                 <ProtectedRoute requiredRole="STAFF">
                   <CreateArticle />
@@ -52,6 +65,11 @@ function App() {
               <Route path="content/:id/edit" element={
                 <ProtectedRoute requiredRole="STAFF">
                   <EditContent />
+                </ProtectedRoute>
+              } />
+              <Route path="content/:id/review-edit" element={
+                <ProtectedRoute requiredRole="STAFF">
+                  <ReviewEditContent />
                 </ProtectedRoute>
               } />
               

@@ -15,10 +15,8 @@ import {
 } from '@heroicons/react/24/outline';
 import ArticlePreviewModal from '../components/ArticlePreviewModal';
 import NotificationModal from '../components/NotificationModal';
-import PublishConfirmationModal from '../components/PublishConfirmationModal';
 import '../styles/createarticle.css';
 import '../styles/article-preview.css';
-import '../styles/publish-confirmation.css';
 
 const EditContent = () => {
   const navigate = useNavigate();
@@ -54,10 +52,16 @@ const EditContent = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationData, setNotificationData] = useState({ title: '', message: '', type: 'success' });
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const [articleStatus, setArticleStatus] = useState('');
   const [articleDataLoaded, setArticleDataLoaded] = useState(false);
-  const [showPublishConfirmation, setShowPublishConfirmation] = useState(false);
   const contentRef = useRef(null);
+
+  // Debug formData changes
+  useEffect(() => {
+    console.log('FormData changed:', formData);
+    console.log('Publication date in formData:', formData.publicationDate);
+  }, [formData]);
 
   // Notification modal helper functions
   const showNotification = (title, message, type = 'success') => {
@@ -190,10 +194,16 @@ const EditContent = () => {
 
       // Format publication date properly
       let formattedDate = '';
+      console.log('Raw publication date from API:', article.publicationDate);
+      console.log('Publication date type:', typeof article.publicationDate);
       if (article.publicationDate) {
         const date = new Date(article.publicationDate);
+        console.log('Parsed date object:', date);
+        console.log('Date is valid:', !isNaN(date.getTime()));
         formattedDate = date.toISOString().split('T')[0];
         console.log('Formatted publication date:', formattedDate);
+      } else {
+        console.log('No publication date found in article data');
       }
 
       // Handle category properly
@@ -244,6 +254,7 @@ const EditContent = () => {
         mediaCaption: article.mediaCaption || '',
         featuredImage: article.featuredImage || ''
       });
+      console.log('Form data publicationDate specifically:', formattedDate);
 
       // Set uploaded file state if there's an existing featured image
       if (article.featuredImage) {
@@ -274,6 +285,7 @@ const EditContent = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    console.log('Input change:', name, value);
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -552,31 +564,26 @@ const EditContent = () => {
 
   const handleSendToEIC = () => {
     console.log('Sending to EIC');
-    handleSave('IN_REVIEW');
+    handleSave('APPROVED');
   };
 
   const handlePublish = () => {
-    console.log('Publishing/Updating article');
-    // Show confirmation modal for admin and EIC roles when publishing (not updating)
-    if ((user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'SYSTEM_ADMIN') && articleStatus !== 'PUBLISHED') {
-      setShowPublishConfirmation(true);
-    } else {
-      // For published articles, only update content without changing status
-      if (articleStatus === 'PUBLISHED') {
-        handleSave('PUBLISHED', true); // true indicates content-only update
-      } else {
-        handleSave('PUBLISHED');
-      }
-    }
+    setShowPublishModal(true);
   };
 
-  const handlePublishConfirm = () => {
+  const confirmPublish = () => {
+    setShowPublishModal(false);
+    console.log('Publishing/Updating article');
     // For published articles, only update content without changing status
     if (articleStatus === 'PUBLISHED') {
       handleSave('PUBLISHED', true); // true indicates content-only update
     } else {
       handleSave('PUBLISHED');
     }
+  };
+
+  const cancelPublish = () => {
+    setShowPublishModal(false);
   };
 
   const handleSubmit = async (e) => {
@@ -607,7 +614,11 @@ const EditContent = () => {
         content: formData.content.trim() || '', // Allow empty content for drafts
         featuredImage: formData.featuredImage || '',
         mediaCaption: formData.mediaCaption.trim() || '',
-        publicationDate: formData.publicationDate ? new Date(formData.publicationDate).toISOString() : null,
+        publicationDate: formData.publicationDate && formData.publicationDate.trim() ? 
+          (() => {
+            const date = new Date(formData.publicationDate);
+            return !isNaN(date.getTime()) ? date.toISOString() : undefined;
+          })() : undefined,
         // Convert category name to slug for backend - ensure it's an array
         categories: formData.category ? [categories.find(cat => cat.name === formData.category)?.slug].filter(Boolean) : [],
         // Convert tags to slugs for backend - ensure it's an array
@@ -618,8 +629,8 @@ const EditContent = () => {
              .replace(/\s+/g, '-')
              .replace(/-+/g, '-')
         ).filter(Boolean) : [],
-        // Send author IDs as expected by backend - exclude current user (primary author)
-        authors: formData.authors.filter(author => author.id && author.id !== user.id).map(author => author.id)
+        // Send author IDs as expected by backend - ensure it's an array
+        authors: formData.authors.length > 0 ? formData.authors.filter(author => author.id).map(author => author.id) : []
       };
 
       // Validate data before sending
@@ -1227,13 +1238,59 @@ const EditContent = () => {
         />
       )}
 
-      {/* Publish Confirmation Modal */}
-      <PublishConfirmationModal
-        isOpen={showPublishConfirmation}
-        onClose={() => setShowPublishConfirmation(false)}
-        onConfirm={handlePublishConfirm}
-        articleTitle={formData.title || 'Untitled Article'}
-      />
+      {/* Publish Modal */}
+      {showPublishModal && (
+        <div className="simple-publish-modal-overlay">
+          <div className="simple-publish-modal">
+            <div className="simple-publish-modal-header">
+              <h3 className="simple-publish-modal-title">
+                {articleStatus === 'PUBLISHED' ? 'Update Article' : 'Publish Article'}
+              </h3>
+              <button
+                onClick={cancelPublish}
+                className="simple-publish-modal-close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="simple-publish-modal-content">
+              <p className="simple-publish-warning-text">
+                {articleStatus === 'PUBLISHED' 
+                  ? `Are you sure you want to update "${formData.title}"?`
+                  : `Are you sure you want to publish "${formData.title}"?`
+                }
+              </p>
+              <p className="simple-publish-details">
+                Category: {formData.category || 'Uncategorized'}
+              </p>
+              <p className="simple-publish-note">
+                {articleStatus === 'PUBLISHED' 
+                  ? 'This will update the article content and keep it live for readers.'
+                  : 'This will make the article live and visible to readers. This action cannot be undone.'
+                }
+              </p>
+            </div>
+            
+            <div className="simple-publish-modal-buttons">
+              <button
+                onClick={cancelPublish}
+                className="simple-publish-modal-button cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmPublish}
+                className="simple-publish-modal-button publish"
+              >
+                {articleStatus === 'PUBLISHED' ? 'Update Article' : 'Publish Article'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

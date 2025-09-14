@@ -65,6 +65,11 @@ const Sidebar = () => {
           permission: 'article:read',
         },
         {
+          name: 'Content Status',
+          href: '/content/status',
+          permission: 'article:read',
+        },
+        {
           name: 'Review Queue',
           href: '/content/pending',
           permission: 'article:review',
@@ -87,7 +92,7 @@ const Sidebar = () => {
       name: 'Site Settings',
       href: '/settings',
       icon: Cog6ToothIcon,
-      permission: null, // Always visible to authenticated users
+      permission: 'system:config', // Only visible to EIC and higher roles
     },
   ];
 

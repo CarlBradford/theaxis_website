@@ -106,7 +106,7 @@ export const articlesAPI = {
 
   // Get current user's content (as author or co-author)
   getMyContent: async (params = {}) => {
-    const response = await api.get('/articles/my-content', { params });
+    const response = await api.get('/articles', { params });
     return response.data;
   },
 

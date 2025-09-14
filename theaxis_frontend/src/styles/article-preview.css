@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10010;
+  z-index: 999999 !important;
   padding: 20px;
   animation: fadeInOverlay 0.3s ease-out;
 }
@@ -34,7 +34,7 @@
   flex-direction: column;
   animation: slideInModal 0.3s ease-out;
   position: relative;
-  z-index: 10011;
+  z-index: 1000000;
 }
 
 @keyframes slideInModal {

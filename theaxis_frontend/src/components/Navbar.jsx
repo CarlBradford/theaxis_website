@@ -14,7 +14,7 @@ const Navbar = () => {
     if (path === '/users') return 'Users';
     if (path === '/content') return 'Content Management';
     if (path === '/content/mycontent') return 'My Content';
-    if (path === '/content/pending') return 'Review Queue';
+    if (path === '/content/status') return 'Content Status';
     if (path === '/comments') return 'Comments';
     if (path === '/analytics') return 'Analytics';
     if (path === '/settings') return 'Site Settings';

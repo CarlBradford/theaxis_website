@@ -33,10 +33,8 @@ const MyContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
-  const [authorRoleFilter, setAuthorRoleFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-  const [showAdditionalFilters, setShowAdditionalFilters] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -95,61 +93,22 @@ const MyContent = () => {
       console.log('Sample article with categories:', response.data?.items?.[0]);
       
       // Transform the data to match the expected structure
-      const transformedArticles = (response.data?.items || []).map(article => {
-        // Determine if current user is primary author or co-author
-        const isPrimaryAuthor = article.authorId === user?.id;
-        const isCoAuthor = article.articleAuthors?.some(aa => aa.user.id === user?.id);
-        
-        console.log(`Article ${article.id} (${article.title}) author role analysis:`, {
-          userId: user?.id,
-          authorId: article.authorId,
-          isPrimaryAuthor: isPrimaryAuthor,
-          isCoAuthor: isCoAuthor,
-          coAuthors: article.articleAuthors?.map(aa => ({ id: aa.user.id, name: aa.user.firstName + ' ' + aa.user.lastName }))
-        });
-        
-        // Get all authors (primary + co-authors) with unique IDs
-        const authorMap = new Map();
-        
-        // Add primary author
-        authorMap.set(article.author.id, {
-          id: article.author.id,
-          name: `${article.author.firstName} ${article.author.lastName}`.trim() || article.author.username,
-          isPrimary: true
-        });
-        
-        // Add co-authors (this will overwrite if same user is both primary and co-author)
-        if (article.articleAuthors && article.articleAuthors.length > 0) {
-          article.articleAuthors.forEach(aa => {
-            authorMap.set(aa.user.id, {
-              id: aa.user.id,
-              name: `${aa.user.firstName} ${aa.user.lastName}`.trim() || aa.user.username,
-              isPrimary: false
-            });
-          });
-        }
-        
-        const allAuthors = Array.from(authorMap.values());
-
-        return {
-          id: article.id,
-          title: article.title,
-          status: article.status?.toLowerCase() || 'draft',
-          author: { 
-            name: isPrimaryAuthor 
-              ? `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.username || 'Unknown Author'
-              : allAuthors.find(a => a.id === user?.id)?.name || 'Unknown Author',
-            isPrimary: isPrimaryAuthor,
-            isCoAuthor: !isPrimaryAuthor && isCoAuthor
-          },
-          allAuthors: allAuthors, // Include all authors for display
-          viewCount: article.viewCount || 0,
-          createdAt: article.createdAt,
-          excerpt: article.excerpt || article.title, // Use title as excerpt if no excerpt
-          categories: article.categories || [], // Use categories from backend
-          tags: article.tags || [] // Use tags from backend
-        };
-      });
+      const transformedArticles = (response.data?.items || []).map(article => ({
+        id: article.id,
+        title: article.title,
+        status: article.status?.toLowerCase() || 'draft',
+        author: { 
+          name: article.author 
+            ? `${article.author.firstName || ''} ${article.author.lastName || ''}`.trim() || article.author.username || 'Unknown Author'
+            : `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.username || 'Unknown Author'
+        },
+        viewCount: article.viewCount || 0,
+        createdAt: article.createdAt,
+        excerpt: article.excerpt || article.title, // Use title as excerpt if no excerpt
+        categories: article.categories || [], // Use categories from backend
+        tags: article.tags || [], // Use tags from backend
+        featuredImage: article.featuredImage || null // Add featured image
+      }));
       
       setArticles(transformedArticles);
     } catch (error) {
@@ -300,10 +259,6 @@ const MyContent = () => {
     setShowAdditionalFilters(false);
   };
 
-  const handleAuthorRoleChange = (role) => {
-    setAuthorRoleFilter(role);
-  };
-
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
@@ -312,9 +267,6 @@ const MyContent = () => {
     setShowFilterDropdown(!showFilterDropdown);
   };
 
-  const handleAdditionalFiltersToggle = () => {
-    setShowAdditionalFilters(!showAdditionalFilters);
-  };
 
   const handleDateRangeChange = (field, value) => {
     console.log('Date range change:', field, value);
@@ -337,8 +289,6 @@ const MyContent = () => {
   const clearAllFilters = () => {
     setDateRange({ start: '', end: '' });
     setSelectedCategories([]);
-    setActiveFilter('all');
-    setAuthorRoleFilter('all');
   };
 
   const closeFilterPopup = () => {
@@ -461,10 +411,10 @@ const MyContent = () => {
     // Filter by status
     if (activeFilter !== 'all') {
       filtered = filtered.filter(article => {
+        const articleStatus = article.status.toLowerCase();
         const filterStatus = activeFilter.toLowerCase();
         
-        // Handle status filters
-        const articleStatus = article.status.toLowerCase();
+        // Map frontend filter names to backend status values
         const statusMap = {
           'published': 'published',
           'draft': 'draft', 
@@ -475,33 +425,6 @@ const MyContent = () => {
         };
         
         return articleStatus === (statusMap[filterStatus] || filterStatus);
-      });
-    }
-
-    // Filter by author role
-    if (authorRoleFilter !== 'all') {
-      filtered = filtered.filter(article => {
-        if (authorRoleFilter === 'primary_author') {
-          const result = article.author?.isPrimary === true;
-          console.log(`Primary author filter for article ${article.id}:`, {
-            articleTitle: article.title,
-            authorIsPrimary: article.author?.isPrimary,
-            result: result
-          });
-          return result;
-        }
-        
-        if (authorRoleFilter === 'co_author') {
-          const result = article.author?.isCoAuthor === true;
-          console.log(`Co-author filter for article ${article.id}:`, {
-            articleTitle: article.title,
-            authorIsCoAuthor: article.author?.isCoAuthor,
-            result: result
-          });
-          return result;
-        }
-        
-        return true;
       });
     }
 
@@ -564,58 +487,21 @@ const MyContent = () => {
       );
     }
 
-    // Apply author role filter
-    if (authorRoleFilter !== 'all') {
-      filtered = filtered.filter(article => {
-        if (authorRoleFilter === 'primary_author') {
-          return article.author?.isPrimary === true;
-        }
-        if (authorRoleFilter === 'co_author') {
-          return article.author?.isCoAuthor === true;
-        }
-        return true;
-      });
-    }
-
-    // Apply date range filter
-    if (dateRange.start || dateRange.end) {
-      filtered = filtered.filter(article => {
-        const articleDate = new Date(article.createdAt);
-        const startDate = dateRange.start ? new Date(dateRange.start + 'T00:00:00') : null;
-        const endDate = dateRange.end ? new Date(dateRange.end + 'T23:59:59') : null;
-        
-        if (startDate && endDate) {
-          return articleDate >= startDate && articleDate <= endDate;
-        } else if (startDate) {
-          return articleDate >= startDate;
-        } else if (endDate) {
-          return articleDate <= endDate;
-        }
-        return true;
-      });
-    }
-
-    // Apply category filter
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter(article => 
-        article.categories.some(category => selectedCategories.includes(category.id))
-      );
-    }
-
     // Then apply status filter
     if (status === 'all') {
       return filtered.length;
     }
     
     return filtered.filter(article => {
+      const articleStatus = article.status.toLowerCase();
       const filterStatus = status.toLowerCase();
       
-      // Handle status filters
-      const articleStatus = article.status.toLowerCase();
+      // Map frontend filter names to backend status values
       const statusMap = {
         'published': 'published',
         'draft': 'draft', 
         'pending': 'in_review',
+        'approved': 'approved',
         'needs_revision': 'needs_revision',
         'rejected': 'needs_revision',
         'archived': 'archived'
@@ -725,80 +611,150 @@ const MyContent = () => {
         <div className="mycontent-header">
           <div>
             <h1 className="mycontent-title">Content Management</h1>
+            <p className="mycontent-subtitle">Create, edit, and manage your content</p>
+          </div>
+          <div className="mycontent-header-controls">
+            <div className="mycontent-search-container">
+              <MagnifyingGlassIcon className="mycontent-search-icon" />
+              <input 
+                type="text" 
+                placeholder="Search content, titles, or categories..." 
+                className="mycontent-search-input"
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
+            </div>
+            <button 
+              className={`mycontent-filter-btn ${(dateRange.start || dateRange.end || selectedCategories.length > 0) ? 'active' : ''}`} 
+              onClick={handleFilterToggle}
+            >
+              <FunnelIcon className="mycontent-filter-icon" />
+              {(dateRange.start || dateRange.end || selectedCategories.length > 0) && (
+                <span className="mycontent-filter-indicator"></span>
+              )}
+            </button>
+            <button
+              onClick={handleCreateContent}
+              className="mycontent-new-content-btn"
+            >
+              <PlusIcon className="mycontent-plus-icon" />
+              New Content
+            </button>
           </div>
         </div>
 
         {/* Control Bar */}
         <div className="mycontent-control-bar">
           <div className="mycontent-stats">
-            <button 
-              className={`mycontent-filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
-              onClick={() => handleFilterChange('all')}
-            >
-              Total Content: {getFilterCount('all')}
-            </button>
-            <div className="mycontent-stat-separator"></div>
-            <button 
-              className={`mycontent-filter-tab ${activeFilter === 'published' ? 'active' : ''}`}
-              onClick={() => handleFilterChange('published')}
-            >
-              Published: {getFilterCount('published')}
-            </button>
-            <div className="mycontent-stat-separator"></div>
-            <button 
-              className={`mycontent-filter-tab ${activeFilter === 'draft' ? 'active' : ''}`}
-              onClick={() => handleFilterChange('draft')}
-            >
-              Drafts: {getFilterCount('draft')}
-            </button>
-            <div className="mycontent-stat-separator"></div>
-            <button 
-              className={`mycontent-filter-tab ${activeFilter === 'pending' ? 'active' : ''}`}
-              onClick={() => handleFilterChange('pending')}
-            >
-              Under Review: {getFilterCount('pending')}
-            </button>
-            <div className="mycontent-stat-separator"></div>
-            
-            {/* Additional Filters Dropdown */}
-            <div className="mycontent-additional-filters">
-              <button 
-                className="mycontent-additional-filters-button"
-                onClick={handleAdditionalFiltersToggle}
-              >
-                <svg 
-                  className={`mycontent-additional-filters-arrow ${showAdditionalFilters ? 'rotated' : ''}`}
-                  width="16" 
-                  height="16" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2"
+            {/* Role-based filter tabs */}
+            {user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'ADVISER' || user?.role === 'SYSTEM_ADMIN' ? (
+              // EIC and higher: Total, Published, Drafts, Archived
+              <>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('all')}
                 >
-                  <polyline points="6,9 12,15 18,9"></polyline>
-                </svg>
-              </button>
-              
-              {showAdditionalFilters && (
-                <div className="mycontent-additional-filters-menu">
-                  <button 
-                    className={`mycontent-additional-filters-item ${activeFilter === 'needs_revision' ? 'active' : ''}`}
-                    onClick={() => handleFilterChange('needs_revision')}
-                  >
-                    <span>Needs Revision</span>
-                    <span className="mycontent-additional-filters-count">{getFilterCount('needs_revision')}</span>
-                  </button>
-                  
-                  <button 
-                    className={`mycontent-additional-filters-item ${activeFilter === 'archived' ? 'active' : ''}`}
-                    onClick={() => handleFilterChange('archived')}
-                  >
-                    <span>Archived</span>
-                    <span className="mycontent-additional-filters-count">{getFilterCount('archived')}</span>
-                  </button>
-                </div>
-              )}
-            </div>
+                  All Content: {getFilterCount('all')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'published' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('published')}
+                >
+                  Published: {getFilterCount('published')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'draft' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('draft')}
+                >
+                  Drafts: {getFilterCount('draft')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'archived' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('archived')}
+                >
+                  Archived: {getFilterCount('archived')}
+                </button>
+              </>
+            ) : user?.role === 'SECTION_HEAD' ? (
+              // Section Head: Total, Published, Drafts, Approved
+              <>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('all')}
+                >
+                  All Content: {getFilterCount('all')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'published' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('published')}
+                >
+                  Published: {getFilterCount('published')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'draft' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('draft')}
+                >
+                  Drafts: {getFilterCount('draft')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'approved' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('approved')}
+                >
+                  Approved: {getFilterCount('approved')}
+                </button>
+              </>
+            ) : (
+              // Staff: All except Archived (Total, Published, Drafts, Under Review, Approved, Needs Revision)
+              <>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('all')}
+                >
+                  All Content: {getFilterCount('all')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'published' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('published')}
+                >
+                  Published: {getFilterCount('published')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'draft' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('draft')}
+                >
+                  Drafts: {getFilterCount('draft')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'pending' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('pending')}
+                >
+                  Under Review: {getFilterCount('pending')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'approved' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('approved')}
+                >
+                  Approved: {getFilterCount('approved')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'needs_revision' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('needs_revision')}
+                >
+                  Needs Revision: {getFilterCount('needs_revision')}
+                </button>
+              </>
+            )}
           </div>
           
           {/* Filter Popup */}
@@ -858,41 +814,6 @@ const MyContent = () => {
                   </div>
                 </div>
 
-                <div className="mycontent-filter-section">
-                  <h4 className="mycontent-filter-title">Author Role</h4>
-                  <div className="mycontent-checkbox-group">
-                    <label className="mycontent-checkbox-item">
-                      <input
-                        type="radio"
-                        name="authorRole"
-                        checked={authorRoleFilter === 'primary_author'}
-                        onChange={() => handleAuthorRoleChange('primary_author')}
-                        className="mycontent-checkbox"
-                      />
-                      <span className="mycontent-checkbox-label">Primary Author</span>
-                    </label>
-                    <label className="mycontent-checkbox-item">
-                      <input
-                        type="radio"
-                        name="authorRole"
-                        checked={authorRoleFilter === 'co_author'}
-                        onChange={() => handleAuthorRoleChange('co_author')}
-                        className="mycontent-checkbox"
-                      />
-                      <span className="mycontent-checkbox-label">Co-Author</span>
-                    </label>
-                    <label className="mycontent-checkbox-item">
-                      <input
-                        type="radio"
-                        name="authorRole"
-                        checked={authorRoleFilter === 'all'}
-                        onChange={() => handleAuthorRoleChange('all')}
-                        className="mycontent-checkbox"
-                      />
-                      <span className="mycontent-checkbox-label">All Roles</span>
-                    </label>
-                  </div>
-                </div>
 
                 <div className="mycontent-filter-actions">
                   <button 
@@ -912,35 +833,6 @@ const MyContent = () => {
             </div>
           )}
 
-          
-          <div className="mycontent-controls">
-            <div className="mycontent-search-container">
-              <MagnifyingGlassIcon className="mycontent-search-icon" />
-              <input 
-                type="text" 
-                placeholder="Search" 
-                className="mycontent-search-input"
-                value={searchTerm}
-                onChange={handleSearchChange}
-              />
-            </div>
-            <button 
-              className={`mycontent-filter-btn ${(dateRange.start || dateRange.end || selectedCategories.length > 0) ? 'active' : ''}`} 
-              onClick={handleFilterToggle}
-            >
-              <FunnelIcon className="mycontent-filter-icon" />
-              {(dateRange.start || dateRange.end || selectedCategories.length > 0) && (
-                <span className="mycontent-filter-indicator"></span>
-              )}
-            </button>
-            <button
-              onClick={handleCreateContent}
-              className="mycontent-new-content-btn"
-            >
-              <PlusIcon className="mycontent-plus-icon" />
-              New Content
-            </button>
-          </div>
         </div>
 
         {/* Articles List */}
@@ -966,9 +858,27 @@ const MyContent = () => {
               }
               return (
               <div key={article.id} className="mycontent-article-card">
-                <div className="mycontent-article-icon">
-                  <UserGroupIcon className="mycontent-group-icon" />
-                </div>
+                {/* Featured Image */}
+                {article.featuredImage ? (
+                  <div className="mycontent-article-image">
+                    <img 
+                      src={article.featuredImage} 
+                      alt={article.title}
+                      className="mycontent-featured-image"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                    <div className="mycontent-article-icon" style={{ display: 'none' }}>
+                      <UserGroupIcon className="mycontent-group-icon" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mycontent-article-icon">
+                    <UserGroupIcon className="mycontent-group-icon" />
+                  </div>
+                )}
                 
                 <div className="mycontent-article-content">
                   <h3 className="mycontent-article-title">
@@ -976,30 +886,7 @@ const MyContent = () => {
                   </h3>
                   
                   <div className="mycontent-article-meta">
-                    <span>
-                      {article.allAuthors && article.allAuthors.length > 1 ? (
-                        <span>
-                          {article.allAuthors.map((author, index) => (
-                            <span key={`${article.id}-${author.id}-${index}`}>
-                              {author.name}
-                              {author.id === user?.id && (
-                                <span className="mycontent-author-role">
-                                  {author.isPrimary ? ' (Primary Author)' : ' (Co-Author)'}
-                                </span>
-                              )}
-                              {index < article.allAuthors.length - 1 && ', '}
-                            </span>
-                          ))}
-                        </span>
-                      ) : (
-                        <span>
-                          By {article.author?.name || 'Author Name'}
-                          {article.author?.isCoAuthor && (
-                            <span className="mycontent-author-role"> (Co-Author)</span>
-                          )}
-                        </span>
-                      )}
-                    </span>
+                    <span>By {article.author?.name || 'Author Name'}</span>
                     <span className="mycontent-meta-separator">•</span>
                     <span>{new Date(article.createdAt).toLocaleDateString()}</span>
                     <span className="mycontent-meta-separator">•</span>
@@ -1019,38 +906,27 @@ const MyContent = () => {
                     >
                       <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
                     </button>
-                  ) : article.author?.isCoAuthor ? (
+                  ) : user?.role === 'STAFF' && article.status === 'IN_REVIEW' ? (
                     <button
                       className="mycontent-action-btn mycontent-action-btn-disabled"
-                      title="Co-authors can only view articles. Only primary authors can edit."
-                      disabled
-                    >
-                      <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                    </button>
-                  ) : (user?.role === 'STAFF' || user?.role === 'SECTION_HEAD') && article.status === 'IN_REVIEW' ? (
-                    <button
-                      className="mycontent-action-btn mycontent-action-btn-disabled"
-                      title={user?.role === 'STAFF' 
-                        ? "Cannot edit articles under review. Wait for section head feedback."
-                        : "Cannot edit articles under review. Wait for EIC feedback or revision request."
-                      }
+                      title="Cannot edit articles under review. Wait for section head feedback."
                       disabled
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log(`Edit button clicked but disabled for ${user?.role} user with IN_REVIEW article`);
+                        console.log('Edit button clicked but disabled for STAFF user with IN_REVIEW article');
                       }}
                     >
                       <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
                     </button>
                   ) : (
-                    <Link
-                      to={`/content/${article.id}/edit`}
-                      className="mycontent-action-btn"
-                      title="Edit"
-                    >
-                      <PencilIcon className="mycontent-action-icon" />
-                    </Link>
+                  <Link
+                    to={`/content/${article.id}/edit`}
+                    className="mycontent-action-btn"
+                    title="Edit"
+                  >
+                    <PencilIcon className="mycontent-action-icon" />
+                  </Link>
                   )}
                   <button
                     onClick={() => handlePreview(article)}
@@ -1060,81 +936,63 @@ const MyContent = () => {
                   >
                     <EyeIcon className="mycontent-action-icon" />
                   </button>
-                  {/* Archive/Restore Button */}
-                  {article.status.toLowerCase() === 'archived' ? (
-                    <button
-                      onClick={() => handleRestoreArticle(article.id)}
-                      className="mycontent-action-btn"
-                      title="Restore to Draft"
-                    >
-                      <ArrowUturnLeftIcon className="mycontent-action-icon" />
-                    </button>
-                  ) : article.author?.isCoAuthor ? (
-                    <button
-                      className="mycontent-action-btn mycontent-action-btn-disabled"
-                      title="Co-authors can only view articles. Only primary authors can archive."
-                      disabled
-                    >
-                      <ArchiveBoxIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                    </button>
-                  ) : (user?.role === 'STAFF' || user?.role === 'SECTION_HEAD') && article.status === 'IN_REVIEW' ? (
-                    <button
-                      className="mycontent-action-btn mycontent-action-btn-disabled"
-                      title={user?.role === 'STAFF' 
-                        ? "Cannot archive articles under review. Wait for section head feedback."
-                        : "Cannot archive articles under review. Wait for EIC feedback or revision request."
-                      }
-                      disabled
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log(`Archive button clicked but disabled for ${user?.role} user with IN_REVIEW article`);
-                      }}
-                    >
-                      <ArchiveBoxIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleArchiveArticle(article.id)}
-                      className="mycontent-action-btn"
-                      title="Archive Article"
-                    >
-                      <ArchiveBoxIcon className="mycontent-action-icon" />
-                    </button>
+                  {/* Archive/Restore Button - Only visible to EIC and higher roles */}
+                  {(user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'ADVISER' || user?.role === 'SYSTEM_ADMIN') && (
+                    <>
+                      {article.status.toLowerCase() === 'archived' ? (
+                        <button
+                          onClick={() => handleRestoreArticle(article.id)}
+                          className="mycontent-action-btn"
+                          title="Restore to Draft"
+                        >
+                          <ArrowUturnLeftIcon className="mycontent-action-icon" />
+                        </button>
+                      ) : user?.role === 'STAFF' && article.status === 'IN_REVIEW' ? (
+                        <button
+                          className="mycontent-action-btn mycontent-action-btn-disabled"
+                          title="Cannot archive articles under review. Wait for section head feedback."
+                          disabled
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('Archive button clicked but disabled for STAFF user with IN_REVIEW article');
+                          }}
+                        >
+                          <ArchiveBoxIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
+                        </button>
+                      ) : (
+                      <button
+                          onClick={() => handleArchiveArticle(article.id)}
+                        className="mycontent-action-btn"
+                          title="Archive Article"
+                      >
+                        <ArchiveBoxIcon className="mycontent-action-icon" />
+                      </button>
+                      )}
+                    </>
                   )}
                   {/* Delete Button */}
-                  {article.author?.isCoAuthor ? (
+                  {user?.role === 'STAFF' && article.status === 'IN_REVIEW' ? (
                     <button
                       className="mycontent-action-btn mycontent-action-btn-disabled"
-                      title="Co-authors can only view articles. Only primary authors can delete."
-                      disabled
-                    >
-                      <TrashIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                    </button>
-                  ) : (user?.role === 'STAFF' || user?.role === 'SECTION_HEAD') && article.status === 'IN_REVIEW' ? (
-                    <button
-                      className="mycontent-action-btn mycontent-action-btn-disabled"
-                      title={user?.role === 'STAFF' 
-                        ? "Cannot delete articles under review. Wait for section head feedback."
-                        : "Cannot delete articles under review. Wait for EIC feedback or revision request."
-                      }
+                      title="Cannot delete articles under review. Wait for section head feedback."
                       disabled
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log(`Delete button clicked but disabled for ${user?.role} user with IN_REVIEW article`);
+                        console.log('Delete button clicked but disabled for STAFF user with IN_REVIEW article');
                       }}
                     >
                       <TrashIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
                     </button>
                   ) : (
-                    <button
-                      onClick={() => handleDeleteArticle(article.id)}
-                      className="mycontent-action-btn"
+                  <button
+                    onClick={() => handleDeleteArticle(article.id)}
+                    className="mycontent-action-btn"
                       title="Delete Article"
-                    >
-                      <TrashIcon className="mycontent-action-icon" />
-                    </button>
+                  >
+                    <TrashIcon className="mycontent-action-icon" />
+                  </button>
                   )}
                 </div>
               </div>

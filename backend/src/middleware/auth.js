@@ -308,10 +308,6 @@ const requireOwnership = (resourceType, resourceIdField = 'id') => {
 
       // Check if user owns the resource or is a section head
       const isOwner = resource.authorId === req.user.id || resource.id === req.user.id;
-      
-      // Note: Co-authors are NOT considered owners for editing purposes
-      // They can only view articles they're connected to
-      
       const isSectionHead = req.user.role === 'SECTION_HEAD';
 
       // For articles, check status-based restrictions for editing and deleting
@@ -337,10 +333,9 @@ const requireOwnership = (resourceType, resourceIdField = 'id') => {
             return next(createPermissionError(action, `articles in ${article.status} status`));
           }
           
-          // Section Head can edit/delete articles in DRAFT or NEEDS_REVISION status only
-          // Cannot edit/delete articles in IN_REVIEW status (waiting for EIC feedback)
-          // Cannot edit/delete after EIC approval (APPROVED, SCHEDULED, PUBLISHED, ARCHIVED)
-          if (req.user.role === 'SECTION_HEAD' && !['DRAFT', 'NEEDS_REVISION'].includes(article.status)) {
+          // Section Head can edit/delete articles in DRAFT, NEEDS_REVISION, or IN_REVIEW status
+          // But cannot edit/delete after EIC approval (APPROVED, SCHEDULED, PUBLISHED, ARCHIVED)
+          if (req.user.role === 'SECTION_HEAD' && !['DRAFT', 'NEEDS_REVISION', 'IN_REVIEW'].includes(article.status)) {
             const action = req.method === 'DELETE' ? 'delete' : 'edit';
             logger.warn(`Section Head cannot ${action} article in current status`, {
               userId: req.user.id,

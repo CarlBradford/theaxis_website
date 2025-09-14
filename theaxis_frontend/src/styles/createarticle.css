@@ -1,6 +1,13 @@
 /* CreateArticle Component Styles */
 /* Clean, modern design matching the provided image */
 
+/* Color Variables */
+:root {
+  --success-color: #10b981;
+  --success-dark: #059669;
+  --background-white: #ffffff;
+}
+
 /* Remove all blue focus outlines globally */
 .create-article-container *:focus,
 .create-article-container *:focus-visible,
@@ -913,8 +920,8 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background-color: #215d55;
-  border: 1px solid #215d55;
+  background-color: #656362;
+  border: 1px solid #656362;
   border-radius: 8px;
   color: #ffffff;
   font-size: 14px;
@@ -924,7 +931,7 @@
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   height: 36px;
   box-sizing: border-box;
-  box-shadow: 0 1px 2px rgba(33, 93, 85, 0.2);
+  box-shadow: 0 1px 2px rgba(101, 99, 98, 0.2);
   position: relative;
   overflow: hidden;
 }
@@ -935,8 +942,8 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background-color: #215d55;
-  border: 1px solid #215d55;
+  background-color: #10b981;
+  border: 1px solid #10b981;
   border-radius: 8px;
   color: #ffffff;
   font-size: 14px;
@@ -946,7 +953,7 @@
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   height: 36px;
   box-sizing: border-box;
-  box-shadow: 0 1px 2px rgba(33, 93, 85, 0.2);
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
   position: relative;
   overflow: hidden;
 }
@@ -957,8 +964,8 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background-color: #215d55;
-  border: 1px solid #215d55;
+  background-color: #10b981;
+  border: 1px solid #10b981;
   border-radius: 8px;
   color: #ffffff;
   font-size: 14px;
@@ -968,7 +975,7 @@
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   height: 36px;
   box-sizing: border-box;
-  box-shadow: 0 1px 2px rgba(33, 93, 85, 0.2);
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2);
   position: relative;
   overflow: hidden;
 }
@@ -989,9 +996,9 @@
 }
 
 .create-article-save-btn:hover:not(:disabled) {
-  background-color: #1c4643;
-  border-color: #1c4643;
-  box-shadow: 0 6px 12px rgba(28, 70, 67, 0.4);
+  background-color: #4a4846;
+  border-color: #4a4846;
+  box-shadow: 0 6px 12px rgba(74, 72, 70, 0.4);
   transform: translateY(-2px);
 }
 
@@ -1011,9 +1018,9 @@
 }
 
 .create-article-submit-btn:hover:not(:disabled) {
-  background-color: #1c4643;
-  border-color: #1c4643;
-  box-shadow: 0 6px 12px rgba(28, 70, 67, 0.4);
+  background-color: #059669;
+  border-color: #059669;
+  box-shadow: 0 6px 12px rgba(5, 150, 105, 0.4);
   transform: translateY(-2px);
 }
 
@@ -1033,9 +1040,9 @@
 }
 
 .create-article-publish-btn:hover:not(:disabled) {
-  background-color: #1c4643;
-  border-color: #1c4643;
-  box-shadow: 0 6px 12px rgba(28, 70, 67, 0.4);
+  background-color: #059669;
+  border-color: #059669;
+  box-shadow: 0 6px 12px rgba(5, 150, 105, 0.4);
   transform: translateY(-2px);
 }
 
@@ -1398,6 +1405,141 @@
     right: 20px;
     left: 20px;
     top: 80px;
+  }
+}
+
+/* Simple Publish Modal Styles */
+.simple-publish-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.simple-publish-modal {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  width: 100%;
+  border: 1px solid #e5e7eb;
+}
+
+.simple-publish-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 0 24px;
+}
+
+.simple-publish-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.simple-publish-modal-close {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.simple-publish-modal-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.simple-publish-modal-content {
+  padding: 20px 24px;
+}
+
+.simple-publish-warning-text {
+  font-size: 16px;
+  color: #374151;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.simple-publish-details {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.simple-publish-note {
+  font-size: 14px;
+  color: #10b981;
+  margin: 0;
+  font-weight: 500;
+}
+
+.simple-publish-modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 0 24px 24px 24px;
+}
+
+.simple-publish-modal-button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.simple-publish-modal-button.cancel {
+  background-color: #f9fafb;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.simple-publish-modal-button.cancel:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.simple-publish-modal-button.publish {
+  background-color: var(--success-color);
+  color: var(--background-white);
+  border-color: var(--success-color);
+}
+
+.simple-publish-modal-button.publish:hover {
+  background-color: var(--success-dark);
+  border-color: var(--success-dark);
+}
+
+/* Mobile responsive for publish modal */
+@media (max-width: 480px) {
+  .simple-publish-modal {
+    max-width: 95vw;
+    margin: 10px;
+  }
+  
+  .simple-publish-modal-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .simple-publish-modal-button {
+    width: 100%;
+    justify-content: center;
   }
 }
 

@@ -27,16 +27,31 @@ const Login = () => {
     setError('');
     setLoading(true);
 
-    const result = await login(formData.usernameOrEmail, formData.password);
-    
-    if (result.success) {
-      setIsSuccess(true);
-      // Add a small delay to show the success animation before navigating
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 800);
-    } else {
-      setError(result.error);
+    try {
+      const result = await login(formData.usernameOrEmail, formData.password);
+      
+      if (result.success) {
+        setIsSuccess(true);
+        // Add a small delay to show the success animation before navigating
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 800);
+      } else {
+        // Handle different types of errors
+        if (result.error.includes('Rate limit') || result.error.includes('Too many')) {
+          setError('Too many login attempts. Please wait a moment and try again.');
+        } else {
+          setError(result.error);
+        }
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      if (error.message?.includes('Rate limit')) {
+        setError('Too many requests. Please wait a moment and try again.');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
       setLoading(false);
     }
   };

@@ -15,10 +15,8 @@ import {
 } from '@heroicons/react/24/outline';
 import ArticlePreviewModal from '../components/ArticlePreviewModal';
 import NotificationModal from '../components/NotificationModal';
-import PublishConfirmationModal from '../components/PublishConfirmationModal';
 import '../styles/createarticle.css';
 import '../styles/article-preview.css';
-import '../styles/publish-confirmation.css';
 
 const CreateArticle = () => {
   const navigate = useNavigate();
@@ -53,7 +51,7 @@ const CreateArticle = () => {
   const [toasts, setToasts] = useState([]);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationData, setNotificationData] = useState({ title: '', message: '', type: 'success' });
-  const [showPublishConfirmation, setShowPublishConfirmation] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const contentRef = useRef(null);
 
   // Notification modal helper functions
@@ -869,16 +867,16 @@ const CreateArticle = () => {
   };
 
   const handlePublish = () => {
-    // Show confirmation modal for admin and EIC roles
-    if (user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'SYSTEM_ADMIN') {
-      setShowPublishConfirmation(true);
-    } else {
-      handleSave('PUBLISHED');
-    }
+    setShowPublishModal(true);
   };
 
-  const handlePublishConfirm = () => {
+  const confirmPublish = () => {
+    setShowPublishModal(false);
     handleSave('PUBLISHED');
+  };
+
+  const cancelPublish = () => {
+    setShowPublishModal(false);
   };
 
   const handleCancel = () => {
@@ -1348,13 +1346,51 @@ const CreateArticle = () => {
         />
       )}
 
-      {/* Publish Confirmation Modal */}
-      <PublishConfirmationModal
-        isOpen={showPublishConfirmation}
-        onClose={() => setShowPublishConfirmation(false)}
-        onConfirm={handlePublishConfirm}
-        articleTitle={formData.title || 'Untitled Article'}
-      />
+      {/* Publish Modal */}
+      {showPublishModal && (
+        <div className="simple-publish-modal-overlay">
+          <div className="simple-publish-modal">
+            <div className="simple-publish-modal-header">
+              <h3 className="simple-publish-modal-title">Publish Article</h3>
+              <button
+                onClick={cancelPublish}
+                className="simple-publish-modal-close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="simple-publish-modal-content">
+              <p className="simple-publish-warning-text">
+                Are you sure you want to publish <strong>"{formData.title}"</strong>?
+              </p>
+              <p className="simple-publish-details">
+                Category: {formData.category || 'Uncategorized'}
+              </p>
+              <p className="simple-publish-note">
+                This will make the article live and visible to readers. This action cannot be undone.
+              </p>
+            </div>
+            
+            <div className="simple-publish-modal-buttons">
+              <button
+                onClick={cancelPublish}
+                className="simple-publish-modal-button cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmPublish}
+                className="simple-publish-modal-button publish"
+              >
+                Publish Article
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

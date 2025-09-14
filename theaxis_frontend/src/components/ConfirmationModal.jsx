@@ -1,43 +1,20 @@
+import React from 'react';
 import { createPortal } from 'react-dom';
 import { ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import '../styles/confirmation-modal.css';
 
-const ConfirmationModal = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title = "Confirm Action", 
-  message = "Are you sure you want to proceed?", 
-  confirmText = "Confirm", 
+const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = "Confirm Action",
+  message,
+  confirmText = "Confirm",
   cancelText = "Cancel",
-  type = "warning" // warning, danger, info
+  type = "warning", // warning, danger, info, success
+  isLoading = false
 }) => {
   if (!isOpen) return null;
-
-  const getIcon = () => {
-    switch (type) {
-      case 'danger':
-        return <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />;
-      case 'warning':
-        return <ExclamationTriangleIcon className="h-6 w-6 text-yellow-500" />;
-      case 'info':
-        return <ExclamationTriangleIcon className="h-6 w-6 text-blue-500" />;
-      default:
-        return <ExclamationTriangleIcon className="h-6 w-6 text-yellow-500" />;
-    }
-  };
-
-  const getConfirmButtonClass = () => {
-    switch (type) {
-      case 'danger':
-        return 'mycontent-confirm-btn-danger';
-      case 'warning':
-        return 'mycontent-confirm-btn-warning';
-      case 'info':
-        return 'mycontent-confirm-btn-info';
-      default:
-        return 'mycontent-confirm-btn-warning';
-    }
-  };
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -47,42 +24,81 @@ const ConfirmationModal = ({
 
   const handleConfirm = () => {
     onConfirm();
-    onClose();
+  };
+
+  const getIconColor = () => {
+    switch (type) {
+      case 'danger':
+        return '#ef4444';
+      case 'success':
+        return '#10b981';
+      case 'info':
+        return '#3b82f6';
+      case 'warning':
+      default:
+        return '#f59e0b';
+    }
+  };
+
+  const getConfirmButtonClass = () => {
+    switch (type) {
+      case 'danger':
+        return 'confirmation-modal-btn-danger';
+      case 'success':
+        return 'confirmation-modal-btn-success';
+      case 'info':
+        return 'confirmation-modal-btn-info';
+      case 'warning':
+      default:
+        return 'confirmation-modal-btn-warning';
+    }
   };
 
   return createPortal(
-    <div className="mycontent-confirm-backdrop" onClick={handleBackdropClick}>
-      <div className="mycontent-confirm-modal">
-        <div className="mycontent-confirm-header">
-          <div className="mycontent-confirm-icon">
-            {getIcon()}
+    <div className="confirmation-modal-backdrop" onClick={handleBackdropClick}>
+      <div className="confirmation-modal">
+        <div className="confirmation-modal-header">
+          <div className="confirmation-modal-icon">
+            <ExclamationTriangleIcon 
+              style={{ color: getIconColor() }}
+              className="confirmation-modal-icon-svg"
+            />
           </div>
           <button
+            className="confirmation-modal-close"
             onClick={onClose}
-            className="mycontent-confirm-close"
-            title="Close"
+            disabled={isLoading}
           >
-            <XMarkIcon className="h-5 w-5" />
+            <XMarkIcon className="confirmation-modal-close-icon" />
           </button>
         </div>
-        
-        <div className="mycontent-confirm-content">
-          <h3 className="mycontent-confirm-title">{title}</h3>
-          <p className="mycontent-confirm-message">{message}</p>
+
+        <div className="confirmation-modal-content">
+          <h3 className="confirmation-modal-title">{title}</h3>
+          <p className="confirmation-modal-message">{message}</p>
         </div>
-        
-        <div className="mycontent-confirm-actions">
+
+        <div className="confirmation-modal-actions">
           <button
-            onClick={handleConfirm}
-            className={getConfirmButtonClass()}
-          >
-            {confirmText}
-          </button>
-          <button
+            className="confirmation-modal-btn-cancel"
             onClick={onClose}
-            className="mycontent-confirm-btn-cancel"
+            disabled={isLoading}
           >
             {cancelText}
+          </button>
+          <button
+            className={`confirmation-modal-btn-confirm ${getConfirmButtonClass()}`}
+            onClick={handleConfirm}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="confirmation-modal-spinner">
+                <div className="confirmation-modal-spinner-circle"></div>
+                <span>Processing...</span>
+              </div>
+            ) : (
+              confirmText
+            )}
           </button>
         </div>
       </div>

@@ -17,12 +17,24 @@ export function AuthProvider({ children }) {
     }
   }, [token]);
 
-  const fetchUser = async () => {
+  const fetchUser = async (retryCount = 0) => {
     try {
       const response = await authAPI.getProfile();
       setUser(response.data);
     } catch (error) {
       console.error('Failed to fetch user:', error);
+      
+      // Handle rate limiting with exponential backoff - Development settings
+      if (error.response?.status === 429 && retryCount < 3) {
+        const delay = Math.pow(1.5, retryCount) * 500; // 500ms, 750ms, 1125ms (much faster)
+        console.log(`Rate limited. Retrying in ${delay}ms...`);
+        setTimeout(() => {
+          fetchUser(retryCount + 1);
+        }, delay);
+        return;
+      }
+      
+      // For other errors or max retries reached, logout
       logout();
     } finally {
       setLoading(false);
@@ -40,6 +52,16 @@ export function AuthProvider({ children }) {
       
       return { success: true };
     } catch (error) {
+      console.error('Login error:', error);
+      
+      // Handle rate limiting
+      if (error.response?.status === 429) {
+        return { 
+          success: false, 
+          error: 'Too many login attempts. Please wait a moment and try again.' 
+        };
+      }
+      
       return { 
         success: false, 
         error: error.response?.data?.message || 'Login failed' 

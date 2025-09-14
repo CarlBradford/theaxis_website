@@ -500,12 +500,13 @@ const UserManagement = () => {
           <h1 className="user-management-title">
             All Users <span className="user-count">{pagination.total}</span>
           </h1>
+          <p className="user-management-subtitle">Manage user accounts, roles, and permissions</p>
           </div>
         <div className="action-bar">
           <div style={{ position: 'relative' }}>
             <input
               type="text"
-              placeholder="Search"
+              placeholder="Search users, emails, or roles..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
@@ -1007,55 +1008,51 @@ const UserManagement = () => {
 
       {/* Delete User Confirmation Modal */}
       {showDeleteModal && userToDelete && (
-        <div className="modal-overlay">
-          <div className="delete-modal">
-            <div className="delete-modal-header">
-              <div className="delete-icon-container">
-                <TrashIcon className="delete-icon" />
-              </div>
-              <h3 className="delete-modal-title">Delete User</h3>
-            </div>
-            
-            <div className="delete-modal-content">
-              <p className="delete-warning-text">
-                Are you sure you want to delete <strong>{userToDelete.firstName} {userToDelete.lastName}</strong>?
-              </p>
-              <p className="delete-details">
-                <span className="delete-detail-item">Email: {userToDelete.email}</span>
-                <span className="delete-detail-item">Role: {getRoleDisplayName(userToDelete.role)}</span>
-              </p>
-              <div className="delete-warning-box">
-                <svg className="warning-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <p className="warning-text">This action cannot be undone. The user will be permanently removed from the system.</p>
-              </div>
-            </div>
-            
-            <div className="delete-modal-buttons">
-              <button
-                onClick={handleDeleteUser}
-                className="delete-modal-button delete"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <div className="button-spinner"></div>
-                    Deleting...
-                  </>
-                ) : (
-                  'Delete User'
-                )}
-              </button>
+        <div className="simple-delete-modal-overlay">
+          <div className="simple-delete-modal">
+            <div className="simple-delete-modal-header">
+              <h3 className="simple-delete-modal-title">Delete User</h3>
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
                   setUserToDelete(null);
                 }}
-                className="delete-modal-button cancel"
+                className="simple-delete-modal-close"
+                disabled={loading}
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="simple-delete-modal-content">
+              <p className="simple-delete-warning-text">
+                Are you sure you want to delete <strong>{userToDelete.firstName} {userToDelete.lastName}</strong>?
+              </p>
+              <p className="simple-delete-details">
+                Email: {userToDelete.email} • Role: {getRoleDisplayName(userToDelete.role)}
+              </p>
+              <p className="simple-delete-note">
+                This action cannot be undone.
+              </p>
+            </div>
+            
+            <div className="simple-delete-modal-buttons">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setUserToDelete(null);
+                }}
+                className="simple-delete-modal-button cancel"
                 disabled={loading}
               >
                 Cancel
+              </button>
+              <button
+                onClick={handleDeleteUser}
+                className="simple-delete-modal-button delete"
+                disabled={loading}
+              >
+                {loading ? 'Deleting...' : 'Delete User'}
               </button>
             </div>
           </div>
