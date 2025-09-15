@@ -24,6 +24,24 @@ const prisma = new PrismaClient();
 
 const allowedStatuses = ['DRAFT', 'IN_REVIEW', 'NEEDS_REVISION', 'APPROVED', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'];
 
+// Helper function to calculate read time in minutes
+const calculateReadTime = (content) => {
+  if (!content) return 1;
+  
+  // Remove HTML tags and get plain text
+  const plainText = content.replace(/<[^>]*>/g, '');
+  
+  // Split by whitespace and filter out empty strings
+  const words = plainText.trim().split(/\s+/).filter(word => word.length > 0);
+  
+  // Average reading speed: 200 words per minute
+  const wordsPerMinute = 200;
+  const minutes = Math.ceil(words.length / wordsPerMinute);
+  
+  // Minimum 1 minute read time
+  return Math.max(1, minutes);
+};
+
 /**
  * @swagger
  * components:
@@ -211,6 +229,7 @@ router.post(
         publicationDate: publicationDate ? new Date(publicationDate) : null,
         status: initialStatus,
         authorId: req.user.id,
+        readingTime: calculateReadTime(content), // Calculate and store read time
         // connect tags/categories if provided as array of slugs
         ...(tags.length > 0 && {
           tags: { 
@@ -233,6 +252,7 @@ router.post(
         slug: true,
         status: true,
         createdAt: true,
+        readingTime: true,
       },
     });
 
@@ -321,6 +341,7 @@ router.get(
           dislikeCount: true,
           commentCount: true,
           socialShares: true,
+          readingTime: true,
           createdAt: true,
           updatedAt: true,
           author: {
@@ -857,7 +878,8 @@ router.put(
       content, 
       featuredImage, 
       mediaCaption,
-      publicationDate: publicationDate ? new Date(publicationDate) : null
+      publicationDate: publicationDate ? new Date(publicationDate) : null,
+      readingTime: content ? calculateReadTime(content) : undefined, // Calculate read time if content is updated
     };
 
     // Handle slug update if title changed

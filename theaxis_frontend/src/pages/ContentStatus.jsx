@@ -66,7 +66,7 @@ const ContentStatus = () => {
           excerpt: article.excerpt || createExcerpt(article.content) || article.title,
           content: article.content,
           wordCount: calculateWordCount(article.content),
-          readTime: calculateReadTime(article.content),
+          readTime: article.readingTime ? `${article.readingTime} min read` : calculateReadTime(article.content),
           categories: article.categories || [],
           tags: article.tags || [],
           featuredImage: article.featuredImage || null,
