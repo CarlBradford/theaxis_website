@@ -670,12 +670,109 @@
   gap: 8px;
 }
 
+/* Date Range Layout */
+.filter-modal-date-compact {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.filter-modal-date-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-modal-date-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* Simple Categories Layout */
+.filter-modal-categories-simple {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.filter-modal-categories-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Override filter modal grid for MyContent to stack sections vertically */
+.mycontent-container .filter-modal-sections-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+}
+
+/* Ensure sections are stacked vertically */
+.mycontent-container .filter-modal-section {
+  width: 100% !important;
+  margin-bottom: 16px !important;
+}
+
+/* Force vertical layout for MyContent filter modal */
+.mycontent-container .filter-modal-content .filter-modal-sections-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+.mycontent-container .filter-modal-content .filter-modal-section {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* MyContent Filter Wrapper - Standard Modal */
+.mycontent-filter-wrapper .filter-modal-content .filter-modal-sections-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+}
+
+.mycontent-filter-wrapper .filter-modal-content .filter-modal-section {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+
 .mycontent-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+/* Standard checkbox items for filter modal */
+.filter-modal-checkbox-item {
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
   padding: 4px 0;
+  font-size: 14px;
+}
+
+.filter-modal-checkbox-input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-dark, #1c4643);
+  cursor: pointer;
+}
+
+.filter-modal-checkbox-label {
+  font-size: 14px;
+  color: var(--text-primary, #111827);
+  cursor: pointer;
+  user-select: none;
 }
 
 .mycontent-checkbox {

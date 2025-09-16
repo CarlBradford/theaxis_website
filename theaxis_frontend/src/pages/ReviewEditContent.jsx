@@ -32,7 +32,8 @@ const ReviewEditContent = () => {
     publicationDate: '',
     content: '',
     mediaCaption: '',
-    featuredImage: ''
+    featuredImage: '',
+    additionalMedia: [] // Added this line
   });
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -171,6 +172,7 @@ const ReviewEditContent = () => {
       console.log('First category:', article.categories?.[0]);
       console.log('Available categories from API:', categories);
       console.log('Article tags:', article.tags);
+      console.log('Article additional media:', article.additionalMedia);
       
       // Transform article data to match form structure
       const authors = [];
@@ -242,7 +244,22 @@ const ReviewEditContent = () => {
         publicationDate: formattedDate,
         content: article.content || '',
         mediaCaption: article.mediaCaption || '',
-        featuredImage: article.featuredImage || ''
+        featuredImage: article.featuredImage || '',
+        additionalMedia: article.additionalMedia ? article.additionalMedia.map(media => ({
+          id: media.id,
+          order: media.order,
+          caption: media.caption || '',
+          media: {
+            id: media.media.id,
+            filename: media.media.filename,
+            originalName: media.media.originalName,
+            mimeType: media.media.mimeType,
+            size: media.media.size,
+            url: media.media.url,
+            altText: media.media.altText || '',
+            caption: media.media.caption || ''
+          }
+        })) : []
       });
 
       // Store the article status
@@ -256,7 +273,8 @@ const ReviewEditContent = () => {
         publicationDate: formattedDate,
         content: article.content || '',
         mediaCaption: article.mediaCaption || '',
-        featuredImage: article.featuredImage || ''
+        featuredImage: article.featuredImage || '',
+        additionalMedia: article.additionalMedia ? article.additionalMedia.length : 0
       });
       console.log('Form data publicationDate specifically:', formattedDate);
 
@@ -516,23 +534,63 @@ const ReviewEditContent = () => {
     setUploadError(null);
 
     try {
-      // Simulate file upload - replace with actual upload logic
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const formData = new FormData();
+      formData.append('file', file);
       
-      const fileUrl = URL.createObjectURL(file);
-      setFormData(prev => ({ ...prev, featuredImage: fileUrl }));
-      setUploadedFile(file);
+      console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      console.log('Auth token:', localStorage.getItem('token') ? 'Present' : 'Missing');
       
-      // Clear media error when file is uploaded successfully
-      if (errors.media) {
-        setErrors(prev => ({
+      // Upload file to media endpoint
+      const uploadResponse = await fetch('http://localhost:3001/api/media/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+      
+      console.log('Upload response status:', uploadResponse.status);
+      
+      if (uploadResponse.ok) {
+        const uploadData = await uploadResponse.json();
+        console.log('File uploaded successfully:', uploadData);
+        
+        // Store the file URL for later use in article update
+        const imageUrl = uploadData.data?.url || uploadData.data?.path;
+        if (!imageUrl) {
+          throw new Error('No URL returned from upload');
+        }
+        const fullImageUrl = imageUrl.startsWith('http') 
+          ? imageUrl 
+          : `http://localhost:3001${imageUrl}`;
+        
+        setFormData(prev => ({
           ...prev,
-          media: null
+          featuredImage: fullImageUrl
         }));
+        setUploadedFile(file);
+        setUploadError(null);
+        
+        // Clear the file input
+        if (event.target) {
+          event.target.value = '';
+        }
+        
+        // Clear media validation error
+        if (errors.media) {
+          setErrors(prev => ({
+            ...prev,
+            media: null
+          }));
+        }
+      } else {
+        const errorData = await uploadResponse.json().catch(() => ({}));
+        console.error('Upload failed:', errorData);
+        setUploadError(errorData.message || 'Failed to upload file');
       }
     } catch (error) {
-      setUploadError('Failed to upload file');
       console.error('Upload error:', error);
+      setUploadError('Failed to upload file');
     } finally {
       setIsUploading(false);
     }
@@ -1233,6 +1291,51 @@ const ReviewEditContent = () => {
                     <div className="create-article-error">{errors.mediaCaption}</div>
                   )}
                 </div>
+
+                {/* Additional Media Section */}
+                {formData.additionalMedia && formData.additionalMedia.length > 0 && (
+                  <div className="create-article-media-row">
+                    <label className="create-article-media-label">Additional Media</label>
+                    <div className="create-article-additional-media">
+                      {formData.additionalMedia.map((mediaItem, index) => (
+                        <div key={mediaItem.id || index} className="create-article-media-item">
+                          <div className="create-article-media-preview">
+                            {mediaItem.media.mimeType.startsWith('video/') ? (
+                              <video 
+                                src={mediaItem.media.url} 
+                                controls 
+                                className="create-article-media-video"
+                                style={{ maxWidth: '200px', maxHeight: '150px' }}
+                              />
+                            ) : mediaItem.media.mimeType.startsWith('image/') ? (
+                              <img 
+                                src={mediaItem.media.url} 
+                                alt={mediaItem.media.altText || mediaItem.media.originalName}
+                                className="create-article-media-image"
+                                style={{ maxWidth: '200px', maxHeight: '150px', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <div className="create-article-media-file">
+                                <PaperClipIcon className="create-article-file-icon" />
+                                <span className="create-article-file-name">{mediaItem.media.originalName}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="create-article-media-info">
+                            <div className="create-article-media-name">{mediaItem.media.originalName}</div>
+                            <div className="create-article-media-type">{mediaItem.media.mimeType}</div>
+                            <div className="create-article-media-size">
+                              {(mediaItem.media.size / 1024 / 1024).toFixed(2)} MB
+                            </div>
+                            {mediaItem.caption && (
+                              <div className="create-article-media-caption">{mediaItem.caption}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Column 2 - Category and Tags */}

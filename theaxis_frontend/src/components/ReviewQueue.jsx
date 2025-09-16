@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import '../styles/review-queue.css';
+import '../styles/filter-modal.css';
 import { reviewQueueService } from '../services/reviewQueueService';
 import { articlesAPI } from '../services/apiService';
 import ConfirmationModal from './ConfirmationModal';
@@ -10,6 +11,7 @@ import SuccessModal from './SuccessModal';
 import RequestRevisionModal from './RequestRevisionModal';
 import ReturnToSectionModal from './ReturnToSectionModal';
 import ResubmitModal from './ResubmitModal';
+import FilterModal from './FilterModal';
 
 const ReviewQueue = ({ queueType = 'section-head' }) => {
   const navigate = useNavigate();
@@ -21,7 +23,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [sortBy, setSortBy] = useState('submittedAt');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedArticles, setSelectedArticles] = useState([]);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState(null);
@@ -64,7 +66,9 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
         setError(null);
         const response = await reviewQueueService.getReviewQueue(queueType, {
           status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
-          search: searchTerm || undefined
+          search: searchTerm || undefined,
+          sortBy: sortBy,
+          sortOrder: sortOrder
         });
         
         console.log('Review queue articles loaded:', response.data.articles);
@@ -83,49 +87,9 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
     };
 
     loadArticles();
-  }, [queueType, selectedStatus, searchTerm]);
+  }, [queueType, selectedStatus, searchTerm, sortBy, sortOrder]);
 
-  // Filter and sort articles (only search filtering, status filtering is done on backend)
-  useEffect(() => {
-    let filtered = articles.filter(article => {
-      const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           article.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           article.category.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      return matchesSearch;
-    });
-
-    // Sort articles
-    filtered.sort((a, b) => {
-      let aValue, bValue;
-      
-      switch (sortBy) {
-        case 'title':
-          aValue = a.title.toLowerCase();
-          bValue = b.title.toLowerCase();
-          break;
-        case 'author':
-          aValue = a.author.toLowerCase();
-          bValue = b.author.toLowerCase();
-          break;
-        case 'submittedAt':
-          aValue = new Date(a.submittedAt);
-          bValue = new Date(b.submittedAt);
-          break;
-        default:
-          aValue = a[sortBy];
-          bValue = b[sortBy];
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    setFilteredArticles(filtered);
-  }, [articles, searchTerm, sortBy, sortOrder]);
+  // No need for frontend filtering/sorting since we're using database operations
 
   const handleSelectArticle = (articleId) => {
     setSelectedArticles(prev => 
@@ -662,7 +626,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
   }
 
   return (
-    <div className={`review-queue-container ${showFilters ? 'filters-open' : ''}`}>
+    <div className="review-queue-container">
       {/* Header */}
       <div className="review-queue-header">
         <div className="review-queue-title-section">
@@ -735,8 +699,8 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
           </div>
           
           <button
-            className={`review-queue-filter-btn ${showFilters ? 'active' : ''}`}
-            onClick={() => setShowFilters(!showFilters)}
+            className={`review-queue-filter-btn ${showFilterModal ? 'active' : ''}`}
+            onClick={() => setShowFilterModal(!showFilterModal)}
           >
             <svg className="review-queue-filter-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
@@ -762,60 +726,156 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
         </div>
       </div>
 
-      {/* Filters */}
-      {showFilters && (
-        <div className="review-queue-filters">
-          <div className="review-queue-filter-group">
-            <label className="review-queue-filter-label">Status</label>
-            <select
-              className="review-queue-filter-select"
-              value={selectedStatus}
-              onChange={(e) => {
-                console.log('Status filter changed to:', e.target.value);
-                setSelectedStatus(e.target.value);
-              }}
-            >
-              <option value="all">All Statuses</option>
-              {queueType === 'section-head' ? (
-                <>
-                  <option value="in-review">In Review</option>
-                  <option value="needs-revision">Needs Revision</option>
-                </>
-              ) : (
-                <>
-                  <option value="approved">Approved for Publication</option>
-                </>
-              )}
-            </select>
-          </div>
-
-
-          <div className="review-queue-filter-group">
-            <label className="review-queue-filter-label">Sort By</label>
-            <select
-              className="review-queue-filter-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="submittedAt">Submission Date</option>
-              <option value="title">Title</option>
-              <option value="author">Author</option>
-            </select>
-          </div>
-
-          <div className="review-queue-filter-group">
-            <label className="review-queue-filter-label">Order</label>
-            <select
-              className="review-queue-filter-select"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-            >
-              <option value="desc">Descending</option>
-              <option value="asc">Ascending</option>
-            </select>
+      {/* Filter Modal */}
+      <FilterModal
+        isOpen={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        title={queueType === 'section-head' ? 'Filter Section Review Queue' : 'Filter EIC Review Queue'}
+        onApply={() => setShowFilterModal(false)}
+        onClear={() => {
+          setSelectedStatus('all');
+          setSortBy('submittedAt');
+          setSortOrder('desc');
+        }}
+      >
+        {/* Left Column */}
+        <div className="filter-modal-section">
+          <h4 className="filter-modal-section-title">Status</h4>
+          <div className="filter-modal-radio-group">
+            <label className={`filter-modal-radio-item ${selectedStatus === 'all' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="status"
+                value="all"
+                checked={selectedStatus === 'all'}
+                onChange={(e) => {
+                  console.log('Status filter changed to:', e.target.value);
+                  setSelectedStatus(e.target.value);
+                }}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">All Statuses</span>
+            </label>
+            {queueType === 'section-head' ? (
+              <>
+                <label className={`filter-modal-radio-item ${selectedStatus === 'in-review' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="status"
+                    value="in-review"
+                    checked={selectedStatus === 'in-review'}
+                    onChange={(e) => {
+                      console.log('Status filter changed to:', e.target.value);
+                      setSelectedStatus(e.target.value);
+                    }}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">In Review</span>
+                </label>
+                <label className={`filter-modal-radio-item ${selectedStatus === 'needs-revision' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="status"
+                    value="needs-revision"
+                    checked={selectedStatus === 'needs-revision'}
+                    onChange={(e) => {
+                      console.log('Status filter changed to:', e.target.value);
+                      setSelectedStatus(e.target.value);
+                    }}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">Needs Revision</span>
+                </label>
+              </>
+            ) : (
+              <>
+                <label className={`filter-modal-radio-item ${selectedStatus === 'approved' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="status"
+                    value="approved"
+                    checked={selectedStatus === 'approved'}
+                    onChange={(e) => {
+                      console.log('Status filter changed to:', e.target.value);
+                      setSelectedStatus(e.target.value);
+                    }}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">Approved for Publication</span>
+                </label>
+              </>
+            )}
           </div>
         </div>
-      )}
+
+        {/* Right Column */}
+        <div className="filter-modal-section">
+          <h4 className="filter-modal-section-title">Sort By</h4>
+          <div className="filter-modal-radio-group">
+            <label className={`filter-modal-radio-item ${sortBy === 'submittedAt' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortBy"
+                value="submittedAt"
+                checked={sortBy === 'submittedAt'}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Submission Date</span>
+            </label>
+            <label className={`filter-modal-radio-item ${sortBy === 'title' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortBy"
+                value="title"
+                checked={sortBy === 'title'}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Title</span>
+            </label>
+            <label className={`filter-modal-radio-item ${sortBy === 'author' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortBy"
+                value="author"
+                checked={sortBy === 'author'}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Author</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="filter-modal-section">
+          <h4 className="filter-modal-section-title">Order</h4>
+          <div className="filter-modal-radio-group">
+            <label className={`filter-modal-radio-item ${sortOrder === 'desc' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortOrder"
+                value="desc"
+                checked={sortOrder === 'desc'}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Newest First</span>
+            </label>
+            <label className={`filter-modal-radio-item ${sortOrder === 'asc' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortOrder"
+                value="asc"
+                checked={sortOrder === 'asc'}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Oldest First</span>
+            </label>
+          </div>
+        </div>
+      </FilterModal>
 
       {/* Articles List */}
       <div className="review-queue-list">
@@ -862,15 +922,43 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                 <div className="review-queue-table-cell image-cell">
                   {article.featuredImage ? (
                     <div className="review-queue-article-image">
-                      <img 
-                        src={article.featuredImage} 
-                        alt={article.title}
-                        className="review-queue-featured-image"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextSibling.style.display = 'flex';
-                        }}
-                      />
+                      {(() => {
+                        const mediaUrl = article.featuredImage;
+                        const isVideo = /\.(mp4|webm|ogg|avi|mov|quicktime)$/i.test(mediaUrl) || 
+                                       mediaUrl.includes('video/') ||
+                                       mediaUrl.includes('.mp4') ||
+                                       mediaUrl.includes('.webm') ||
+                                       mediaUrl.includes('.ogg');
+                        
+                        if (isVideo) {
+                          return (
+                            <video 
+                              src={mediaUrl} 
+                              className="review-queue-featured-image"
+                              onError={(e) => {
+                                console.error('Video failed to load:', mediaUrl);
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            >
+                              Your browser does not support the video tag.
+                            </video>
+                          );
+                        } else {
+                          return (
+                            <img 
+                              src={mediaUrl} 
+                              alt={article.title}
+                              className="review-queue-featured-image"
+                              onError={(e) => {
+                                console.error('Image failed to load:', mediaUrl);
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            />
+                          );
+                        }
+                      })()}
                       <div className="review-queue-article-icon" style={{ display: 'none' }}>
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

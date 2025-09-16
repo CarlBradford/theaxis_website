@@ -5,6 +5,7 @@ import { articlesAPI, categoriesAPI } from '../services/apiService';
 import ArticlePreviewModal from '../components/ArticlePreviewModal';
 import NotificationModal from '../components/NotificationModal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import FilterModal from '../components/FilterModal';
 import { 
   DocumentTextIcon, 
   EyeIcon, 
@@ -18,25 +19,28 @@ import {
   XCircleIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
-  ArchiveBoxIcon,
   ArrowUturnLeftIcon,
   UserGroupIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/mycontent.css';
+import '../styles/filter-modal.css';
 
 const MyContent = () => {
   const navigate = useNavigate();
 
   const [articles, setArticles] = useState([]);
+  const [filteredArticles, setFilteredArticles] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [showPreview, setShowPreview] = useState(false);
   const [previewArticle, setPreviewArticle] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -44,8 +48,6 @@ const MyContent = () => {
   const [notificationData, setNotificationData] = useState({ title: '', message: '', type: 'success' });
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState(null);
-  const [showArchiveModal, setShowArchiveModal] = useState(false);
-  const [articleToArchive, setArticleToArchive] = useState(null);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [articleToRestore, setArticleToRestore] = useState(null);
   const { user } = useAuth();
@@ -70,10 +72,23 @@ const MyContent = () => {
   // Fetch user's articles and categories when component mounts
   useEffect(() => {
     if (user?.id) {
-      fetchMyContent();
+      fetchMyContent({}, true); // Show loading on initial load
       fetchCategories();
     }
   }, [user?.id]);
+
+  // Apply filters and reload articles
+  useEffect(() => {
+    if (user?.id) {
+      fetchMyContent({
+        search: searchTerm,
+        status: activeFilter,
+        category: selectedCategories.length === 1 ? selectedCategories[0] : 'all',
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      }, false); // Don't show loading on filter changes
+    }
+  }, [user?.id, searchTerm, activeFilter, selectedCategories, sortBy, sortOrder]);
 
   const fetchCategories = async () => {
     try {
@@ -84,11 +99,37 @@ const MyContent = () => {
     }
   };
 
-  const fetchMyContent = async () => {
+  const fetchMyContent = async (filters = {}, showLoading = false) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       setError(null);
-      const response = await articlesAPI.getMyContent({ authorId: user?.id });
+      
+      // Build API parameters
+      const params = {
+        authorId: user?.id
+      };
+      
+      // Add filter parameters
+      if (filters.search && filters.search.trim()) {
+        params.search = filters.search.trim();
+      }
+      if (filters.status && filters.status !== 'all') {
+        params.status = filters.status.toUpperCase();
+      }
+      if (filters.category && filters.category !== 'all') {
+        params.category = filters.category;
+      }
+      if (filters.sortBy) {
+        params.sortBy = filters.sortBy;
+      }
+      if (filters.sortOrder) {
+        params.sortOrder = filters.sortOrder;
+      }
+      
+      console.log('MyContent API params:', params);
+      const response = await articlesAPI.getMyContent(params);
       console.log('Fetched articles response:', response);
       console.log('Sample article with categories:', response.data?.items?.[0]);
       
@@ -111,12 +152,16 @@ const MyContent = () => {
       }));
       
       setArticles(transformedArticles);
+      setFilteredArticles(transformedArticles);
     } catch (error) {
       console.error('Failed to fetch my content:', error);
       setError('Failed to load your content');
       setArticles([]); // Set empty array on error
+      setFilteredArticles([]);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -164,50 +209,6 @@ const MyContent = () => {
   const cancelDeleteArticle = () => {
     setShowConfirmModal(false);
     setArticleToDelete(null);
-  };
-
-  const handleArchiveArticle = async (articleId) => {
-    setArticleToArchive(articleId);
-    setShowArchiveModal(true);
-  };
-
-  const confirmArchiveArticle = async () => {
-    if (!articleToArchive) return;
-
-    try {
-      await articlesAPI.updateArticleStatus(articleToArchive, 'ARCHIVED');
-      // Update local state
-      setArticles(articles.map(article => 
-        article.id === articleToArchive 
-          ? { ...article, status: 'archived' }
-          : article
-      ));
-      
-      showNotification('Success', 'Article archived successfully', 'success');
-    } catch (error) {
-      console.error('Failed to archive article:', error);
-      
-      let errorMessage = 'Failed to archive article. Please try again.';
-      if (error.response?.status === 403) {
-        errorMessage = 'You can only archive your own articles.';
-      } else if (error.response?.status === 404) {
-        errorMessage = 'Article not found.';
-      } else if (error.response?.status === 401) {
-        errorMessage = 'Please log in to archive articles.';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      }
-      
-      showNotification('Error', errorMessage, 'error');
-    } finally {
-      setShowArchiveModal(false);
-      setArticleToArchive(null);
-    }
-  };
-
-  const cancelArchiveArticle = () => {
-    setShowArchiveModal(false);
-    setArticleToArchive(null);
   };
 
   const handleRestoreArticle = async (articleId) => {
@@ -264,7 +265,7 @@ const MyContent = () => {
   };
 
   const handleFilterToggle = () => {
-    setShowFilterDropdown(!showFilterDropdown);
+    setShowFilterModal(!showFilterModal);
   };
 
 
@@ -289,17 +290,6 @@ const MyContent = () => {
   const clearAllFilters = () => {
     setDateRange({ start: '', end: '' });
     setSelectedCategories([]);
-  };
-
-  const closeFilterPopup = () => {
-    setShowFilterDropdown(false);
-    setShowAdditionalFilters(false);
-  };
-
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
-      closeFilterPopup();
-    }
   };
 
   const handleCreateContent = () => {
@@ -405,94 +395,19 @@ const MyContent = () => {
   };
 
 
+  // No need for frontend filtering since we're using database filtering
   const getFilteredArticles = () => {
-    let filtered = articles;
-
-    // Filter by status
-    if (activeFilter !== 'all') {
-      filtered = filtered.filter(article => {
-        const articleStatus = article.status.toLowerCase();
-        const filterStatus = activeFilter.toLowerCase();
-        
-        // Map frontend filter names to backend status values
-        const statusMap = {
-          'published': 'published',
-          'draft': 'draft', 
-          'pending': 'in_review',
-          'needs_revision': 'needs_revision',
-          'rejected': 'needs_revision',
-          'archived': 'archived'
-        };
-        
-        return articleStatus === (statusMap[filterStatus] || filterStatus);
-      });
-    }
-
-    // Filter by search term
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(article => 
-        article.title.toLowerCase().includes(searchLower) ||
-        article.excerpt.toLowerCase().includes(searchLower) ||
-        article.author.name.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Filter by date range
-    if (dateRange.start || dateRange.end) {
-      filtered = filtered.filter(article => {
-        const articleDate = new Date(article.createdAt);
-        const startDate = dateRange.start ? new Date(dateRange.start + 'T00:00:00') : null;
-        const endDate = dateRange.end ? new Date(dateRange.end + 'T23:59:59') : null;
-        
-        console.log('Date filtering:', {
-          articleTitle: article.title,
-          articleDate: articleDate.toISOString(),
-          startDate: startDate?.toISOString(),
-          endDate: endDate?.toISOString(),
-          dateRange
-        });
-        
-        if (startDate && endDate) {
-          return articleDate >= startDate && articleDate <= endDate;
-        } else if (startDate) {
-          return articleDate >= startDate;
-        } else if (endDate) {
-          return articleDate <= endDate;
-        }
-        return true;
-      });
-    }
-
-    // Filter by categories
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter(article => 
-        article.categories.some(category => selectedCategories.includes(category.id))
-      );
-    }
-
-    return filtered;
+    return filteredArticles;
   };
 
   const getFilterCount = (status) => {
-    let filtered = articles;
-
-    // Apply search filter first
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(article => 
-        article.title.toLowerCase().includes(searchLower) ||
-        article.excerpt.toLowerCase().includes(searchLower) ||
-        article.author.name.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Then apply status filter
+    // For now, return count from filteredArticles since we're using database filtering
+    // In the future, we could add a separate API call for filter counts
     if (status === 'all') {
-      return filtered.length;
+      return filteredArticles.length;
     }
     
-    return filtered.filter(article => {
+    return filteredArticles.filter(article => {
       const articleStatus = article.status.toLowerCase();
       const filterStatus = status.toLowerCase();
       
@@ -648,7 +563,7 @@ const MyContent = () => {
           <div className="mycontent-stats">
             {/* Role-based filter tabs */}
             {user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'ADVISER' || user?.role === 'SYSTEM_ADMIN' ? (
-              // EIC and higher: Total, Published, Drafts, Archived
+              // EIC and higher: Total, Published, Drafts, In Review, Approved, Archived
               <>
                 <button 
                   className={`mycontent-filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
@@ -672,6 +587,20 @@ const MyContent = () => {
                 </button>
                 <div className="mycontent-stat-separator"></div>
                 <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'pending' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('pending')}
+                >
+                  In Review: {getFilterCount('pending')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'approved' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('approved')}
+                >
+                  Approved: {getFilterCount('approved')}
+                </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
                   className={`mycontent-filter-tab ${activeFilter === 'archived' ? 'active' : ''}`}
                   onClick={() => handleFilterChange('archived')}
                 >
@@ -679,7 +608,7 @@ const MyContent = () => {
                 </button>
               </>
             ) : user?.role === 'SECTION_HEAD' ? (
-              // Section Head: Total, Published, Drafts, Approved
+              // Section Head: Total, Published, Drafts, Approved, Archived
               <>
                 <button 
                   className={`mycontent-filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
@@ -708,9 +637,16 @@ const MyContent = () => {
                 >
                   Approved: {getFilterCount('approved')}
                 </button>
+                <div className="mycontent-stat-separator"></div>
+                <button 
+                  className={`mycontent-filter-tab ${activeFilter === 'archived' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('archived')}
+                >
+                  Archived: {getFilterCount('archived')}
+                </button>
               </>
             ) : (
-              // Staff: All except Archived (Total, Published, Drafts, Under Review, Approved, Needs Revision)
+              // Staff: Total, Published, Drafts, Under Review, Approved, Needs Revision
               <>
                 <button 
                   className={`mycontent-filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
@@ -757,81 +693,75 @@ const MyContent = () => {
             )}
           </div>
           
-          {/* Filter Popup */}
-          {showFilterDropdown && (
-            <div className="mycontent-filter-backdrop" onClick={handleBackdropClick}>
-              <div className="mycontent-filter-popup">
-                <button 
-                  className="mycontent-filter-close"
-                  onClick={closeFilterPopup}
-                  title="Close"
-                >
-                  ×
-                </button>
-                
-                <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '600', color: '#111827' }}>
-                  Filter Content
-                </h3>
-
-                <div className="mycontent-filter-section">
-                  <h4 className="mycontent-filter-title">Date Range</h4>
-                  <div className="mycontent-date-inputs">
-                    <div className="mycontent-date-input-group">
-                      <label className="mycontent-date-label">From:</label>
-                      <input
-                        type="date"
-                        value={dateRange.start}
-                        onChange={(e) => handleDateRangeChange('start', e.target.value)}
-                        className="mycontent-date-input"
-                      />
-                    </div>
-                    <div className="mycontent-date-input-group">
-                      <label className="mycontent-date-label">To:</label>
-                      <input
-                        type="date"
-                        value={dateRange.end}
-                        onChange={(e) => handleDateRangeChange('end', e.target.value)}
-                        className="mycontent-date-input"
-                      />
-                    </div>
-                  </div>
+          {/* Filter Modal */}
+          <div className="mycontent-filter-wrapper">
+            <FilterModal
+              isOpen={showFilterModal}
+              onClose={() => setShowFilterModal(false)}
+              title="Filter Content"
+              onApply={() => setShowFilterModal(false)}
+              onClear={clearAllFilters}
+              layout="vertical"
+            >
+            {/* Date Range - Compact Layout */}
+            <div className="filter-modal-section">
+              <h4 className="filter-modal-section-title">Date Range:</h4>
+              <div className="filter-modal-date-compact">
+                <div className="filter-modal-date-item">
+                  <label className="filter-modal-date-label">FROM:</label>
+                  <input
+                    type="date"
+                    value={dateRange.start}
+                    onChange={(e) => handleDateRangeChange('start', e.target.value)}
+                    className="filter-modal-date-input"
+                  />
                 </div>
-
-                <div className="mycontent-filter-section">
-                  <h4 className="mycontent-filter-title">Categories</h4>
-                  <div className="mycontent-checkbox-group">
-                    {categories.map(category => (
-                      <label key={category.id} className="mycontent-checkbox-item">
-                        <input
-                          type="checkbox"
-                          checked={selectedCategories.includes(category.id)}
-                          onChange={() => handleCategoryToggle(category.id)}
-                          className="mycontent-checkbox"
-                        />
-                        <span className="mycontent-checkbox-label">{category.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-
-                <div className="mycontent-filter-actions">
-                  <button 
-                    onClick={clearAllFilters}
-                    className="mycontent-clear-filters-btn"
-                  >
-                    Clear All Filters
-                  </button>
-                  <button 
-                    onClick={closeFilterPopup}
-                    className="mycontent-apply-filters-btn"
-                  >
-                    Apply Filters
-                  </button>
+                <div className="filter-modal-date-item">
+                  <label className="filter-modal-date-label">TO:</label>
+                  <input
+                    type="date"
+                    value={dateRange.end}
+                    onChange={(e) => handleDateRangeChange('end', e.target.value)}
+                    className="filter-modal-date-input"
+                  />
                 </div>
               </div>
             </div>
-          )}
+
+            {/* Categories - Simple Two Columns */}
+            <div className="filter-modal-section">
+              <h4 className="filter-modal-section-title">Categories</h4>
+              <div className="filter-modal-categories-simple">
+                <div className="filter-modal-categories-column">
+                  {categories.slice(0, Math.ceil(categories.length / 2)).map(category => (
+                    <label key={category.id} className={`filter-modal-checkbox-item ${selectedCategories.includes(category.id) ? 'selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={selectedCategories.includes(category.id)}
+                        onChange={() => handleCategoryToggle(category.id)}
+                        className="filter-modal-checkbox-input"
+                      />
+                      <span className="filter-modal-checkbox-label">{category.name}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="filter-modal-categories-column">
+                  {categories.slice(Math.ceil(categories.length / 2)).map(category => (
+                    <label key={category.id} className={`filter-modal-checkbox-item ${selectedCategories.includes(category.id) ? 'selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={selectedCategories.includes(category.id)}
+                        onChange={() => handleCategoryToggle(category.id)}
+                        className="filter-modal-checkbox-input"
+                      />
+                      <span className="filter-modal-checkbox-label">{category.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            </FilterModal>
+          </div>
 
         </div>
 
@@ -861,15 +791,43 @@ const MyContent = () => {
                 {/* Featured Image */}
                 {article.featuredImage ? (
                   <div className="mycontent-article-image">
-                    <img 
-                      src={article.featuredImage} 
-                      alt={article.title}
-                      className="mycontent-featured-image"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
-                      }}
-                    />
+                    {(() => {
+                      const mediaUrl = article.featuredImage;
+                      const isVideo = /\.(mp4|webm|ogg|avi|mov|quicktime)$/i.test(mediaUrl) || 
+                                     mediaUrl.includes('video/') ||
+                                     mediaUrl.includes('.mp4') ||
+                                     mediaUrl.includes('.webm') ||
+                                     mediaUrl.includes('.ogg');
+                      
+                      if (isVideo) {
+                        return (
+                          <video 
+                            src={mediaUrl} 
+                            className="mycontent-featured-image"
+                            onError={(e) => {
+                              console.error('Video failed to load:', mediaUrl);
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        );
+                      } else {
+                        return (
+                          <img 
+                            src={mediaUrl} 
+                            alt={article.title}
+                            className="mycontent-featured-image"
+                            onError={(e) => {
+                              console.error('Image failed to load:', mediaUrl);
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        );
+                      }
+                    })()}
                     <div className="mycontent-article-icon" style={{ display: 'none' }}>
                       <UserGroupIcon className="mycontent-group-icon" />
                     </div>
@@ -897,37 +855,97 @@ const MyContent = () => {
                 </div>
                 
                 <div className="mycontent-article-actions">
-                  {/* Edit Button */}
-                  {article.status.toLowerCase() === 'archived' ? (
-                    <button
-                      className="mycontent-action-btn mycontent-action-btn-disabled"
-                      title="Cannot edit archived articles. Restore to draft first."
-                      disabled
-                    >
-                      <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                    </button>
-                  ) : user?.role === 'STAFF' && article.status === 'IN_REVIEW' ? (
-                    <button
-                      className="mycontent-action-btn mycontent-action-btn-disabled"
-                      title="Cannot edit articles under review. Wait for section head feedback."
-                      disabled
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Edit button clicked but disabled for STAFF user with IN_REVIEW article');
-                      }}
-                    >
-                      <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                    </button>
-                  ) : (
-                  <Link
-                    to={`/content/${article.id}/edit`}
-                    className="mycontent-action-btn"
-                    title="Edit"
-                  >
-                    <PencilIcon className="mycontent-action-icon" />
-                  </Link>
-                  )}
+                  {/* Edit Button - Role and status based logic */}
+                  {(() => {
+                    const status = article.status.toLowerCase();
+                    const userRole = user?.role;
+                    
+                    // Staff: Enable only for draft and needs_revision
+                    if (userRole === 'STAFF') {
+                      if (status === 'draft' || status === 'needs_revision') {
+                        return (
+                          <Link
+                            to={`/content/${article.id}/edit`}
+                            className="mycontent-action-btn"
+                            title="Edit"
+                          >
+                            <PencilIcon className="mycontent-action-icon" />
+                          </Link>
+                        );
+                      } else {
+                        return (
+                          <button
+                            className="mycontent-action-btn mycontent-action-btn-disabled"
+                            title={`Cannot edit articles with status: ${getStatusLabel(article.status)}`}
+                            disabled
+                          >
+                            <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
+                          </button>
+                        );
+                      }
+                    }
+                    
+                    // Section Head: Enable only for draft
+                    if (userRole === 'SECTION_HEAD') {
+                      if (status === 'draft') {
+                        return (
+                          <Link
+                            to={`/content/${article.id}/edit`}
+                            className="mycontent-action-btn"
+                            title="Edit"
+                          >
+                            <PencilIcon className="mycontent-action-icon" />
+                          </Link>
+                        );
+                      } else {
+                        return (
+                          <button
+                            className="mycontent-action-btn mycontent-action-btn-disabled"
+                            title={`Cannot edit articles with status: ${getStatusLabel(article.status)}`}
+                            disabled
+                          >
+                            <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
+                          </button>
+                        );
+                      }
+                    }
+                    
+                    // EIC and higher: Enable only for draft, published, and approved
+                    if (userRole === 'EDITOR_IN_CHIEF' || userRole === 'ADVISER' || userRole === 'SYSTEM_ADMIN') {
+                      if (status === 'draft' || status === 'published' || status === 'approved') {
+                        return (
+                          <Link
+                            to={`/content/${article.id}/edit`}
+                            className="mycontent-action-btn"
+                            title="Edit"
+                          >
+                            <PencilIcon className="mycontent-action-icon" />
+                          </Link>
+                        );
+                      } else {
+                        return (
+                          <button
+                            className="mycontent-action-btn mycontent-action-btn-disabled"
+                            title={`Cannot edit articles with status: ${getStatusLabel(article.status)}`}
+                            disabled
+                          >
+                            <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
+                          </button>
+                        );
+                      }
+                    }
+                    
+                    // Default: Disabled for unknown roles
+                    return (
+                      <button
+                        className="mycontent-action-btn mycontent-action-btn-disabled"
+                        title="Edit not available for your role"
+                        disabled
+                      >
+                        <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
+                      </button>
+                    );
+                  })()}
                   <button
                     onClick={() => handlePreview(article)}
                     className="mycontent-action-btn"
@@ -936,63 +954,15 @@ const MyContent = () => {
                   >
                     <EyeIcon className="mycontent-action-icon" />
                   </button>
-                  {/* Archive/Restore Button - Only visible to EIC and higher roles */}
-                  {(user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'ADVISER' || user?.role === 'SYSTEM_ADMIN') && (
-                    <>
-                      {article.status.toLowerCase() === 'archived' ? (
-                        <button
-                          onClick={() => handleRestoreArticle(article.id)}
-                          className="mycontent-action-btn"
-                          title="Restore to Draft"
-                        >
-                          <ArrowUturnLeftIcon className="mycontent-action-icon" />
-                        </button>
-                      ) : user?.role === 'STAFF' && article.status === 'IN_REVIEW' ? (
-                        <button
-                          className="mycontent-action-btn mycontent-action-btn-disabled"
-                          title="Cannot archive articles under review. Wait for section head feedback."
-                          disabled
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('Archive button clicked but disabled for STAFF user with IN_REVIEW article');
-                          }}
-                        >
-                          <ArchiveBoxIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                        </button>
-                      ) : (
-                      <button
-                          onClick={() => handleArchiveArticle(article.id)}
-                        className="mycontent-action-btn"
-                          title="Archive Article"
-                      >
-                        <ArchiveBoxIcon className="mycontent-action-icon" />
-                      </button>
-                      )}
-                    </>
-                  )}
-                  {/* Delete Button */}
-                  {user?.role === 'STAFF' && article.status === 'IN_REVIEW' ? (
+                  {/* Delete Button - Only show for draft articles */}
+                  {article.status === 'draft' && (
                     <button
-                      className="mycontent-action-btn mycontent-action-btn-disabled"
-                      title="Cannot delete articles under review. Wait for section head feedback."
-                      disabled
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Delete button clicked but disabled for STAFF user with IN_REVIEW article');
-                      }}
-                    >
-                      <TrashIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                    </button>
-                  ) : (
-                  <button
-                    onClick={() => handleDeleteArticle(article.id)}
-                    className="mycontent-action-btn"
+                      onClick={() => handleDeleteArticle(article.id)}
+                      className="mycontent-action-btn"
                       title="Delete Article"
-                  >
-                    <TrashIcon className="mycontent-action-icon" />
-                  </button>
+                    >
+                      <TrashIcon className="mycontent-action-icon" />
+                    </button>
                   )}
                 </div>
               </div>
@@ -1032,18 +1002,6 @@ const MyContent = () => {
         confirmText="Delete"
         cancelText="Cancel"
         type="danger"
-      />
-
-      {/* Archive Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showArchiveModal}
-        onClose={cancelArchiveArticle}
-        onConfirm={confirmArchiveArticle}
-        title="Archive Article"
-        message="Are you sure you want to archive this article? You can restore it later if needed."
-        confirmText="Archive"
-        cancelText="Cancel"
-        type="warning"
       />
 
       {/* Restore Confirmation Modal */}

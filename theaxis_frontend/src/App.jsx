@@ -15,6 +15,7 @@ import ContentStatus from './pages/ContentStatus';
 import Media from './pages/Media';
 import Profile from './pages/Profile';
 import UserManagement from './pages/UserManagement';
+import PublishedContent from './pages/PublishedContent';
 import LoginDebug from './pages/LoginDebug';
 import HealthCheck from './pages/HealthCheck';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -83,6 +84,12 @@ function App() {
               <Route path="users" element={
                 <ProtectedRoute requiredRole="SECTION_HEAD">
                   <UserManagement />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="published-content" element={
+                <ProtectedRoute requiredRole="SECTION_HEAD">
+                  <PublishedContent />
                 </ProtectedRoute>
               } />
               

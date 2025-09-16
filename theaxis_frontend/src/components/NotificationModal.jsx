@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 
@@ -79,7 +79,7 @@ const NotificationModal = ({
   };
 
   // Auto-close functionality
-  React.useEffect(() => {
+  useEffect(() => {
     if (duration > 0) {
       const timer = setTimeout(() => {
         onClose();

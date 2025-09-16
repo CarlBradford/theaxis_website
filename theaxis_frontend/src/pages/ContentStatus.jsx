@@ -19,7 +19,9 @@ import {
   ChartBarIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../hooks/useAuth';
+import FilterModal from '../components/FilterModal';
 import '../styles/content-status.css';
+import '../styles/filter-modal.css';
 
 const ContentStatus = () => {
   const navigate = useNavigate();
@@ -33,19 +35,41 @@ const ContentStatus = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewArticle, setPreviewArticle] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
   // Load articles from API
-  useEffect(() => {
-    const loadArticles = async () => {
+  const loadArticles = async (filters = {}, showLoading = false) => {
       try {
+      if (showLoading) {
         setLoading(true);
+      }
         setError(null);
-        const response = await articlesAPI.getMyContent({ authorId: user?.id });
+      
+      // Build API parameters
+      const params = {
+        authorId: user?.id
+      };
+      
+      // Add filter parameters
+      if (filters.search && filters.search.trim()) {
+        params.search = filters.search.trim();
+      }
+      if (filters.status && filters.status !== 'all') {
+        params.status = filters.status.toUpperCase();
+      }
+      if (filters.sortBy) {
+        params.sortBy = filters.sortBy;
+      }
+      if (filters.sortOrder) {
+        params.sortOrder = filters.sortOrder;
+      }
+      
+      console.log('ContentStatus API params:', params);
+      const response = await articlesAPI.getMyContent(params);
         
         console.log('Article status articles loaded:', response.data.items);
         
@@ -84,72 +108,32 @@ const ContentStatus = () => {
         setArticles([]);
         setFilteredArticles([]);
       } finally {
+      if (showLoading) {
         setLoading(false);
+      }
       }
     };
 
+  // Load articles on mount
+  useEffect(() => {
     if (user?.id) {
-      loadArticles();
+      loadArticles({}, true); // Show loading on initial load
     }
   }, [user?.id]);
 
-  // Filter and sort articles
+  // Apply filters and reload articles
   useEffect(() => {
-    let filtered = articles.filter(article => {
-      const matchesSearch = article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           article.author.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (article.categories.length > 0 && article.categories.some(cat => 
-                             cat.name.toLowerCase().includes(searchTerm.toLowerCase())
-                           ));
-      
-      const matchesStatus = selectedStatus === 'all' || article.status === selectedStatus;
-      
-      return matchesSearch && matchesStatus;
-    });
+    if (user?.id) {
+      loadArticles({
+        search: searchTerm,
+        status: selectedStatus,
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      }, false); // Don't show loading on filter changes
+    }
+  }, [user?.id, searchTerm, selectedStatus, sortBy, sortOrder]);
 
-    // Sort articles
-    filtered.sort((a, b) => {
-      let aValue, bValue;
-      
-      switch (sortBy) {
-        case 'title':
-          aValue = a.title.toLowerCase();
-          bValue = b.title.toLowerCase();
-          break;
-        case 'author':
-          aValue = a.author.name.toLowerCase();
-          bValue = b.author.name.toLowerCase();
-          break;
-        case 'createdAt':
-          aValue = new Date(a.createdAt);
-          bValue = new Date(b.createdAt);
-          break;
-        case 'updatedAt':
-          aValue = new Date(a.updatedAt);
-          bValue = new Date(b.updatedAt);
-          break;
-        case 'publishedAt':
-          aValue = new Date(a.publishedAt || 0);
-          bValue = new Date(b.publishedAt || 0);
-          break;
-        case 'viewCount':
-          aValue = a.viewCount || 0;
-          bValue = b.viewCount || 0;
-          break;
-        default:
-          aValue = a[sortBy];
-          bValue = b[sortBy];
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    setFilteredArticles(filtered);
-  }, [articles, searchTerm, selectedStatus, sortBy, sortOrder]);
+  // No need for frontend filtering since we're using database filtering
 
   const handlePreview = async (article) => {
     console.log('Previewing article:', article);
@@ -385,7 +369,7 @@ const ContentStatus = () => {
   }
 
   return (
-    <div className={`content-status-container ${showFilters ? 'filters-open' : ''}`}>
+    <div className="content-status-container">
       {/* Header */}
       <div className="content-status-header">
         <div className="content-status-title-section">
@@ -529,8 +513,8 @@ const ContentStatus = () => {
           </div>
           
           <button
-            className={`content-status-filter-btn ${showFilters ? 'active' : ''}`}
-            onClick={() => setShowFilters(!showFilters)}
+            className={`content-status-filter-btn ${showFilterModal ? 'active' : ''}`}
+            onClick={() => setShowFilterModal(!showFilterModal)}
           >
             <FunnelIcon className="content-status-filter-icon" />
           </button>
@@ -547,52 +531,170 @@ const ContentStatus = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      {showFilters && (
-        <div className="content-status-filters">
-          <div className="content-status-filter-group">
-            <label className="content-status-filter-label">Status</label>
-            <select
-              className="content-status-filter-select"
-              value={selectedStatus}
+      {/* Filter Modal */}
+      <FilterModal
+        isOpen={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        title="Filter Content Status"
+        onApply={() => setShowFilterModal(false)}
+        onClear={() => {
+          setSelectedStatus('all');
+          setSortBy('createdAt');
+          setSortOrder('desc');
+        }}
+      >
+        {/* Left Column */}
+        <div className="filter-modal-section">
+          <h4 className="filter-modal-section-title">Status</h4>
+          <div className="filter-modal-radio-group">
+            <label className={`filter-modal-radio-item ${selectedStatus === 'all' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="status"
+                value="all"
+                checked={selectedStatus === 'all'}
+                onChange={(e) => handleFilterChange(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">All Content ({getFilterCount('all')})</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedStatus === 'published' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="status"
+                value="published"
+                checked={selectedStatus === 'published'}
+                onChange={(e) => handleFilterChange(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Published ({getFilterCount('published')})</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedStatus === 'draft' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="status"
+                value="draft"
+                checked={selectedStatus === 'draft'}
+                onChange={(e) => handleFilterChange(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Drafts ({getFilterCount('draft')})</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedStatus === 'in_review' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="status"
+                value="in_review"
+                checked={selectedStatus === 'in_review'}
+                onChange={(e) => handleFilterChange(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Under Review ({getFilterCount('in_review')})</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedStatus === 'needs_revision' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="status"
+                value="needs_revision"
+                checked={selectedStatus === 'needs_revision'}
               onChange={(e) => handleFilterChange(e.target.value)}
-            >
-              <option value="all">All Content ({getFilterCount('all')})</option>
-              <option value="published">Published ({getFilterCount('published')})</option>
-              <option value="draft">Drafts ({getFilterCount('draft')})</option>
-              <option value="in_review">Under Review ({getFilterCount('in_review')})</option>
-              <option value="needs_revision">Needs Revision ({getFilterCount('needs_revision')})</option>
-            </select>
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Needs Revision ({getFilterCount('needs_revision')})</span>
+            </label>
+          </div>
       </div>
 
-          <div className="content-status-filter-group">
-            <label className="content-status-filter-label">Sort By</label>
-            <select
-              className="content-status-filter-select"
-              value={sortBy}
+        {/* Right Column */}
+        <div className="filter-modal-section">
+          <h4 className="filter-modal-section-title">Sort By</h4>
+          <div className="filter-modal-radio-group">
+            <label className={`filter-modal-radio-item ${sortBy === 'createdAt' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortBy"
+                value="createdAt"
+                checked={sortBy === 'createdAt'}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Created Date</span>
+            </label>
+            <label className={`filter-modal-radio-item ${sortBy === 'updatedAt' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortBy"
+                value="updatedAt"
+                checked={sortBy === 'updatedAt'}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Last Updated</span>
+            </label>
+            <label className={`filter-modal-radio-item ${sortBy === 'publishedAt' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortBy"
+                value="publishedAt"
+                checked={sortBy === 'publishedAt'}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Published Date</span>
+            </label>
+            <label className={`filter-modal-radio-item ${sortBy === 'title' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortBy"
+                value="title"
+                checked={sortBy === 'title'}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Title</span>
+            </label>
+            <label className={`filter-modal-radio-item ${sortBy === 'viewCount' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortBy"
+                value="viewCount"
+                checked={sortBy === 'viewCount'}
               onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="createdAt">Created Date</option>
-              <option value="updatedAt">Last Updated</option>
-              <option value="publishedAt">Published Date</option>
-              <option value="title">Title</option>
-              <option value="viewCount">View Count</option>
-            </select>
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">View Count</span>
+            </label>
+          </div>
           </div>
 
-          <div className="content-status-filter-group">
-            <label className="content-status-filter-label">Order</label>
-            <select
-              className="content-status-filter-select"
-              value={sortOrder}
+        <div className="filter-modal-section">
+          <h4 className="filter-modal-section-title">Order</h4>
+          <div className="filter-modal-radio-group">
+            <label className={`filter-modal-radio-item ${sortOrder === 'desc' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortOrder"
+                value="desc"
+                checked={sortOrder === 'desc'}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Newest First</span>
+            </label>
+            <label className={`filter-modal-radio-item ${sortOrder === 'asc' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="sortOrder"
+                value="asc"
+                checked={sortOrder === 'asc'}
               onChange={(e) => setSortOrder(e.target.value)}
-            >
-              <option value="desc">Newest First</option>
-              <option value="asc">Oldest First</option>
-            </select>
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Oldest First</span>
+            </label>
           </div>
         </div>
-      )}
+      </FilterModal>
 
       {/* Articles List */}
       <div className="content-status-list">
@@ -623,15 +725,43 @@ const ContentStatus = () => {
                 <div className="content-status-table-cell image-cell">
                   {article.featuredImage ? (
                     <div className="content-status-article-image">
-                      <img 
-                        src={article.featuredImage} 
+                      {(() => {
+                        const mediaUrl = article.featuredImage;
+                        const isVideo = /\.(mp4|webm|ogg|avi|mov|quicktime)$/i.test(mediaUrl) || 
+                                       mediaUrl.includes('video/') ||
+                                       mediaUrl.includes('.mp4') ||
+                                       mediaUrl.includes('.webm') ||
+                                       mediaUrl.includes('.ogg');
+                        
+                        if (isVideo) {
+                          return (
+                            <video 
+                              src={mediaUrl} 
+                              className="content-status-featured-image"
+                              onError={(e) => {
+                                console.error('Video failed to load:', mediaUrl);
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                            >
+                              Your browser does not support the video tag.
+                            </video>
+                          );
+                        } else {
+                          return (
+                            <img 
+                              src={mediaUrl} 
                         alt={article.title}
                         className="content-status-featured-image"
                         onError={(e) => {
+                                console.error('Image failed to load:', mediaUrl);
                           e.target.style.display = 'none';
                           e.target.nextSibling.style.display = 'flex';
                         }}
                       />
+                          );
+                        }
+                      })()}
                       <div className="content-status-article-icon" style={{ display: 'none' }}>
                         <DocumentTextIcon className="w-6 h-6" />
                       </div>

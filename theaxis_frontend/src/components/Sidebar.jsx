@@ -74,6 +74,11 @@ const Sidebar = () => {
           href: '/content/pending',
           permission: 'article:review',
         },
+        {
+          name: 'Published Content',
+          href: '/published-content',
+          permission: 'article:publish',
+        },
       ]
     },
     {

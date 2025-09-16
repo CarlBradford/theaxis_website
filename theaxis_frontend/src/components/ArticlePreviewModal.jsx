@@ -133,6 +133,55 @@ const ArticlePreviewModal = ({ isOpen, onClose, articleData }) => {
             </div>
           )}
 
+          {/* Additional Media */}
+          {articleData.additionalMedia && articleData.additionalMedia.length > 0 && (
+            <div className="article-preview-additional-media">
+              <h3 className="article-preview-media-title">Additional Media</h3>
+              <div className="article-preview-media-grid">
+                {articleData.additionalMedia.map((mediaItem, index) => (
+                  <div key={mediaItem.id || index} className="article-preview-media-item">
+                    <div className="article-preview-media-container">
+                      {mediaItem.media.mimeType.startsWith('video/') ? (
+                        <video 
+                          src={mediaItem.media.url} 
+                          controls 
+                          className="article-preview-media-video"
+                          onError={(e) => {
+                            console.error('Video failed to load:', mediaItem.media.url);
+                            e.target.style.display = 'none';
+                          }}
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                      ) : mediaItem.media.mimeType.startsWith('image/') ? (
+                        <img 
+                          src={mediaItem.media.url} 
+                          alt={mediaItem.media.altText || mediaItem.media.originalName}
+                          className="article-preview-media-image"
+                          onError={(e) => {
+                            console.error('Image failed to load:', mediaItem.media.url);
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="article-preview-media-file">
+                          <div className="article-preview-file-icon">📎</div>
+                          <div className="article-preview-file-name">{mediaItem.media.originalName}</div>
+                          <div className="article-preview-file-type">{mediaItem.media.mimeType}</div>
+                        </div>
+                      )}
+                    </div>
+                    {(mediaItem.caption || mediaItem.media.caption) && (
+                      <p className="article-preview-media-caption">
+                        {mediaItem.caption || mediaItem.media.caption}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Article Content */}
           <div className="article-preview-body">
             <div 

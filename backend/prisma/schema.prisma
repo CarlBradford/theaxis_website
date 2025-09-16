@@ -34,6 +34,7 @@ model User {
   comments               Comment[]
   editorialNotes         EditorialNote[]
   reviewFeedback         ReviewFeedback[]
+  flipbooks              Flipbook[]
 
   @@index([email])
   @@index([username])
@@ -335,4 +336,33 @@ enum ArticleStatus {
   SCHEDULED
   PUBLISHED
   ARCHIVED
+}
+
+enum PublicationType {
+  NEWSLETTER
+  TABLOID
+  MAGAZINE
+  LITERARY_FOLIO
+  ART_COMPILATION
+}
+
+model Flipbook {
+  id          String         @id @default(cuid())
+  name        String
+  embedUrl    String         @map("embed_url")
+  type        PublicationType
+  description String?
+  releaseDate DateTime?      @map("release_date")
+  isActive    Boolean        @default(true) @map("is_active")
+  userId      String         @map("user_id")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  
+  user        User           @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([type])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("flipbooks")
 }

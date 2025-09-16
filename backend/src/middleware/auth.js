@@ -52,6 +52,13 @@ const authenticateToken = async (req, res, next) => {
     req.user = user;
 
     // Log authentication success
+    console.log('🔑 User authenticated successfully:');
+    console.log('   User ID:', user.id);
+    console.log('   Username:', user.username);
+    console.log('   Email:', user.email);
+    console.log('   Role:', user.role);
+    console.log('   Active:', user.isActive);
+    
     logger.info('User authenticated', {
       userId: user.id,
       username: user.username,
@@ -112,11 +119,21 @@ const optionalAuth = async (req, res, next) => {
 // Role-based access control middleware
 const requireRole = (...roles) => {
   return (req, res, next) => {
+    console.log('🔐 Role check middleware:');
+    console.log('   User:', req.user?.username, '(', req.user?.email, ')');
+    console.log('   User role:', req.user?.role);
+    console.log('   Required roles:', roles);
+    console.log('   User has required role:', roles.includes(req.user?.role));
+    console.log('   Request URL:', req.originalUrl);
+    console.log('   Request method:', req.method);
+    
     if (!req.user) {
+      console.log('   ❌ No user found');
       return next(new AppError('Authentication required', 401));
     }
 
     if (!roles.includes(req.user.role)) {
+      console.log('   ❌ User role not in required roles');
       logger.warn('Insufficient role access', {
         userId: req.user.id,
         userRole: req.user.role,
@@ -128,6 +145,7 @@ const requireRole = (...roles) => {
       return next(createPermissionError('access', 'this resource'));
     }
 
+    console.log('   ✅ Role check passed');
     next();
   };
 };
@@ -333,21 +351,8 @@ const requireOwnership = (resourceType, resourceIdField = 'id') => {
             return next(createPermissionError(action, `articles in ${article.status} status`));
           }
           
-          // Section Head can edit/delete articles in DRAFT, NEEDS_REVISION, or IN_REVIEW status
-          // But cannot edit/delete after EIC approval (APPROVED, SCHEDULED, PUBLISHED, ARCHIVED)
-          if (req.user.role === 'SECTION_HEAD' && !['DRAFT', 'NEEDS_REVISION', 'IN_REVIEW'].includes(article.status)) {
-            const action = req.method === 'DELETE' ? 'delete' : 'edit';
-            logger.warn(`Section Head cannot ${action} article in current status`, {
-              userId: req.user.id,
-              userRole: req.user.role,
-              resourceType,
-              resourceId,
-              articleStatus: article.status,
-              action: req.method,
-            });
-
-            return next(createPermissionError(action, `articles in ${article.status} status`));
-          }
+          // Section Head can edit articles in all statuses including ARCHIVED
+          // This allows them to both archive and restore articles
         }
       }
 
@@ -374,7 +379,7 @@ const requireOwnership = (resourceType, resourceIdField = 'id') => {
 // Rate limiting for authentication endpoints
 const authRateLimit = require('express-rate-limit')({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'development' ? 50 : 5, // More lenient in development
+  max: process.env.NODE_ENV === 'development' ? 200 : 50, // Increased limits
   message: {
     error: 'Too many authentication attempts, please try again later.',
     retryAfter: 900, // 15 minutes in seconds

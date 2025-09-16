@@ -291,6 +291,23 @@ router.post(
  *       - in: query
  *         name: search
  *         schema: { type: string }
+ *         description: Search in title, excerpt, and author name
+ *       - in: query
+ *         name: authorId
+ *         schema: { type: string }
+ *         description: Filter by author ID
+ *       - in: query
+ *         name: category
+ *         schema: { type: string }
+ *         description: Filter by category name or slug
+ *       - in: query
+ *         name: sortBy
+ *         schema: { type: string, enum: [createdAt, updatedAt, publishedAt, title, viewCount, author], default: createdAt }
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema: { type: string, enum: [asc, desc], default: desc }
+ *         description: Sort order
  *     responses:
  *       200:
  *         description: Articles retrieved
@@ -305,23 +322,75 @@ router.get(
     query('status').optional().isIn(allowedStatuses),
     query('search').optional().isString(),
     query('authorId').optional().isString(),
+    query('category').optional().isString(),
+    query('sortBy').optional().isIn(['createdAt', 'updatedAt', 'publishedAt', 'title', 'viewCount', 'author']),
+    query('sortOrder').optional().isIn(['asc', 'desc']),
   ],
   asyncHandler(async (req, res) => {
     const page = req.query.page || 1;
     const limit = req.query.limit || 20;
     const skip = (page - 1) * limit;
-    const { status, search, authorId } = req.query;
+    const { status, search, authorId, category, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
 
     const where = {};
+    
+    // Search filter
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
         { excerpt: { contains: search, mode: 'insensitive' } },
+        { author: { 
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { username: { contains: search, mode: 'insensitive' } }
+          ]
+        }}
       ];
     }
+    
+    // Status filter
     if (status) where.status = status;
+    
+    // Author filter
     if (authorId) where.authorId = authorId;
+    
+    // Category filter
+    if (category && category !== 'all') {
+      where.categories = {
+        some: {
+          OR: [
+            { name: { contains: category, mode: 'insensitive' } },
+            { slug: { contains: category, mode: 'insensitive' } }
+          ]
+        }
+      };
+    }
+    
+    // Public users can only see published articles
     if (!req.user) where.status = 'PUBLISHED';
+
+    // Build orderBy clause
+    let orderBy = {};
+    switch (sortBy) {
+      case 'title':
+        orderBy = { title: sortOrder };
+        break;
+      case 'viewCount':
+        orderBy = { viewCount: sortOrder };
+        break;
+      case 'publishedAt':
+        orderBy = { publishedAt: sortOrder };
+        break;
+      case 'updatedAt':
+        orderBy = { updatedAt: sortOrder };
+        break;
+      case 'author':
+        orderBy = { author: { firstName: sortOrder } };
+        break;
+      default:
+        orderBy = { createdAt: sortOrder };
+    }
 
     const [items, total] = await Promise.all([
       prisma.article.findMany({
@@ -369,12 +438,143 @@ router.get(
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       prisma.article.count({ where }),
     ]);
 
     sendSuccessResponse(res, { items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } }, 'Articles retrieved');
+  })
+);
+
+/**
+ * @swagger
+ * /articles/stats:
+ *   get:
+ *     summary: Get article statistics
+ *     tags: [Articles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: authorId
+ *         schema: { type: string }
+ *         description: Filter stats by author ID
+ *       - in: query
+ *         name: queueType
+ *         schema: { type: string, enum: [section-head, eic] }
+ *         description: Queue type for review queue stats
+ *     responses:
+ *       200:
+ *         description: Article statistics retrieved
+ *       401:
+ *         description: Unauthorized
+ */
+// Get article statistics
+router.get(
+  '/stats',
+  [
+    authenticateToken,
+    query('authorId').optional().isString(),
+    query('queueType').optional().isIn(['section-head', 'eic']),
+  ],
+  asyncHandler(async (req, res) => {
+    const { authorId, queueType } = req.query;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    let stats = {};
+
+    // Build base where clause
+    let baseWhere = {};
+    if (authorId) {
+      baseWhere.authorId = authorId;
+    }
+
+    // Role-based stats
+    if (userRole === 'STAFF') {
+      // Staff: Focus on their own content
+      const staffWhere = { ...baseWhere, authorId: userId };
+      
+      stats = {
+        totalContent: await prisma.article.count({ where: staffWhere }),
+        drafts: await prisma.article.count({ where: { ...staffWhere, status: 'DRAFT' } }),
+        inReview: await prisma.article.count({ where: { ...staffWhere, status: 'IN_REVIEW' } }),
+        needsRevision: await prisma.article.count({ where: { ...staffWhere, status: 'NEEDS_REVISION' } }),
+        published: await prisma.article.count({ where: { ...staffWhere, status: 'PUBLISHED' } }),
+        archived: await prisma.article.count({ where: { ...staffWhere, status: 'ARCHIVED' } }),
+        totalViews: await prisma.article.aggregate({
+          where: staffWhere,
+          _sum: { viewCount: true }
+        }).then(result => result._sum.viewCount || 0)
+      };
+    } else if (['EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(userRole)) {
+      // EIC and higher: All content stats
+      stats = {
+        totalContent: await prisma.article.count({ where: baseWhere }),
+        published: await prisma.article.count({ where: { ...baseWhere, status: 'PUBLISHED' } }),
+        approved: await prisma.article.count({ where: { ...baseWhere, status: 'APPROVED' } }),
+        archived: await prisma.article.count({ where: { ...baseWhere, status: 'ARCHIVED' } }),
+        totalViews: await prisma.article.aggregate({
+          where: baseWhere,
+          _sum: { viewCount: true }
+        }).then(result => result._sum.viewCount || 0),
+        avgViews: await prisma.article.aggregate({
+          where: baseWhere,
+          _avg: { viewCount: true }
+        }).then(result => Math.round(result._avg.viewCount || 0))
+      };
+    } else if (['SECTION_HEAD'].includes(userRole)) {
+      // Section Head: Review queue stats
+      if (queueType === 'section-head') {
+        stats = {
+          totalArticles: await prisma.article.count({ 
+            where: { ...baseWhere, status: { in: ['IN_REVIEW', 'NEEDS_REVISION'] } }
+          }),
+          inReview: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'IN_REVIEW' }
+          }),
+          needsRevision: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'NEEDS_REVISION' }
+          })
+        };
+      } else if (queueType === 'eic') {
+        stats = {
+          totalArticles: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'APPROVED' }
+          }),
+          readyForPublication: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'APPROVED' }
+          }),
+          needsRevision: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'NEEDS_REVISION' }
+          })
+        };
+      } else {
+        // Default section head stats
+        stats = {
+          totalArticles: await prisma.article.count({ 
+            where: { ...baseWhere, status: { in: ['IN_REVIEW', 'NEEDS_REVISION'] } }
+          }),
+          inReview: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'IN_REVIEW' }
+          }),
+          needsRevision: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'NEEDS_REVISION' }
+          })
+        };
+      }
+    } else {
+      // Default fallback
+      stats = {
+        totalContent: await prisma.article.count({ where: baseWhere }),
+        published: await prisma.article.count({ where: { ...baseWhere, status: 'PUBLISHED' } }),
+        inReview: await prisma.article.count({ where: { ...baseWhere, status: 'IN_REVIEW' } }),
+        needsRevision: await prisma.article.count({ where: { ...baseWhere, status: 'NEEDS_REVISION' } })
+      };
+    }
+
+    sendSuccessResponse(res, stats, 'Statistics retrieved');
   })
 );
 
@@ -435,6 +635,14 @@ router.get(
  *         name: search
  *         schema: { type: string }
  *       - in: query
+ *         name: sortBy
+ *         schema: { type: string, enum: [createdAt, updatedAt, submittedAt, title, author], default: submittedAt }
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema: { type: string, enum: [asc, desc], default: desc }
+ *         description: Sort order
+ *       - in: query
  *         name: page
  *         schema: { type: integer, default: 1 }
  *       - in: query
@@ -455,11 +663,13 @@ router.get(
     query('queueType').optional().isIn(['section-head', 'eic']),
     query('status').optional().isString(),
     query('search').optional().isString(),
+    query('sortBy').optional().isIn(['createdAt', 'updatedAt', 'submittedAt', 'title', 'author']),
+    query('sortOrder').optional().isIn(['asc', 'desc']),
     query('page').optional().isInt({ min: 1 }).toInt(),
     query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
   ],
   asyncHandler(async (req, res) => {
-    const { queueType, status, search, page = 1, limit = 20 } = req.query;
+    const { queueType, status, search, sortBy = 'submittedAt', sortOrder = 'desc', page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
     // Determine queue type based on user role if not specified
@@ -501,6 +711,25 @@ router.get(
     // Add status filter if specified
     if (status && status !== 'all') {
       where.status = status;
+    }
+
+    // Build orderBy clause
+    let orderBy = {};
+    switch (sortBy) {
+      case 'title':
+        orderBy = { title: sortOrder };
+        break;
+      case 'author':
+        orderBy = { author: { firstName: sortOrder } };
+        break;
+      case 'submittedAt':
+        orderBy = { createdAt: sortOrder };
+        break;
+      case 'updatedAt':
+        orderBy = { updatedAt: sortOrder };
+        break;
+      default:
+        orderBy = { createdAt: sortOrder };
     }
 
     const [articles, total] = await Promise.all([
@@ -549,7 +778,7 @@ router.get(
         },
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       prisma.article.count({ where }),
     ]);
@@ -794,6 +1023,29 @@ router.get(
             lastName: true,
             username: true
           }
+        },
+        additionalMedia: {
+          select: {
+            id: true,
+            order: true,
+            caption: true,
+            createdAt: true,
+            media: {
+              select: {
+                id: true,
+                filename: true,
+                originalName: true,
+                mimeType: true,
+                size: true,
+                url: true,
+                altText: true,
+                caption: true
+              }
+            }
+          },
+          orderBy: {
+            order: 'asc'
+          }
         }
       },
     });
@@ -1009,7 +1261,7 @@ router.patch(
       APPROVED: ['SCHEDULED', 'PUBLISHED'],
       SCHEDULED: ['PUBLISHED'],
       PUBLISHED: ['ARCHIVED'],
-      ARCHIVED: ['DRAFT'],
+      ARCHIVED: ['DRAFT', 'IN_REVIEW'],
     };
 
     // Section Heads can directly submit to EIC (skip section review)
@@ -1024,8 +1276,9 @@ router.patch(
     const data = { status };
     if (status === 'SCHEDULED' && scheduledAt) data.scheduledAt = new Date(scheduledAt);
     if (status === 'PUBLISHED') data.publishedAt = new Date();
+    if (status === 'ARCHIVED') data.archivedAt = new Date();
 
-    const updated = await prisma.article.update({ where: { id }, data, select: { id: true, status: true, publishedAt: true, scheduledAt: true } });
+    const updated = await prisma.article.update({ where: { id }, data, select: { id: true, status: true, publishedAt: true, scheduledAt: true, archivedAt: true } });
 
     sendSuccessResponse(res, updated, 'Status updated');
   })

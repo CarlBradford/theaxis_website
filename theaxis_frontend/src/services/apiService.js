@@ -144,6 +144,23 @@ export const articlesAPI = {
   incrementViewCount: async (id) => {
     const response = await api.post(`/articles/${id}/view`);
     return response.data;
+  },
+
+  // Get published content
+  getPublishedContent: async (params = {}) => {
+    const response = await api.get('/articles', { 
+      params: { 
+        ...params
+        // Remove hardcoded status: 'PUBLISHED' to allow filtering by different statuses
+      } 
+    });
+    return response.data;
+  },
+
+  // Get article statistics
+  getArticleStats: async (params = {}) => {
+    const response = await api.get('/articles/stats', { params });
+    return response.data;
   }
 };
 

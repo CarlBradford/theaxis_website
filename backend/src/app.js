@@ -18,6 +18,7 @@ const tagRoutes = require('./routes/tags');
 const categoryRoutes = require('./routes/categories');
 const editorialNoteRoutes = require('./routes/editorialNotes');
 const analyticsRoutes = require('./routes/analytics');
+const flipbookRoutes = require('../routes/flipbooks');
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -82,6 +83,10 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate limiting in development if explicitly disabled
+  skip: (req) => {
+    return process.env.NODE_ENV === 'development' && process.env.DISABLE_RATE_LIMIT === 'true';
+  },
   // Add debugging for development
   onLimitReached: (req, res, options) => {
     if (process.env.NODE_ENV === 'development') {
@@ -92,7 +97,11 @@ const limiter = rateLimit({
 
 // Log rate limit settings in development
 if (process.env.NODE_ENV === 'development') {
-  console.log(`Rate limiting: ${config.rateLimit.maxRequests} requests per ${config.rateLimit.windowMs / 1000 / 60} minutes`);
+  if (process.env.DISABLE_RATE_LIMIT === 'true') {
+    console.log('Rate limiting: DISABLED for development');
+  } else {
+    console.log(`Rate limiting: ${config.rateLimit.maxRequests} requests per ${config.rateLimit.windowMs / 1000 / 60} minutes`);
+  }
 }
 app.use('/api/', limiter);
 
@@ -128,6 +137,7 @@ app.use('/api/tags', tagRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/editorial-notes', editorialNoteRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/flipbooks', flipbookRoutes);
 
 // API documentation
 if (config.apiDocs.enabled) {
