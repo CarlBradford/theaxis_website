@@ -840,31 +840,12 @@
   }
 }
 
-/* Filter Loading Spinner */
-.published-content-filter-loading {
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-}
-
-.published-content-loading-spinner {
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--neutral-medium);
-  border-top: 2px solid var(--primary-dark);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-.published-content-filter-btn {
-  position: relative;
-}
 
 /* Upload Spinner */
 .published-content-upload-spinner {
@@ -875,4 +856,76 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-right: 8px;
+}
+
+/* Badge Styles for Online Issues */
+.published-content-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.published-content-type-badge-newsletter {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
+.published-content-type-badge-tabloid {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fbbf24;
+}
+
+.published-content-type-badge-magazine {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.published-content-type-badge-literary_folio {
+  background-color: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #a5b4fc;
+}
+
+.published-content-type-badge-art_compilation {
+  background-color: #fce7f3;
+  color: #be185d;
+  border: 1px solid #f9a8d4;
+}
+
+.published-content-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.published-content-status-badge-active {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.published-content-status-badge-active svg {
+  color: #10b981;
+}
+
+.published-content-status-badge-inactive {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.published-content-status-badge-inactive svg {
+  color: #ef4444;
 }

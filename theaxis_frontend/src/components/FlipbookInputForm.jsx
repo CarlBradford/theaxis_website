@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   XMarkIcon, 
@@ -6,20 +6,47 @@ import {
   LinkIcon,
   TagIcon,
   CalendarIcon,
-  EyeIcon
+  EyeIcon,
+  PhotoIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import '../styles/flipbook-input-form.css';
 
-const FlipbookInputForm = ({ isOpen, onClose, onSubmit }) => {
+const FlipbookInputForm = ({ isOpen, onClose, onSubmit, editData = null }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    embedLink: '',
-    type: 'magazine',
-    releaseDate: new Date().toISOString().split('T')[0]
+    name: editData?.title || '',
+    embedLink: editData?.embed_url || '',
+    type: editData?.type?.toLowerCase() || 'magazine',
+    releaseDate: editData?.releaseDate ? new Date(editData.releaseDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    thumbnailImage: null
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [imagePreview, setImagePreview] = useState(editData?.thumbnailUrl || null);
+
+  // Update form data when editData changes
+  useEffect(() => {
+    if (editData) {
+      setFormData({
+        name: editData.title || '',
+        embedLink: editData.embed_url || '',
+        type: editData.type?.toLowerCase() || 'magazine',
+        releaseDate: editData.releaseDate ? new Date(editData.releaseDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        thumbnailImage: null
+      });
+      setImagePreview(editData?.thumbnailUrl || null);
+    } else {
+      setFormData({
+        name: '',
+        embedLink: '',
+        type: 'magazine',
+        releaseDate: new Date().toISOString().split('T')[0],
+        thumbnailImage: null
+      });
+      setImagePreview(null);
+    }
+  }, [editData]);
 
   const publicationTypes = [
     { value: 'newsletter', label: 'Newsletter' },
@@ -43,33 +70,99 @@ const FlipbookInputForm = ({ isOpen, onClose, onSubmit }) => {
         [name]: ''
       }));
     }
+  };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({
+          ...prev,
+          thumbnailImage: 'Please select a valid image file'
+        }));
+        return;
+      }
+
+      // Validate file size (max 20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        setErrors(prev => ({
+          ...prev,
+          thumbnailImage: 'Image size must be less than 20MB'
+        }));
+        return;
+      }
+
+      // Update form data with file
+      setFormData(prev => ({
+        ...prev,
+        thumbnailImage: file
+      }));
+
+      // Clear any existing errors
+      if (errors.thumbnailImage) {
+        setErrors(prev => ({
+          ...prev,
+          thumbnailImage: ''
+        }));
+      }
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData(prev => ({
+      ...prev,
+      thumbnailImage: null
+    }));
+    
+    // Clear image preview for edit mode
+    setImagePreview(null);
+    
+    // Clear file input if it exists (for new file upload mode)
+    const fileInput = document.getElementById('thumbnailImage');
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
   const validateForm = () => {
     const newErrors = {};
+    console.log('🔍 Validating form with data:', formData);
 
     // Validate publication name
     if (!formData.name.trim()) {
       newErrors.name = 'Publication name is required';
+      console.log('🔍 Validation error: Publication name is required');
     } else if (formData.name.trim().length < 3) {
       newErrors.name = 'Publication name must be at least 3 characters';
+      console.log('🔍 Validation error: Publication name too short');
     } else if (formData.name.trim().length > 100) {
       newErrors.name = 'Publication name must be less than 100 characters';
+      console.log('🔍 Validation error: Publication name too long');
     }
 
     // Validate embed link
     if (!formData.embedLink.trim()) {
       newErrors.embedLink = 'Embed link is required';
+      console.log('🔍 Validation error: Embed link is required');
     } else if (!isValidUrl(formData.embedLink)) {
       newErrors.embedLink = 'Please enter a valid URL';
+      console.log('🔍 Validation error: Invalid URL');
     } else if (!isValidFlipbookUrl(formData.embedLink)) {
       newErrors.embedLink = 'Please enter a valid FlipHTML5 or flipbook URL';
+      console.log('🔍 Validation error: Invalid flipbook URL');
     }
 
     // Validate publication type
     if (!formData.type) {
       newErrors.type = 'Publication type is required';
+      console.log('🔍 Validation error: Publication type is required');
+    }
+
+    // Validate thumbnail image (required)
+    if (!formData.thumbnailImage) {
+      newErrors.thumbnailImage = 'Thumbnail image is required';
+      console.log('🔍 Validation error: Thumbnail image is required');
     }
 
     // Validate release date (optional but if provided, check it's not in the future by more than 1 year)
@@ -85,7 +178,9 @@ const FlipbookInputForm = ({ isOpen, onClose, onSubmit }) => {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const isValid = Object.keys(newErrors).length === 0;
+    console.log('🔍 Validation result:', { isValid, errors: newErrors });
+    return isValid;
   };
 
   const isValidUrl = (string) => {
@@ -124,16 +219,22 @@ const FlipbookInputForm = ({ isOpen, onClose, onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('🔍 Form submit triggered');
+    console.log('🔍 Form data:', formData);
     
     if (!validateForm()) {
+      console.log('🔍 Form validation failed');
       return;
     }
 
+    console.log('🔍 Form validation passed, submitting...');
     setIsSubmitting(true);
     setSubmitError('');
 
     try {
+      console.log('🔍 Calling onSubmit with formData:', formData);
       await onSubmit(formData);
+      console.log('🔍 onSubmit completed successfully');
       handleClose();
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -148,8 +249,10 @@ const FlipbookInputForm = ({ isOpen, onClose, onSubmit }) => {
       name: '',
       embedLink: '',
       type: 'magazine',
-      releaseDate: new Date().toISOString().split('T')[0]
+      releaseDate: new Date().toISOString().split('T')[0],
+      thumbnailImage: null
     });
+    setImagePreview(null);
     setErrors({});
     setSubmitError('');
     setIsSubmitting(false);
@@ -164,6 +267,13 @@ const FlipbookInputForm = ({ isOpen, onClose, onSubmit }) => {
 
   if (!isOpen) return null;
 
+  console.log('🔍 FlipbookInputForm render:', {
+    isOpen,
+    editData,
+    onSubmit: typeof onSubmit,
+    onClose: typeof onClose
+  });
+
   return createPortal(
     <div className="flipbook-form-overlay" onClick={handleBackdropClick}>
       <div className="flipbook-form-container">
@@ -172,7 +282,7 @@ const FlipbookInputForm = ({ isOpen, onClose, onSubmit }) => {
           <div className="flipbook-form-title-section">
             <DocumentTextIcon className="flipbook-form-icon" />
             <div>
-              <h2 className="flipbook-form-title">Publish Online Issue</h2>
+              <h2 className="flipbook-form-title">{editData ? 'Edit Online Issue' : 'Publish Online Issue'}</h2>
               <p className="flipbook-form-subtitle">Enter publication details and embed link</p>
             </div>
           </div>
@@ -292,6 +402,75 @@ const FlipbookInputForm = ({ isOpen, onClose, onSubmit }) => {
             </div>
            </div>
 
+           {/* Thumbnail Image Upload */}
+           <div className="flipbook-form-field flipbook-form-field-full">
+             <label htmlFor="thumbnailImage" className="flipbook-form-label">
+               <PhotoIcon className="w-4 h-4" />
+               Thumbnail Image <span className="flipbook-form-required">*</span>
+             </label>
+             
+             {formData.thumbnailImage ? (
+               <div className="flipbook-form-file-selected">
+                 <div className="flipbook-form-file-info">
+                   <PhotoIcon className="w-5 h-5" />
+                   <span className="flipbook-form-file-name">{formData.thumbnailImage.name}</span>
+                   <span className="flipbook-form-file-size">
+                     ({(formData.thumbnailImage.size / (1024 * 1024)).toFixed(2)} MB)
+                   </span>
+                 </div>
+                 <button
+                   type="button"
+                   onClick={handleRemoveImage}
+                   className="flipbook-form-remove-file-btn"
+                   title="Remove file"
+                 >
+                   <TrashIcon className="w-4 h-4" />
+                 </button>
+               </div>
+             ) : imagePreview ? (
+               <div className="flipbook-form-file-selected">
+                 <div className="flipbook-form-file-info">
+                   <PhotoIcon className="w-5 h-5" />
+                   <span className="flipbook-form-file-name">
+                     {imagePreview.split('/').pop() || 'Current thumbnail'}
+                   </span>
+                   <span className="flipbook-form-file-size">
+                     (Current image)
+                   </span>
+                 </div>
+                 <div className="flipbook-form-file-actions">
+                   <button
+                     type="button"
+                     onClick={handleRemoveImage}
+                     className="flipbook-form-change-image-btn"
+                     title="Remove current image"
+                   >
+                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                     </svg>
+                   </button>
+                 </div>
+               </div>
+             ) : (
+               <div className="flipbook-form-image-upload">
+                 <input
+                   type="file"
+                   id="thumbnailImage"
+                   name="thumbnailImage"
+                   accept="image/*"
+                   onChange={handleImageUpload}
+                   className="flipbook-form-file-input"
+                 />
+                 <label htmlFor="thumbnailImage" className="flipbook-form-file-label">
+                   <span>Upload thumbnail image</span>
+                   <small>PNG, JPG, GIF up to 20MB</small>
+                 </label>
+               </div>
+             )}
+             
+             {errors.thumbnailImage && <span className="flipbook-form-error">{errors.thumbnailImage}</span>}
+           </div>
+
            {/* Submit Error */}
           {submitError && (
             <div className="flipbook-form-submit-error">
@@ -316,11 +495,11 @@ const FlipbookInputForm = ({ isOpen, onClose, onSubmit }) => {
             >
               {isSubmitting ? (
                 <>
-                  <div className="flipbook-form-spinner"></div>
+                  <div className="uniform-spinner-small"></div>
                   Publishing...
                 </>
               ) : (
-                'Publish Online Issue'
+                editData ? 'Update Online Issue' : 'Publish Online Issue'
               )}
             </button>
           </div>

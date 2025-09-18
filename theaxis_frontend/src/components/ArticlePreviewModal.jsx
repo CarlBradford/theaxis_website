@@ -1,5 +1,5 @@
 import React from 'react';
-import { XMarkIcon, CalendarIcon, UserIcon, TagIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, CalendarIcon, UserIcon, TagIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 
 const ArticlePreviewModal = ({ isOpen, onClose, articleData }) => {
   if (!isOpen) return null;
@@ -87,7 +87,7 @@ const ArticlePreviewModal = ({ isOpen, onClose, articleData }) => {
           </div>
 
           {/* Featured Media (Image or Video) */}
-          {articleData.featuredImage && (
+          {articleData.featuredImage ? (
             <div className="article-preview-featured-image">
               {(() => {
                 const mediaUrl = articleData.featuredImage;
@@ -130,6 +130,11 @@ const ArticlePreviewModal = ({ isOpen, onClose, articleData }) => {
                   {articleData.mediaCaption}
                 </p>
               )}
+            </div>
+          ) : (
+            <div className="article-preview-placeholder">
+              <DocumentTextIcon className="article-preview-placeholder-icon" />
+              <p className="article-preview-placeholder-text">No featured image</p>
             </div>
           )}
 

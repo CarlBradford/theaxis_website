@@ -179,6 +179,46 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Search Loading Spinner */
+.review-queue-search-loading {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.review-queue-search-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--background-gray);
+  border-top: 2px solid var(--primary-light);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Filter Loading Spinner */
+.review-queue-filter-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.review-queue-filter-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--background-gray);
+  border-top: 2px solid var(--primary-light);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
 .review-queue-search-icon {
   position: absolute;
   left: 12px;
@@ -227,6 +267,15 @@
 .review-queue-filter-btn.active:hover {
   background-color: var(--primary-light);
   border-color: var(--primary-light);
+}
+
+.review-queue-filter-btn.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.review-queue-filter-btn.loading .review-queue-filter-icon {
+  opacity: 0.3;
 }
 
 .review-queue-filter-icon {
@@ -557,17 +606,26 @@
   color: var(--text-primary);
 }
 
+/* Status Container */
+.review-queue-status-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
 /* Status Badge */
 .review-queue-status-badge {
-  display: inline-block;
-  padding: 3px 6px;
-  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   color: var(--background-white);
-  margin-bottom: 3px;
 }
 
 /* Status cell wrapper for proper vertical stacking */
@@ -660,6 +718,31 @@
   border-top: 3px solid var(--primary-light);
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+/* Uniform Loading Animation (used in component) */
+.uniform-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  gap: 16px;
+}
+
+.uniform-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--background-gray);
+  border-top: 3px solid var(--primary-light);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.uniform-loading-text {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
 }
 
 @keyframes spin {
@@ -1071,6 +1154,80 @@
   font-size: 16px;
   color: #374151;
   margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.simple-publish-details {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.simple-publish-note {
+  font-size: 14px;
+  color: #10b981;
+  margin: 0;
+  font-weight: 500;
+}
+
+.simple-publish-modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 0 24px 24px 24px;
+}
+
+.simple-publish-modal-button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.simple-publish-modal-button.cancel {
+  background-color: #f9fafb;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.simple-publish-modal-button.cancel:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.simple-publish-modal-button.publish {
+  background-color: var(--success-color);
+  color: var(--background-white);
+  border-color: var(--success-color);
+}
+
+.simple-publish-modal-button.publish:hover {
+  background-color: var(--success-dark);
+  border-color: var(--success-dark);
+}
+
+/* Mobile responsive for publish modal */
+@media (max-width: 480px) {
+  .simple-publish-modal {
+    max-width: 95vw;
+    margin: 10px;
+  }
+  
+  .simple-publish-modal-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .simple-publish-modal-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
   line-height: 1.5;
 }
 

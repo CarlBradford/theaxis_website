@@ -63,11 +63,13 @@ const Sidebar = () => {
           name: 'My Content',
           href: '/content/mycontent',
           permission: 'article:read',
+          hideForRoles: ['ADVISER'], // Hide for advisers
         },
         {
           name: 'Content Status',
           href: '/content/status',
           permission: 'article:read',
+          hideForRoles: ['ADVISER'], // Hide for advisers
         },
         {
           name: 'Review Queue',
@@ -107,9 +109,17 @@ const Sidebar = () => {
     return hasPermission(user?.role, item.permission);
   }).map(item => ({
     ...item,
-    subItems: item.subItems?.filter(subItem => 
-      !subItem.permission || hasPermission(user?.role, subItem.permission)
-    )
+    subItems: item.subItems?.filter(subItem => {
+      // Check permission first
+      if (subItem.permission && !hasPermission(user?.role, subItem.permission)) {
+        return false;
+      }
+      // Check if item should be hidden for current user's role
+      if (subItem.hideForRoles && subItem.hideForRoles.includes(user?.role)) {
+        return false;
+      }
+      return true;
+    })
   }));
 
   const isActive = (href) => {

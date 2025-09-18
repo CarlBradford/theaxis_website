@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ROLE_DISPLAY_NAMES } from '../config/permissions';
+import { NotificationBell } from './NotificationBell';
 import '../styles/dashboard.css';
 
 const Navbar = () => {
@@ -29,8 +30,11 @@ const Navbar = () => {
         {getPageTitle()}
       </h1>
 
-      {/* Right side - User Profile */}
+      {/* Right side - Notifications and User Profile */}
       <div className="navbar-right">
+        {/* Notifications */}
+        {isAuthenticated && <NotificationBell />}
+        
         {/* User Profile */}
         {isAuthenticated ? (
           <Link 

@@ -357,19 +357,20 @@ const ContentStatus = () => {
     setSelectedStatus(status);
   };
 
+  // Show uniform loading animation during transitions
   if (loading) {
     return (
       <div className="content-status-container">
-        <div className="content-status-loading">
-          <div className="content-status-spinner"></div>
-          <p>Loading content status...</p>
+        <div className="uniform-loading">
+          <div className="uniform-spinner"></div>
+          <p className="uniform-loading-text">Loading content status...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="content-status-container">
+      <div className="content-status-container">
       {/* Header */}
       <div className="content-status-header">
         <div className="content-status-title-section">
@@ -463,7 +464,7 @@ const ContentStatus = () => {
                   {filteredArticles.filter(a => a.status === 'archived').length}
                 </span>
                 <span className="content-status-stat-label">Archived</span>
-              </div>
+        </div>
             </>
           ) : (
             // Default fallback
@@ -471,28 +472,28 @@ const ContentStatus = () => {
               <div className="content-status-stat">
                 <span className="content-status-stat-number">{filteredArticles.length}</span>
                 <span className="content-status-stat-label">Total Content</span>
-              </div>
+          </div>
               <div className="content-status-stat-separator"></div>
               <div className="content-status-stat">
                 <span className="content-status-stat-number">
-                  {filteredArticles.filter(a => a.status === 'published').length}
-                </span>
+              {filteredArticles.filter(a => a.status === 'published').length}
+            </span>
                 <span className="content-status-stat-label">Published</span>
-              </div>
+          </div>
               <div className="content-status-stat-separator"></div>
               <div className="content-status-stat">
                 <span className="content-status-stat-number">
-                  {filteredArticles.filter(a => a.status === 'in_review').length}
-                </span>
+              {filteredArticles.filter(a => a.status === 'in_review').length}
+            </span>
                 <span className="content-status-stat-label">Under Review</span>
-              </div>
+          </div>
               <div className="content-status-stat-separator"></div>
               <div className="content-status-stat">
                 <span className="content-status-stat-number">
-                  {filteredArticles.filter(a => a.status === 'needs_revision').length}
-                </span>
+              {filteredArticles.filter(a => a.status === 'needs_revision').length}
+            </span>
                 <span className="content-status-stat-label">Needs Revision</span>
-              </div>
+          </div>
             </>
           )}
         </div>
@@ -556,7 +557,7 @@ const ContentStatus = () => {
                 onChange={(e) => handleFilterChange(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">All Content ({getFilterCount('all')})</span>
+              <span className="filter-modal-radio-label">All Content</span>
             </label>
             <label className={`filter-modal-radio-item ${selectedStatus === 'published' ? 'selected' : ''}`}>
               <input
@@ -567,7 +568,7 @@ const ContentStatus = () => {
                 onChange={(e) => handleFilterChange(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Published ({getFilterCount('published')})</span>
+              <span className="filter-modal-radio-label">Published</span>
             </label>
             <label className={`filter-modal-radio-item ${selectedStatus === 'draft' ? 'selected' : ''}`}>
               <input
@@ -578,7 +579,7 @@ const ContentStatus = () => {
                 onChange={(e) => handleFilterChange(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Drafts ({getFilterCount('draft')})</span>
+              <span className="filter-modal-radio-label">Drafts</span>
             </label>
             <label className={`filter-modal-radio-item ${selectedStatus === 'in_review' ? 'selected' : ''}`}>
               <input
@@ -589,7 +590,7 @@ const ContentStatus = () => {
                 onChange={(e) => handleFilterChange(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Under Review ({getFilterCount('in_review')})</span>
+              <span className="filter-modal-radio-label">Under Review</span>
             </label>
             <label className={`filter-modal-radio-item ${selectedStatus === 'needs_revision' ? 'selected' : ''}`}>
               <input
@@ -600,7 +601,7 @@ const ContentStatus = () => {
               onChange={(e) => handleFilterChange(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Needs Revision ({getFilterCount('needs_revision')})</span>
+              <span className="filter-modal-radio-label">Needs Revision</span>
             </label>
           </div>
       </div>
@@ -777,12 +778,12 @@ const ContentStatus = () => {
                    <div className="content-status-article-info">
                      <h4 className="content-status-article-title">{article.title}</h4>
                      <div className="content-status-article-meta">
-                       {article.categories.length > 0 && (
-                         <>
+                      {article.categories.length > 0 && (
+                        <>
                            <div className="content-status-article-top-line">
                              <span className="content-status-article-category">
-                               {article.categories[0].name}
-                             </span>
+                            {article.categories[0].name}
+                          </span>
                              <span className="content-status-article-separator">•</span>
                              <span className="content-status-article-word-count">
                                {article.wordCount} words
@@ -795,24 +796,24 @@ const ContentStatus = () => {
                            <span className="content-status-article-author">
                              By {article.author.name}
                            </span>
-                         </>
-                       )}
+                        </>
+                      )}
                        {article.categories.length === 0 && (
                          <span className="content-status-article-author">
-                           By {article.author.name}
-                         </span>
+                        By {article.author.name}
+                      </span>
                        )}
-                     </div>
+                    </div>
                      <div className="content-status-article-tags">
-                       {article.tags.slice(0, 3).map((tag, index) => (
+                      {article.tags.slice(0, 3).map((tag, index) => (
                          <span key={index} className="content-status-tag">{tag.name}</span>
-                       ))}
-                       {article.tags.length > 3 && (
+                      ))}
+                      {article.tags.length > 3 && (
                          <span className="content-status-tag-more">+{article.tags.length - 3} more</span>
-                       )}
-                     </div>
-                   </div>
-                 </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                 <div className="content-status-table-cell status-cell">
                   <div className="content-status-status-container">

@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { 
+  DocumentTextIcon, 
+  ClockIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  CalendarIcon
+} from '@heroicons/react/24/outline';
 import '../styles/review-queue.css';
 import '../styles/filter-modal.css';
 import { reviewQueueService } from '../services/reviewQueueService';
 import { articlesAPI } from '../services/apiService';
+import { useNotifications } from './NotificationBell';
 import ConfirmationModal from './ConfirmationModal';
 import ArticlePreviewModal from './ArticlePreviewModal';
 import SuccessModal from './SuccessModal';
@@ -15,12 +23,13 @@ import FilterModal from './FilterModal';
 
 const ReviewQueue = ({ queueType = 'section-head' }) => {
   const navigate = useNavigate();
+  const { addNotification } = useNotifications();
   const [articles, setArticles] = useState([]);
   const [filteredArticles, setFilteredArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('submittedAt');
   const [sortOrder, setSortOrder] = useState('desc');
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -62,11 +71,11 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
   useEffect(() => {
     const loadArticles = async () => {
       try {
-        setLoading(true);
         setError(null);
         const response = await reviewQueueService.getReviewQueue(queueType, {
           status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
           search: searchTerm || undefined,
+          category: selectedCategory !== 'all' ? selectedCategory : undefined,
           sortBy: sortBy,
           sortOrder: sortOrder
         });
@@ -81,13 +90,11 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
         // Fallback to empty array on error
         setArticles([]);
         setFilteredArticles([]);
-      } finally {
-        setLoading(false);
       }
     };
 
     loadArticles();
-  }, [queueType, selectedStatus, searchTerm, sortBy, sortOrder]);
+  }, [queueType, selectedStatus, selectedCategory, searchTerm, sortBy, sortOrder]);
 
   // No need for frontend filtering/sorting since we're using database operations
 
@@ -129,7 +136,6 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
     };
 
     try {
-      setLoading(true);
       const result = await reviewQueueService.bulkUpdateArticles(selectedArticles, pendingBulkAction);
       
       console.log(`Bulk action ${pendingBulkAction} completed:`, result);
@@ -148,7 +154,8 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       // Refresh articles after bulk action
       const response = await reviewQueueService.getReviewQueue(queueType, {
         status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
-        search: searchTerm || undefined
+        search: searchTerm || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
@@ -159,7 +166,6 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       console.error('Error performing bulk action:', error);
       alert(`Error performing bulk action: ${error.response?.data?.message || error.message}`);
     } finally {
-      setLoading(false);
       setShowConfirmationModal(false);
       setPendingBulkAction(null);
     }
@@ -277,6 +283,15 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       await reviewQueueService.updateArticleStatus(articleToApprove.id, 'approve-to-eic');
       console.log(`Article ${articleToApprove.id} approved for EIC review`);
       
+      // Add notification for article approval
+      addNotification({
+        type: 'approval',
+        title: 'Article Approved',
+        message: `Your article "${articleToApprove.title}" has been approved by Section Head and forwarded to Editor-in-Chief for final review.`,
+        articleTitle: articleToApprove.title,
+        articleId: articleToApprove.id
+      });
+      
       // Show success message
       setSuccessMessage(`Successfully approved "${articleToApprove.title}" for EIC review`);
       setShowSuccessModal(true);
@@ -284,7 +299,8 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       // Refresh articles after action
       const response = await reviewQueueService.getReviewQueue(queueType, {
         status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
-        search: searchTerm || undefined
+        search: searchTerm || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
@@ -329,6 +345,15 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       await reviewQueueService.updateArticleStatus(articleToRevise.id, 'request-revision', feedback);
       console.log(`Article ${articleToRevise.id} sent for revision`);
       
+      // Add notification for revision request
+      addNotification({
+        type: 'rejection',
+        title: 'Revision Required',
+        message: `Your article "${articleToRevise.title}" needs revision. ${feedback ? `Feedback: ${feedback}` : 'Please check the feedback section for details.'}`,
+        articleTitle: articleToRevise.title,
+        articleId: articleToRevise.id
+      });
+      
       // Show success message
       setSuccessMessage(`Successfully sent "${articleToRevise.title}" back for revision`);
       setShowSuccessModal(true);
@@ -336,7 +361,8 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       // Refresh articles after action
       const response = await reviewQueueService.getReviewQueue(queueType, {
         status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
-        search: searchTerm || undefined
+        search: searchTerm || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
@@ -390,6 +416,15 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       await reviewQueueService.updateArticleStatus(articleToPublish.id, 'publish');
       console.log(`Article ${articleToPublish.id} published`);
       
+      // Add notification for article publication
+      addNotification({
+        type: 'approval',
+        title: 'Article Published',
+        message: `Congratulations! Your article "${articleToPublish.title}" has been published and is now live.`,
+        articleTitle: articleToPublish.title,
+        articleId: articleToPublish.id
+      });
+      
       // Show success message
       setSuccessMessage(`Successfully published "${articleToPublish.title}"`);
       setShowSuccessModal(true);
@@ -397,7 +432,8 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       // Refresh articles after action
       const response = await reviewQueueService.getReviewQueue(queueType, {
         status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
-        search: searchTerm || undefined
+        search: searchTerm || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
@@ -442,6 +478,15 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       await reviewQueueService.updateArticleStatus(articleToReturn.id, 'return-to-section', feedback);
       console.log(`Article ${articleToReturn.id} returned to section head`);
       
+      // Add notification for article return
+      addNotification({
+        type: 'return',
+        title: 'Article Returned',
+        message: `Your article "${articleToReturn.title}" has been returned to Section Head for further review. ${feedback ? `Feedback: ${feedback}` : ''}`,
+        articleTitle: articleToReturn.title,
+        articleId: articleToReturn.id
+      });
+      
       // Show success message
       setSuccessMessage(`Successfully returned "${articleToReturn.title}" to section head`);
       setShowSuccessModal(true);
@@ -449,7 +494,8 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       // Refresh articles after action
       const response = await reviewQueueService.getReviewQueue(queueType, {
         status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
-        search: searchTerm || undefined
+        search: searchTerm || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
@@ -501,7 +547,8 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       // Refresh articles after action
       const response = await reviewQueueService.getReviewQueue(queueType, {
         status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
-        search: searchTerm || undefined
+        search: searchTerm || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
@@ -580,7 +627,8 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       // Refresh articles after action
       const response = await reviewQueueService.getReviewQueue(queueType, {
         status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
-        search: searchTerm || undefined
+        search: searchTerm || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined
       });
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
@@ -604,6 +652,48 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
     return colors[status] || '#6b7280';
   };
 
+  const getStatusLabel = (status) => {
+    switch (status.toLowerCase()) {
+      case 'published':
+        return 'Published';
+      case 'in-review':
+        return 'Under Review';
+      case 'draft':
+        return 'Draft';
+      case 'needs-revision':
+        return 'Needs Revision';
+      case 'approved':
+        return 'Approved';
+      case 'scheduled':
+        return 'Scheduled';
+      case 'archived':
+        return 'Archived';
+      default:
+        return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status.toLowerCase()) {
+      case 'published':
+        return <CheckCircleIcon className="w-4 h-4" />;
+      case 'in-review':
+        return <ClockIcon className="w-4 h-4" />;
+      case 'draft':
+        return <DocumentTextIcon className="w-4 h-4" />;
+      case 'needs-revision':
+        return <ExclamationTriangleIcon className="w-4 h-4" />;
+      case 'approved':
+        return <CheckCircleIcon className="w-4 h-4" />;
+      case 'scheduled':
+        return <CalendarIcon className="w-4 h-4" />;
+      case 'archived':
+        return <DocumentTextIcon className="w-4 h-4" />;
+      default:
+        return <DocumentTextIcon className="w-4 h-4" />;
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -614,16 +704,6 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="review-queue-container">
-        <div className="review-queue-loading">
-          <div className="review-queue-spinner"></div>
-          <p>Loading review queue...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="review-queue-container">
@@ -717,9 +797,8 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
               <button
                 className="review-queue-bulk-btn"
                 onClick={() => handleBulkAction('publish')}
-                disabled={loading}
               >
-                {loading ? 'Publishing...' : 'Publish Articles'}
+                Publish Articles
                   </button>
             </div>
           )}
@@ -734,11 +813,145 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
         onApply={() => setShowFilterModal(false)}
         onClear={() => {
           setSelectedStatus('all');
+          setSelectedCategory('all');
           setSortBy('submittedAt');
           setSortOrder('desc');
         }}
       >
-        {/* Left Column */}
+        {/* Left Column - Category */}
+        <div className="filter-modal-section">
+          <h4 className="filter-modal-section-title">Category</h4>
+          <div className="filter-modal-radio-group">
+            <label className={`filter-modal-radio-item ${selectedCategory === 'all' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="category"
+                value="all"
+                checked={selectedCategory === 'all'}
+                onChange={(e) => {
+                  console.log('Category filter changed to:', e.target.value);
+                  setSelectedCategory(e.target.value);
+                }}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">All Categories</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedCategory === 'Development Communication' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="category"
+                value="Development Communication"
+                checked={selectedCategory === 'Development Communication'}
+                onChange={(e) => {
+                  console.log('Category filter changed to:', e.target.value);
+                  setSelectedCategory(e.target.value);
+                }}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Development Communication</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedCategory === 'Editorial' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="category"
+                value="Editorial"
+                checked={selectedCategory === 'Editorial'}
+                onChange={(e) => {
+                  console.log('Category filter changed to:', e.target.value);
+                  setSelectedCategory(e.target.value);
+                }}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Editorial</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedCategory === 'Feature' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="category"
+                value="Feature"
+                checked={selectedCategory === 'Feature'}
+                onChange={(e) => {
+                  console.log('Category filter changed to:', e.target.value);
+                  setSelectedCategory(e.target.value);
+                }}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Feature</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedCategory === 'Literary' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="category"
+                value="Literary"
+                checked={selectedCategory === 'Literary'}
+                onChange={(e) => {
+                  console.log('Category filter changed to:', e.target.value);
+                  setSelectedCategory(e.target.value);
+                }}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Literary</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedCategory === 'News' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="category"
+                value="News"
+                checked={selectedCategory === 'News'}
+                onChange={(e) => {
+                  console.log('Category filter changed to:', e.target.value);
+                  setSelectedCategory(e.target.value);
+                }}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">News</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedCategory === 'Opinion' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="category"
+                value="Opinion"
+                checked={selectedCategory === 'Opinion'}
+                onChange={(e) => {
+                  console.log('Category filter changed to:', e.target.value);
+                  setSelectedCategory(e.target.value);
+                }}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Opinion</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedCategory === 'Sports' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="category"
+                value="Sports"
+                checked={selectedCategory === 'Sports'}
+                onChange={(e) => {
+                  console.log('Category filter changed to:', e.target.value);
+                  setSelectedCategory(e.target.value);
+                }}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">Sports</span>
+            </label>
+            <label className={`filter-modal-radio-item ${selectedCategory === 'The AXIS Online' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="category"
+                value="The AXIS Online"
+                checked={selectedCategory === 'The AXIS Online'}
+                onChange={(e) => {
+                  console.log('Category filter changed to:', e.target.value);
+                  setSelectedCategory(e.target.value);
+                }}
+                className="filter-modal-radio-input"
+              />
+              <span className="filter-modal-radio-label">The AXIS Online</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Right Column - Status */}
         <div className="filter-modal-section">
           <h4 className="filter-modal-section-title">Status</h4>
           <div className="filter-modal-radio-group">
@@ -808,7 +1021,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
           </div>
         </div>
 
-        {/* Right Column */}
+        {/* Right Column - Sort By */}
         <div className="filter-modal-section">
           <h4 className="filter-modal-section-title">Sort By</h4>
           <div className="filter-modal-radio-group">
@@ -848,6 +1061,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
           </div>
         </div>
 
+        {/* Right Column - Order */}
         <div className="filter-modal-section">
           <h4 className="filter-modal-section-title">Order</h4>
           <div className="filter-modal-radio-group">
@@ -998,18 +1212,16 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                 </div>
 
                 <div className="review-queue-table-cell">
+                  <div className="review-queue-status-container">
                   <span
                     className="review-queue-status-badge"
                     style={{ backgroundColor: getStatusColor(article.status) }}
                   >
-                    {article.status === 'draft' ? 'Draft' :
-                     article.status === 'in-review' ? 'In Review' :
-                     article.status === 'needs-revision' ? 'Needs Revision' :
-                     article.status === 'approved' ? 'Approved' :
-                     article.status === 'scheduled' ? 'Scheduled' :
-                     article.status === 'published' ? 'Published' :
-                     article.status === 'archived' ? 'Archived' : article.status}
+                      {getStatusIcon(article.status)}
+                      {getStatusLabel(article.status)}
                   </span>
+                    
+                    {/* Show reviewer information for relevant statuses */}
                   {article.status === 'approved' && (
                     <div className="review-queue-reviewer">
                       <span className="review-queue-reviewer-label">Approved by:</span>
@@ -1043,6 +1255,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                       </span>
                     </div>
                   )}
+                  </div>
                 </div>
 
                 <div className="review-queue-table-cell">
@@ -1056,7 +1269,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                     <button
                       className="review-queue-action-btn"
                       onClick={() => handleArticleAction(article.id, 'view')}
-                      title="View Article"
+                      title="View Content"
                     >
                       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1093,7 +1306,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                         <button
                           className="review-queue-action-btn"
                           onClick={() => handlePublishClick(article)}
-                          title="Publish Article"
+                          title="Publish Content"
                         >
                           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -1150,7 +1363,6 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
         confirmText="Publish Articles"
         cancelText="Cancel"
         type="warning"
-        isLoading={loading}
       />
 
       {/* Preview Modal */}
@@ -1168,7 +1380,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
         <div className="simple-approve-modal-overlay">
           <div className="simple-approve-modal">
             <div className="simple-approve-modal-header">
-              <h3 className="simple-approve-modal-title">Approve Article</h3>
+              <h3 className="simple-approve-modal-title">Approve Content</h3>
               <button
                 onClick={cancelApprove}
                 className="simple-approve-modal-close"
@@ -1256,7 +1468,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
         <div className="simple-publish-modal-overlay">
           <div className="simple-publish-modal">
             <div className="simple-publish-modal-header">
-              <h3 className="simple-publish-modal-title">Publish Article</h3>
+              <h3 className="simple-publish-modal-title">Publish Content</h3>
               <button
                 onClick={cancelPublish}
                 className="simple-publish-modal-close"
@@ -1275,7 +1487,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                 Author: {articleToPublish.author} • Category: {articleToPublish.category}
               </p>
               <p className="simple-publish-note">
-                This will make the article live and visible to readers. This action cannot be undone.
+                This will make the content live and visible to readers. This action cannot be undone.
               </p>
             </div>
             
@@ -1290,7 +1502,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                 onClick={confirmPublish}
                 className="simple-publish-modal-button publish"
               >
-                Publish Article
+                Publish Content
               </button>
             </div>
           </div>

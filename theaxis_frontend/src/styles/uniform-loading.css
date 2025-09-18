@@ -1,0 +1,192 @@
+/* Uniform Loading Animation System */
+/* Following the project's design system and color scheme */
+
+/* Color Variables */
+:root {
+  --primary-dark: #1c4643;
+  --primary-light: #215d55;
+  --neutral-light: #fefefe;
+  --neutral-medium: #c2c1be;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --info-color: #3b82f6;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --background-white: #ffffff;
+  --background-gray: #f9fafb;
+}
+
+/* Universal Loading Container */
+.uniform-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  min-height: 200px;
+}
+
+/* Universal Spinner */
+.uniform-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--background-gray);
+  border-top: 3px solid var(--primary-light);
+  border-radius: 50%;
+  animation: uniform-spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+/* Universal Spin Animation */
+@keyframes uniform-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Loading Text */
+.uniform-loading-text {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Small Spinner for Buttons */
+.uniform-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  animation: uniform-spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+/* Medium Spinner for Modals */
+.uniform-spinner-medium {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-light);
+  border-radius: 50%;
+  animation: uniform-spin 1s linear infinite;
+}
+
+/* Large Spinner for Full Page Loading */
+.uniform-spinner-large {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border-color);
+  border-top: 4px solid var(--primary-light);
+  border-radius: 50%;
+  animation: uniform-spin 1s linear infinite;
+  margin-bottom: 24px;
+}
+
+/* Loading States for Different Contexts */
+.uniform-loading-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: var(--background-white);
+}
+
+.uniform-loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  min-height: 300px;
+}
+
+.uniform-loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: var(--background-white);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.uniform-loading-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .uniform-loading {
+    padding: 40px 16px;
+    min-height: 150px;
+  }
+  
+  .uniform-spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+  }
+  
+  .uniform-spinner-large {
+    width: 40px;
+    height: 40px;
+    border-width: 3px;
+  }
+  
+  .uniform-loading-text {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .uniform-loading {
+    padding: 30px 12px;
+    min-height: 120px;
+  }
+  
+  .uniform-spinner {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .uniform-spinner-large {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .uniform-loading-text {
+    font-size: 13px;
+  }
+}
+
+/* Animation Performance */
+.uniform-spinner,
+.uniform-spinner-small,
+.uniform-spinner-medium,
+.uniform-spinner-large {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .uniform-spinner,
+  .uniform-spinner-small,
+  .uniform-spinner-medium,
+  .uniform-spinner-large {
+    animation: none;
+    border-top-color: var(--primary-light);
+  }
+}
+
+

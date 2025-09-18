@@ -60,7 +60,7 @@
 }
 
 .filter-modal-content {
-  padding: 16px 20px;
+  padding: 12px 16px;
   overflow-y: auto;
   flex: 1;
 }
@@ -68,7 +68,15 @@
 .filter-modal-sections-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 12px;
+  align-items: start;
+}
+
+/* Category section - 2x2 grid layout */
+.filter-modal-section:first-child .filter-modal-radio-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
 }
 
 /* Override for vertical layout */
@@ -84,18 +92,43 @@
 }
 
 .filter-modal-section {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .filter-modal-section:last-child {
   margin-bottom: 0;
 }
 
+/* Layout positioning */
+.filter-modal-sections-grid .filter-modal-section:nth-child(1) {
+  /* Category - Full width, row 1 */
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.filter-modal-sections-grid .filter-modal-section:nth-child(2) {
+  /* Status - Left column, row 2 */
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.filter-modal-sections-grid .filter-modal-section:nth-child(3) {
+  /* Sort By - Right column, row 2 */
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.filter-modal-sections-grid .filter-modal-section:nth-child(4) {
+  /* Order - Left column, row 3 */
+  grid-column: 1;
+  grid-row: 3;
+}
+
 .filter-modal-section-title {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary, #6b7280);
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -103,15 +136,15 @@
 .filter-modal-radio-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .filter-modal-radio-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 6px;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid transparent;

@@ -21,7 +21,8 @@ import {
   FunnelIcon,
   ChartBarIcon,
   TrashIcon,
-  CloudArrowUpIcon
+  CloudArrowUpIcon,
+  PowerIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../hooks/useAuth';
 import FilterModal from '../components/FilterModal';
@@ -34,6 +35,12 @@ import '../styles/flipbook-input-form.css';
 const PublishedContent = () => {
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
+  
+  // Debug: Log current user info
+  console.log('🔍 PublishedContent Debug:');
+  console.log('   Current user:', user);
+  console.log('   User role:', user?.role);
+  console.log('   User role uppercase:', user?.role?.toUpperCase());
   
   const [articles, setArticles] = useState([]);
   const [filteredArticles, setFilteredArticles] = useState([]);
@@ -57,9 +64,8 @@ const PublishedContent = () => {
   const [filterCounts, setFilterCounts] = useState({
     published: 0,
     archived: 0,
-    annual_editions: 0
+    online_issues: 0
   });
-  const [filterLoading, setFilterLoading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [stats, setStats] = useState({
@@ -72,6 +78,12 @@ const PublishedContent = () => {
   const [showFlipbookModal, setShowFlipbookModal] = useState(false);
   const [showFlipbookForm, setShowFlipbookForm] = useState(false);
   const [currentFlipbook, setCurrentFlipbook] = useState(null);
+  const [flipbooks, setFlipbooks] = useState([]);
+  const [flipbooksLoading, setFlipbooksLoading] = useState(false);
+  const [showDeleteFlipbookModal, setShowDeleteFlipbookModal] = useState(false);
+  const [flipbookToDelete, setFlipbookToDelete] = useState(null);
+  const [showToggleFlipbookModal, setShowToggleFlipbookModal] = useState(false);
+  const [flipbookToToggle, setFlipbookToToggle] = useState(null);
 
   // Load categories from API
   useEffect(() => {
@@ -103,15 +115,93 @@ const PublishedContent = () => {
     loadCategories();
   }, []);
 
+  // Load flipbooks from API
+  const loadFlipbooks = async (filters = {}) => {
+    try {
+      setFlipbooksLoading(true);
+      console.log('🔍 Loading flipbooks with filters:', filters);
+      
+      // Build API parameters for flipbooks
+      const params = {};
+      
+      // Add search parameter
+      if (filters.search && filters.search.trim()) {
+        params.search = filters.search.trim();
+      }
+      
+      // Add type filter (map from category to flipbook type)
+      if (filters.category && filters.category !== 'all') {
+        // Map category names to flipbook types
+        const categoryToTypeMap = {
+          'Newsletter': 'NEWSLETTER',
+          'Tabloid': 'TABLOID', 
+          'Magazine': 'MAGAZINE',
+          'Literary Folio': 'LITERARY_FOLIO',
+          'Art Compilation': 'ART_COMPILATION'
+        };
+        
+        if (categoryToTypeMap[filters.category]) {
+          params.type = categoryToTypeMap[filters.category];
+        }
+      }
+      
+      // Add sorting parameters
+      if (filters.sortBy) {
+        // Map article sort fields to flipbook sort fields
+        const sortFieldMap = {
+          'publishedAt': 'createdAt',
+          'createdAt': 'createdAt',
+          'updatedAt': 'createdAt', // Flipbooks don't have updatedAt, use createdAt
+          'title': 'title', // Use 'title' for flipbook name sorting
+          'type': 'type',
+          'isActive': 'isActive',
+          'author': 'title', // Sort by name for flipbooks
+          'viewCount': 'createdAt' // Flipbooks don't have viewCount, use createdAt
+        };
+        params.sortBy = sortFieldMap[filters.sortBy] || 'createdAt';
+      }
+      
+      if (filters.sortOrder) {
+        params.sortOrder = filters.sortOrder;
+      }
+      
+      console.log('🔍 Flipbook API params:', params);
+      const response = await flipbookService.getFlipbooks(params);
+      console.log('🔍 Flipbooks API response:', response);
+      console.log('🔍 Response data:', response.data);
+      
+      const flipbooksData = response.data?.items || [];
+      console.log('🔍 Number of flipbooks:', flipbooksData.length);
+      console.log('🔍 First flipbook data:', flipbooksData[0]);
+      console.log('🔍 First flipbook thumbnailUrl:', flipbooksData[0]?.thumbnailUrl);
+      
+      flipbooksData.forEach((flipbook, index) => {
+        console.log(`🔍 Flipbook ${index + 1}:`, {
+          id: flipbook.id,
+          name: flipbook.name,
+          embedUrl: flipbook.embedUrl,
+          embed_url: flipbook.embed_url, // Check both possible field names
+          type: flipbook.type,
+          isActive: flipbook.isActive
+        });
+      });
+      
+      setFlipbooks(flipbooksData);
+    } catch (error) {
+      console.error('Error loading flipbooks:', error);
+      setFlipbooks([]);
+    } finally {
+      setFlipbooksLoading(false);
+    }
+  };
+
   // Load published articles from API
   const loadPublishedArticles = async (filters = {}, showLoading = false) => {
     try {
       if (showLoading) {
         setLoading(true);
-      } else {
-        setFilterLoading(true);
       }
-      setError(null);
+        setError(null);
       console.log('Loading published articles...');
       console.log('User:', user);
       console.log('Token:', localStorage.getItem('token'));
@@ -125,8 +215,8 @@ const PublishedContent = () => {
         statusFilter = 'ARCHIVED';
       } else if (filters.activeFilter === 'published') {
         statusFilter = 'PUBLISHED';
-      } else if (filters.activeFilter === 'annual_editions') {
-        // For annual editions, we'll fetch all published articles and filter by category
+      } else if (filters.activeFilter === 'online_issues') {
+        // For online issues, we'll fetch all published articles and filter by category
         statusFilter = 'PUBLISHED';
       }
       
@@ -189,13 +279,13 @@ const PublishedContent = () => {
           reviewerId: article.reviewerId
         }));
         
-        // Apply annual_editions filter if needed (still frontend since it's a special case)
+        // Apply online_issues filter if needed (still frontend since it's a special case)
         let finalArticles = transformedArticles;
-        if (filters.activeFilter === 'annual_editions') {
+        if (filters.activeFilter === 'online_issues') {
           finalArticles = transformedArticles.filter(article => 
             article.categories.some(cat => 
-              cat.name.toLowerCase().includes('annual') || 
-              cat.name.toLowerCase().includes('edition')
+              cat.name.toLowerCase().includes('online') || 
+              cat.name.toLowerCase().includes('issue')
             )
           );
         }
@@ -216,17 +306,24 @@ const PublishedContent = () => {
         setFilteredArticles([]);
       } finally {
         if (showLoading) {
-          setLoading(false);
-        } else {
-          setFilterLoading(false);
+        setLoading(false);
         }
       }
     };
 
-  // Load articles on mount
+  // Load articles or flipbooks on mount
   useEffect(() => {
     if (user?.id) {
-      loadPublishedArticles({ activeFilter }, true); // Show loading on initial load
+      if (activeFilter === 'online_issues') {
+        loadFlipbooks({
+          search: searchTerm,
+          category: selectedCategory,
+          sortBy: sortBy,
+          sortOrder: sortOrder
+        });
+      } else {
+        loadPublishedArticles({ activeFilter }, true); // Show loading on initial load
+      }
     }
   }, [user?.id, activeFilter]);
 
@@ -239,16 +336,16 @@ const PublishedContent = () => {
         setStats(statsResponse.data);
 
         // Load filter counts
-        const [publishedCount, archivedCount, annualCount] = await Promise.all([
+        const [publishedCount, archivedCount, onlineIssuesCount] = await Promise.all([
           getFilterCount('published'),
           getFilterCount('archived'),
-          getFilterCount('annual_editions')
+          getFilterCount('online_issues')
         ]);
         
         setFilterCounts({
           published: publishedCount,
           archived: archivedCount,
-          annual_editions: annualCount
+          online_issues: onlineIssuesCount
         });
       } catch (error) {
         console.error('Error loading stats and filter counts:', error);
@@ -258,16 +355,25 @@ const PublishedContent = () => {
     loadStatsAndCounts();
   }, []);
 
-  // Apply filters and reload articles
+  // Apply filters and reload articles or flipbooks
   useEffect(() => {
     if (user?.id) {
-      loadPublishedArticles({
-        activeFilter: activeFilter,
-        search: searchTerm,
-        category: selectedCategory,
-        sortBy: sortBy,
-        sortOrder: sortOrder
-      }, false); // Don't show loading on filter changes
+      if (activeFilter === 'online_issues') {
+        loadFlipbooks({
+          search: searchTerm,
+          category: selectedCategory,
+          sortBy: sortBy,
+          sortOrder: sortOrder
+        });
+      } else {
+        loadPublishedArticles({
+          activeFilter: activeFilter,
+          search: searchTerm,
+          category: selectedCategory,
+          sortBy: sortBy,
+          sortOrder: sortOrder
+        }, false); // Don't show loading on filter changes
+      }
     }
   }, [user?.id, searchTerm, sortBy, sortOrder, selectedCategory]);
 
@@ -378,16 +484,16 @@ const PublishedContent = () => {
       setFilteredArticles(filteredArticles.filter(article => article.id !== articleToArchive));
       
       // Refresh filter counts
-      const [publishedCount, archivedCount, annualCount] = await Promise.all([
+        const [publishedCount, archivedCount, onlineIssuesCount] = await Promise.all([
         getFilterCount('published'),
         getFilterCount('archived'),
-        getFilterCount('annual_editions')
+        getFilterCount('online_issues')
       ]);
       
       setFilterCounts({
         published: publishedCount,
         archived: archivedCount,
-        annual_editions: annualCount
+        online_issues: onlineIssuesCount
       });
       
       showNotification('Success', 'Article archived successfully', 'success');
@@ -445,16 +551,16 @@ const PublishedContent = () => {
       setFilteredArticles(filteredArticles.filter(article => article.id !== articleToRestore));
       
       // Refresh filter counts
-      const [publishedCount, archivedCount, annualCount] = await Promise.all([
+        const [publishedCount, archivedCount, onlineIssuesCount] = await Promise.all([
         getFilterCount('published'),
         getFilterCount('archived'),
-        getFilterCount('annual_editions')
+        getFilterCount('online_issues')
       ]);
       
       setFilterCounts({
         published: publishedCount,
         archived: archivedCount,
-        annual_editions: annualCount
+        online_issues: onlineIssuesCount
       });
       
       showNotification('Success', 'Article restored and sent for review', 'success');
@@ -512,16 +618,16 @@ const PublishedContent = () => {
       setFilteredArticles(filteredArticles.filter(article => article.id !== articleToDelete));
       
       // Refresh filter counts
-      const [publishedCount, archivedCount, annualCount] = await Promise.all([
+        const [publishedCount, archivedCount, onlineIssuesCount] = await Promise.all([
         getFilterCount('published'),
         getFilterCount('archived'),
-        getFilterCount('annual_editions')
+        getFilterCount('online_issues')
       ]);
       
       setFilterCounts({
         published: publishedCount,
         archived: archivedCount,
-        annual_editions: annualCount
+        online_issues: onlineIssuesCount
       });
       
       showNotification('Success', 'Article deleted successfully', 'success');
@@ -560,28 +666,23 @@ const PublishedContent = () => {
 
   const getFilterCount = async (filter) => {
     try {
+      if (filter === 'online_issues') {
+        // Get flipbook count for online issues
+        const response = await flipbookService.getFlipbooks();
+        return response.data?.items?.length || 0;
+      }
+      
       let statusFilter = 'PUBLISHED';
       if (filter === 'archived') {
         statusFilter = 'ARCHIVED';
       } else if (filter === 'published') {
-        statusFilter = 'PUBLISHED';
-      } else if (filter === 'annual_editions') {
         statusFilter = 'PUBLISHED';
       }
       
       const response = await articlesAPI.getPublishedContent({ status: statusFilter });
       const articles = response.data?.items || [];
       
-      if (filter === 'annual_editions') {
-        return articles.filter(article => 
-          article.categories.some(cat => 
-            cat.name.toLowerCase().includes('annual') || 
-            cat.name.toLowerCase().includes('edition')
-          )
-        ).length;
-      }
-      
-      return articles.length;
+        return articles.length;
     } catch (error) {
       console.error('Error getting filter count:', error);
       return 0;
@@ -590,11 +691,32 @@ const PublishedContent = () => {
 
   const handleFilterChange = (filter) => {
     setActiveFilter(filter);
+    
+    // Reset sort options when switching between article and flipbook views
+    if (filter === 'online_issues') {
+      // Set appropriate defaults for flipbook view
+      if (sortBy === 'publishedAt' || sortBy === 'updatedAt' || sortBy === 'viewCount') {
+        setSortBy('createdAt');
+      }
+    } else {
+      // Set appropriate defaults for article view
+      if (sortBy === 'type' || sortBy === 'isActive') {
+        setSortBy('publishedAt');
+      }
+    }
   };
 
   // Flipbook handling functions
-  const handlePublishAnnualEdition = () => {
+  const handlePublishOnlineIssue = () => {
+    console.log('🔍 Publish Online Issue button clicked');
+    console.log('🔍 Current user:', user);
+    console.log('🔍 User role:', user?.role);
+    console.log('🔍 Has SECTION_HEAD role:', hasRole('SECTION_HEAD'));
+    
+    // Reset current flipbook to ensure we're creating a new one
+    setCurrentFlipbook(null);
     setShowFlipbookForm(true);
+    console.log('🔍 Flipbook form should now be visible');
   };
 
   const handleFlipbookFormSubmit = async (formData) => {
@@ -603,21 +725,37 @@ const PublishedContent = () => {
       console.log('🔍 Frontend Debug - User Info:');
       console.log('   User:', user);
       console.log('   User role:', user?.role);
+      console.log('   User role uppercase:', user?.role?.toUpperCase());
       console.log('   Has SECTION_HEAD role:', hasRole('SECTION_HEAD'));
+      console.log('   Required roles for flipbook:', ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN']);
+      console.log('   User has required role:', ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(user?.role?.toUpperCase()));
       console.log('   Token exists:', !!localStorage.getItem('token'));
+      console.log('   Token value:', localStorage.getItem('token'));
       
-      // Check user role before proceeding
-      if (!hasRole('SECTION_HEAD')) {
-        throw new Error('Access denied. Only Section Heads and higher roles can publish online issues.');
+      // Check user role before proceeding - use explicit role check
+      const allowedRoles = ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'];
+      if (!allowedRoles.includes(user?.role?.toUpperCase())) {
+        throw new Error('Access denied. Only Section Heads, Editor-in-Chief, Advisers, and System Admins can publish online issues.');
       }
 
-      // Save flipbook to database
-      const response = await flipbookService.createFlipbook({
+      const flipbookData = {
         name: formData.name,
         embedUrl: formData.embedLink,
         type: formData.type.toUpperCase(),
-        releaseDate: formData.releaseDate || null
-      });
+        releaseDate: formData.releaseDate || null,
+        thumbnailImage: formData.thumbnailImage // Include the uploaded image
+      };
+
+      let response;
+      let isEdit = currentFlipbook && currentFlipbook.id;
+
+      if (isEdit) {
+        // Update existing flipbook
+        response = await flipbookService.updateFlipbook(currentFlipbook.id, flipbookData);
+      } else {
+        // Create new flipbook
+        response = await flipbookService.createFlipbook(flipbookData);
+      }
 
       // Create flipbook object for display
       const flipbook = {
@@ -635,21 +773,42 @@ const PublishedContent = () => {
         status: 'completed',
         type: response.data.type,
         releaseDate: response.data.releaseDate,
-        isActive: response.data.isActive
+        isActive: response.data.isActive,
+        thumbnailUrl: response.data.thumbnailUrl // Include thumbnail URL
       };
 
       setCurrentFlipbook(flipbook);
-      setShowFlipbookModal(true);
+      
+      // Close the form and don't show preview for both new and edited flipbooks
+      setShowFlipbookModal(false);
+      setShowFlipbookForm(false);
+
+      // Refresh flipbooks list if we're in online issues view
+      if (activeFilter === 'online_issues') {
+        loadFlipbooks({
+          search: searchTerm,
+          category: selectedCategory,
+          sortBy: sortBy,
+          sortOrder: sortOrder
+        });
+      }
+
+      // Update filter counts after adding/updating flipbook
+      const onlineIssuesCount = await getFilterCount('online_issues');
+      setFilterCounts(prev => ({
+        ...prev,
+        online_issues: onlineIssuesCount
+      }));
 
       showNotification(
         'Success', 
-        `${formData.name} published successfully!`, 
+        `${formData.name} ${isEdit ? 'updated' : 'published'} successfully!`, 
         'success'
       );
     } catch (error) {
-      console.error('Error creating flipbook:', error);
+      console.error(`Error ${currentFlipbook && currentFlipbook.id ? 'updating' : 'creating'} flipbook:`, error);
       
-      let errorMessage = 'Failed to create flipbook';
+      let errorMessage = `Failed to ${currentFlipbook && currentFlipbook.id ? 'update' : 'create'} flipbook`;
       
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -658,7 +817,7 @@ const PublishedContent = () => {
       } else if (error.response?.status === 401) {
         errorMessage = 'You are not authorized to publish flipbooks.';
       } else if (error.response?.status === 403) {
-        errorMessage = 'You do not have permission to publish flipbooks.';
+        errorMessage = 'You do not have permission to publish flipbooks. Only Section Heads, Editor-in-Chief, Advisers, and System Admins can create flipbooks.';
       } else if (error.response?.status === 409) {
         errorMessage = 'A flipbook with this name already exists.';
       } else if (error.response?.status === 422) {
@@ -679,9 +838,139 @@ const PublishedContent = () => {
     setCurrentFlipbook(null);
   };
 
+  const handleEditFlipbook = (flipbook) => {
+    // Convert relative thumbnail URL to full URL if needed
+    const thumbnailUrl = flipbook.thumbnailUrl 
+      ? (flipbook.thumbnailUrl.startsWith('http') 
+          ? flipbook.thumbnailUrl 
+          : `http://localhost:3001${flipbook.thumbnailUrl}`)
+      : null;
+    
+    // Create edit data object for the form
+    const editData = {
+      id: flipbook.id,
+      title: flipbook.name,
+      url: flipbook.embedUrl,
+      embedCode: `<iframe src="${flipbook.embedUrl}" width="100%" height="600px" frameborder="0" allowfullscreen></iframe>`,
+      embed_url: flipbook.embedUrl,
+      createdAt: flipbook.createdAt,
+      created_at: flipbook.createdAt,
+      fileSize: 0,
+      file_size: 0,
+      fileName: flipbook.name,
+      file_name: flipbook.name,
+      status: 'completed',
+      type: flipbook.type,
+      releaseDate: flipbook.releaseDate,
+      isActive: flipbook.isActive,
+      thumbnailUrl: thumbnailUrl, // Include existing thumbnail URL with full path
+      thumbnailImage: thumbnailUrl // Include for form pre-population
+    };
+    
+    console.log('🖼️ Edit flipbook data:', editData);
+    
+    // Set the edit data and show the form (no preview)
+    setCurrentFlipbook(editData);
+    setShowFlipbookForm(true);
+    setShowFlipbookModal(false); // Ensure preview modal is closed
+  };
+
   const handleShareFlipbook = (flipbook) => {
     console.log('Sharing flipbook:', flipbook);
     // Additional sharing logic can be implemented here
+  };
+
+  const handleDeleteFlipbook = (flipbook) => {
+    setFlipbookToDelete(flipbook);
+    setShowDeleteFlipbookModal(true);
+  };
+
+  const confirmDeleteFlipbook = async () => {
+    if (!flipbookToDelete) return;
+
+    try {
+      await flipbookService.deleteFlipbook(flipbookToDelete.id);
+      
+      // Update flipbooks list
+      setFlipbooks(flipbooks.filter(flipbook => flipbook.id !== flipbookToDelete.id));
+      
+      // Refresh filter counts
+      const onlineIssuesCount = await getFilterCount('online_issues');
+      setFilterCounts(prev => ({
+        ...prev,
+        online_issues: onlineIssuesCount
+      }));
+      
+      showNotification('Success', 'Online issue deleted successfully', 'success');
+    } catch (error) {
+      console.error('Error deleting flipbook:', error);
+      
+      let errorMessage = 'Failed to delete online issue';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 403) {
+        errorMessage = 'You do not have permission to delete this online issue';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Online issue not found';
+      }
+      
+      showNotification('Error', errorMessage, 'error');
+    } finally {
+      setShowDeleteFlipbookModal(false);
+      setFlipbookToDelete(null);
+    }
+  };
+
+  const cancelDeleteFlipbook = () => {
+    setShowDeleteFlipbookModal(false);
+    setFlipbookToDelete(null);
+  };
+
+  const handleToggleFlipbookStatus = (flipbook) => {
+    setFlipbookToToggle(flipbook);
+    setShowToggleFlipbookModal(true);
+  };
+
+  const confirmToggleFlipbookStatus = async () => {
+    if (!flipbookToToggle) return;
+
+    try {
+      await flipbookService.toggleFlipbookStatus(flipbookToToggle.id);
+      
+      // Update flipbooks list
+      setFlipbooks(flipbooks.map(fb => 
+        fb.id === flipbookToToggle.id 
+          ? { ...fb, isActive: !fb.isActive }
+          : fb
+      ));
+      
+      showNotification(
+        'Success', 
+        `Online issue ${!flipbookToToggle.isActive ? 'activated' : 'deactivated'} successfully`, 
+        'success'
+      );
+    } catch (error) {
+      console.error('Error toggling flipbook status:', error);
+      
+      let errorMessage = 'Failed to update online issue status';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 403) {
+        errorMessage = 'You do not have permission to modify this online issue';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Online issue not found';
+      }
+      
+      showNotification('Error', errorMessage, 'error');
+    } finally {
+      setShowToggleFlipbookModal(false);
+      setFlipbookToToggle(null);
+    }
+  };
+
+  const cancelToggleFlipbookStatus = () => {
+    setShowToggleFlipbookModal(false);
+    setFlipbookToToggle(null);
   };
 
   const formatDate = (dateString) => {
@@ -693,14 +982,145 @@ const PublishedContent = () => {
         return 'N/A';
       }
       return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
+      year: 'numeric',
+      month: 'short',
         day: 'numeric'
-      });
+    });
     } catch (error) {
       console.error('Error formatting date:', error, 'Date string:', dateString);
       return 'N/A';
     }
+  };
+
+  // Generate thumbnail URL from flipbook embed URL
+  const getFlipbookThumbnail = (embedUrl) => {
+    if (!embedUrl) return null;
+    
+    try {
+      console.log('🔍 Generating thumbnail for embedUrl:', embedUrl);
+      
+      // For FlipHTML5 URLs, try multiple thumbnail patterns
+      if (embedUrl.includes('fliphtml5.com')) {
+        const baseUrl = embedUrl.replace(/\/$/, '');
+        
+        // Try different thumbnail patterns
+        const patterns = [
+          `${baseUrl}/p1.jpg`,           // Page 1 as JPG
+          `${baseUrl}/p1.png`,           // Page 1 as PNG
+          `${baseUrl}/thumb.jpg`,        // Thumbnail as JPG
+          `${baseUrl}/thumbnail.jpg`,    // Thumbnail as JPG
+          `${baseUrl}/cover.jpg`,        // Cover as JPG
+          `${baseUrl}/preview.jpg`,      // Preview as JPG
+          `${baseUrl}/p1`,               // Page 1 without extension
+          `${baseUrl}/thumb`,            // Thumbnail without extension
+        ];
+        
+        // For now, return the first pattern (p1.jpg) and let the error handling deal with it
+        const thumbnailUrl = patterns[0];
+        console.log('✅ Generated thumbnail URL:', thumbnailUrl);
+        console.log('📋 All patterns to try:', patterns);
+        return thumbnailUrl;
+      }
+      
+      console.log('❌ No thumbnail pattern matched for URL:', embedUrl);
+      return null;
+    } catch (error) {
+      console.error('Error generating thumbnail URL:', error);
+      return null;
+    }
+  };
+
+  // Component to handle thumbnail with uploaded image
+  const FlipbookThumbnail = ({ flipbook }) => {
+    // Generate a placeholder thumbnail based on flipbook type
+    const getPlaceholderThumbnail = (type) => {
+      const typeColors = {
+        'NEWSLETTER': '#3B82F6',      // Blue
+        'TABLOID': '#F59E0B',         // Amber
+        'MAGAZINE': '#10B981',        // Emerald
+        'LITERARY_FOLIO': '#8B5CF6',  // Violet
+        'ART_COMPILATION': '#EC4899'  // Pink
+      };
+      
+      const typeIcons = {
+        'NEWSLETTER': '📰',
+        'TABLOID': '📰',
+        'MAGAZINE': '📖',
+        'LITERARY_FOLIO': '📚',
+        'ART_COMPILATION': '🎨'
+      };
+      
+      const color = typeColors[type] || '#6B7280';
+      const icon = typeIcons[type] || '📄';
+      
+      return {
+        color,
+        icon,
+        text: type?.replace('_', ' ') || 'Flipbook'
+      };
+    };
+
+    // Use uploaded thumbnail image if available
+    if (flipbook.thumbnailUrl) {
+      return (
+        <div className="published-content-article-image">
+          <img 
+            src={`http://localhost:3001${flipbook.thumbnailUrl}`} 
+            alt={`${flipbook.name} - Thumbnail`}
+            className="published-content-featured-image"
+            onError={(e) => {
+              // Fallback to placeholder if image fails to load
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
+          {/* Fallback placeholder (hidden by default) */}
+          <div 
+            className="published-content-article-icon"
+            style={{
+              backgroundColor: getPlaceholderThumbnail(flipbook.type).color,
+              display: 'none',
+              flexDirection: 'column',
+              color: 'white',
+              fontSize: '20px',
+              fontWeight: 'bold'
+            }}
+            title={`${getPlaceholderThumbnail(flipbook.type).text} - ${flipbook.name}`}
+          >
+            <div style={{ fontSize: '24px', marginBottom: '2px' }}>
+              {getPlaceholderThumbnail(flipbook.type).icon}
+            </div>
+            <div style={{ fontSize: '8px', textAlign: 'center', lineHeight: '1' }}>
+              {getPlaceholderThumbnail(flipbook.type).text.split(' ').map(word => word.charAt(0)).join('')}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    const placeholder = getPlaceholderThumbnail(flipbook.type);
+    
+    return (
+      <div className="published-content-article-image">
+        <div 
+          className="published-content-article-icon"
+          style={{
+            backgroundColor: placeholder.color,
+            color: 'white',
+            fontSize: '20px',
+            fontWeight: 'bold'
+          }}
+          title={`${placeholder.text} - ${flipbook.name}`}
+        >
+          <div style={{ fontSize: '24px', marginBottom: '2px' }}>
+            {placeholder.icon}
+          </div>
+          <div style={{ fontSize: '8px', textAlign: 'center', lineHeight: '1' }}>
+            {placeholder.text.split(' ').map(word => word.charAt(0)).join('')}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Helper function to create excerpt from content
@@ -759,16 +1179,17 @@ const PublishedContent = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="published-content-container">
-        <div className="published-content-loading">
-          <div className="published-content-spinner"></div>
-          <p>Loading published content...</p>
-        </div>
-      </div>
-    );
-  }
+  // Remove loading spinner - show content immediately
+  // if (loading) {
+  //   return (
+  //     <div className="published-content-container">
+  //       <div className="published-content-loading">
+  //         <div className="published-content-spinner"></div>
+  //         <p>Loading published content...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className={`published-content-container ${showFilters ? 'filters-open' : ''}`}>
@@ -779,24 +1200,49 @@ const PublishedContent = () => {
           <p className="published-content-subtitle">Manage all published contents</p>
         </div>
         <div className="published-content-header-stats">
+          {activeFilter === 'online_issues' ? (
+            <>
           <div className="published-content-stat">
-            <span className="published-content-stat-number">{stats.totalArticles || filteredArticles.length}</span>
+                <span className="published-content-stat-number">{flipbooks.length}</span>
+                <span className="published-content-stat-label">Online Issues</span>
+              </div>
+              <div className="published-content-stat-separator"></div>
+              <div className="published-content-stat">
+                <span className="published-content-stat-number">
+                  {flipbooks.filter(fb => fb.isActive).length}
+                </span>
+                <span className="published-content-stat-label">Active Issues</span>
+              </div>
+              <div className="published-content-stat-separator"></div>
+              <div className="published-content-stat">
+                <span className="published-content-stat-number">
+                  {flipbooks.filter(fb => !fb.isActive).length}
+                </span>
+                <span className="published-content-stat-label">Inactive Issues</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="published-content-stat">
+                <span className="published-content-stat-number">{stats.totalArticles || filteredArticles.length}</span>
             <span className="published-content-stat-label">Published Articles</span>
           </div>
           <div className="published-content-stat-separator"></div>
           <div className="published-content-stat">
             <span className="published-content-stat-number">
-              {stats.totalViews || filteredArticles.reduce((sum, article) => sum + (article.viewCount || 0), 0)}
+                  {stats.totalViews || filteredArticles.reduce((sum, article) => sum + (article.viewCount || 0), 0)}
             </span>
             <span className="published-content-stat-label">Total Views</span>
           </div>
           <div className="published-content-stat-separator"></div>
           <div className="published-content-stat">
             <span className="published-content-stat-number">
-              {stats.avgViews || (filteredArticles.length > 0 ? Math.round(filteredArticles.reduce((sum, article) => sum + (article.viewCount || 0), 0) / filteredArticles.length) : 0)}
+                  {stats.avgViews || (filteredArticles.length > 0 ? Math.round(filteredArticles.reduce((sum, article) => sum + (article.viewCount || 0), 0) / filteredArticles.length) : 0)}
             </span>
             <span className="published-content-stat-label">Avg Views</span>
           </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -819,10 +1265,10 @@ const PublishedContent = () => {
            </button>
            <div className="published-content-stat-separator"></div>
            <button 
-             className={`published-content-filter-tab ${activeFilter === 'annual_editions' ? 'active' : ''}`}
-             onClick={() => handleFilterChange('annual_editions')}
+             className={`published-content-filter-tab ${activeFilter === 'online_issues' ? 'active' : ''}`}
+             onClick={() => handleFilterChange('online_issues')}
            >
-             Annual Editions: {filterCounts.annual_editions}
+             Online Issues: {filterCounts.online_issues}
            </button>
          </div>
          
@@ -831,7 +1277,7 @@ const PublishedContent = () => {
              <MagnifyingGlassIcon className="published-content-search-icon" />
              <input
                type="text"
-               placeholder="Search published articles..."
+               placeholder={activeFilter === 'online_issues' ? "Search online issues..." : "Search published articles..."}
                className="published-content-search-input"
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
@@ -843,21 +1289,26 @@ const PublishedContent = () => {
              onClick={() => setShowFilters(!showFilters)}
            >
              <FunnelIcon className="published-content-filter-icon" />
-             {filterLoading && (
-               <div className="published-content-filter-loading">
-                 <div className="published-content-loading-spinner"></div>
-               </div>
-             )}
            </button>
 
            {hasRole('SECTION_HEAD') && (
-             <button
-               className="published-content-create-btn"
-               onClick={handlePublishAnnualEdition}
-             >
-               <CloudArrowUpIcon className="w-4 h-4" />
-               Publish Online Issue
-             </button>
+             <>
+               {console.log('🔍 Rendering Publish Online Issue button for user:', user?.role)}
+               <button
+             className="published-content-create-btn"
+                 onClick={(e) => {
+                   console.log('🔍 Button clicked directly');
+                   e.preventDefault();
+                   e.stopPropagation();
+                   handlePublishOnlineIssue();
+                 }}
+                 type="button"
+                 disabled={false}
+               >
+                 <CloudArrowUpIcon className="w-4 h-4" />
+                 Publish Online Issue
+               </button>
+             </>
            )}
          </div>
        </div>
@@ -866,11 +1317,11 @@ const PublishedContent = () => {
       <FilterModal
         isOpen={showFilters}
         onClose={() => setShowFilters(false)}
-        title="Filter Published Content"
+        title={activeFilter === 'online_issues' ? "Filter Online Issues" : "Filter Published Content"}
         onApply={() => setShowFilters(false)}
         onClear={() => {
           setSelectedCategory('all');
-          setSortBy('publishedAt');
+          setSortBy(activeFilter === 'online_issues' ? 'createdAt' : 'publishedAt');
           setSortOrder('desc');
         }}
       >
@@ -888,94 +1339,167 @@ const PublishedContent = () => {
               />
               <span className="filter-modal-radio-label">All Categories</span>
             </label>
-            {Array.isArray(categories) && categories.map(category => (
-              <label key={category.id} className={`filter-modal-radio-item ${selectedCategory === category.name ? 'selected' : ''}`}>
-                <input
-                  type="radio"
-                  name="category"
-                  value={category.name}
-                  checked={selectedCategory === category.name}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="filter-modal-radio-input"
-                />
-                <span className="filter-modal-radio-label">{category.name}</span>
-              </label>
-            ))}
+            {activeFilter === 'online_issues' ? (
+              // Show flipbook types for online issues
+              ['Newsletter', 'Tabloid', 'Magazine', 'Literary Folio', 'Art Compilation'].map(type => (
+                <label key={type} className={`filter-modal-radio-item ${selectedCategory === type ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="category"
+                    value={type}
+                    checked={selectedCategory === type}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">{type}</span>
+                </label>
+              ))
+            ) : (
+              // Show article categories for other filters
+              Array.isArray(categories) && categories.map(category => (
+                <label key={category.id} className={`filter-modal-radio-item ${selectedCategory === category.name ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="category"
+                    value={category.name}
+                    checked={selectedCategory === category.name}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">{category.name}</span>
+                </label>
+              ))
+            )}
           </div>
-        </div>
+          </div>
 
         <div className="filter-modal-section">
           <h4 className="filter-modal-section-title">Sort By</h4>
           <div className="filter-modal-radio-group">
-            <label className={`filter-modal-radio-item ${sortBy === 'publishedAt' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="sortBy"
-                value="publishedAt"
-                checked={sortBy === 'publishedAt'}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">Published Date</span>
-            </label>
-            <label className={`filter-modal-radio-item ${sortBy === 'createdAt' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="sortBy"
-                value="createdAt"
-                checked={sortBy === 'createdAt'}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">Created Date</span>
-            </label>
-            <label className={`filter-modal-radio-item ${sortBy === 'updatedAt' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="sortBy"
-                value="updatedAt"
-                checked={sortBy === 'updatedAt'}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">Last Updated</span>
-            </label>
-            <label className={`filter-modal-radio-item ${sortBy === 'title' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="sortBy"
-                value="title"
-                checked={sortBy === 'title'}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">Title</span>
-            </label>
-            <label className={`filter-modal-radio-item ${sortBy === 'author' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="sortBy"
-                value="author"
-                checked={sortBy === 'author'}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">Author</span>
-            </label>
-            <label className={`filter-modal-radio-item ${sortBy === 'viewCount' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="sortBy"
-                value="viewCount"
-                checked={sortBy === 'viewCount'}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">View Count</span>
-            </label>
+            {activeFilter === 'online_issues' ? (
+              // Show flipbook-specific sort options
+              <>
+                <label className={`filter-modal-radio-item ${sortBy === 'createdAt' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value="createdAt"
+                    checked={sortBy === 'createdAt'}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">Created Date</span>
+                </label>
+                <label className={`filter-modal-radio-item ${sortBy === 'title' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value="title"
+                    checked={sortBy === 'title'}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">Name</span>
+                </label>
+                <label className={`filter-modal-radio-item ${sortBy === 'type' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value="type"
+                    checked={sortBy === 'type'}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">Type</span>
+                </label>
+                <label className={`filter-modal-radio-item ${sortBy === 'isActive' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value="isActive"
+                    checked={sortBy === 'isActive'}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">Status</span>
+                </label>
+              </>
+            ) : (
+              // Show article-specific sort options
+              <>
+                <label className={`filter-modal-radio-item ${sortBy === 'publishedAt' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value="publishedAt"
+                    checked={sortBy === 'publishedAt'}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">Published Date</span>
+                </label>
+                <label className={`filter-modal-radio-item ${sortBy === 'createdAt' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value="createdAt"
+                    checked={sortBy === 'createdAt'}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">Created Date</span>
+                </label>
+                <label className={`filter-modal-radio-item ${sortBy === 'updatedAt' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value="updatedAt"
+                    checked={sortBy === 'updatedAt'}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">Last Updated</span>
+                </label>
+                <label className={`filter-modal-radio-item ${sortBy === 'title' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value="title"
+                    checked={sortBy === 'title'}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">Title</span>
+                </label>
+                <label className={`filter-modal-radio-item ${sortBy === 'author' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value="author"
+                    checked={sortBy === 'author'}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">Author</span>
+                </label>
+                <label className={`filter-modal-radio-item ${sortBy === 'viewCount' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value="viewCount"
+                    checked={sortBy === 'viewCount'}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">View Count</span>
+                </label>
+              </>
+            )}
           </div>
-          
-          <h4 className="filter-modal-section-title" style={{ marginTop: '16px', marginBottom: '8px' }}>Order</h4>
+        </div>
+
+        <div className="filter-modal-section">
+          <h4 className="filter-modal-section-title">Order</h4>
           <div className="filter-modal-radio-group">
             <label className={`filter-modal-radio-item ${sortOrder === 'desc' ? 'selected' : ''}`}>
               <input
@@ -1003,9 +1527,145 @@ const PublishedContent = () => {
         </div>
       </FilterModal>
 
-      {/* Articles List */}
+      {/* Articles List or Flipbooks List */}
       <div className="published-content-list">
-        {filteredArticles.length === 0 ? (
+        {activeFilter === 'online_issues' ? (
+          // Show flipbooks for online issues
+          flipbooksLoading ? (
+            <div className="uniform-loading">
+              <div className="uniform-spinner"></div>
+              <p className="uniform-loading-text">Loading online issues...</p>
+            </div>
+          ) : flipbooks.length === 0 ? (
+            <div className="published-content-empty">
+              <DocumentTextIcon className="published-content-empty-icon" />
+              <h3 className="published-content-empty-title">No online issues found</h3>
+              <p className="published-content-empty-description">
+                No flipbooks have been published yet. Create your first online issue!
+              </p>
+            </div>
+          ) : (
+            <div className="published-content-table">
+              <div className="published-content-table-header">
+                <div className="published-content-table-cell">Content</div>
+                <div className="published-content-table-cell">Type</div>
+                <div className="published-content-table-cell">Created</div>
+                <div className="published-content-table-cell">Status</div>
+                <div className="published-content-table-cell">Actions</div>
+              </div>
+
+              {flipbooks.map((flipbook) => (
+                  <div key={flipbook.id} className="published-content-table-row">
+                    <div className="published-content-table-cell">
+                      <div className="published-content-content-cell">
+                        <FlipbookThumbnail flipbook={flipbook} />
+                        <div className="published-content-article-info">
+                        <h4 className="published-content-article-title">
+                          {flipbook.name}
+                        </h4>
+                        <div className="published-content-article-meta">
+                          <div className="published-content-article-top-line">
+                            <span className="published-content-article-category">
+                              {flipbook.user ? `${flipbook.user.firstName} ${flipbook.user.lastName}` : 'Unknown Author'}
+                            </span>
+                          </div>
+                        </div>
+                        {flipbook.description && (
+                          <div className="published-content-article-tags">
+                            <span className="published-content-tag">{flipbook.description}</span>
+                          </div>
+                        )}
+                        </div>
+                      </div>
+                    </div>
+
+                  <div className="published-content-table-cell">
+                    <div className="published-content-author">
+                      <span className={`published-content-type-badge published-content-type-badge-${flipbook.type?.toLowerCase()}`}>
+                        {flipbook.type}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="published-content-table-cell">
+                    <div className="published-content-date">
+                      {formatDate(flipbook.createdAt)}
+                    </div>
+                  </div>
+
+                  <div className="published-content-table-cell">
+                    <div className="published-content-views">
+                      <span className={`published-content-status-badge published-content-status-badge-${flipbook.isActive ? 'active' : 'inactive'}`}>
+                        <CheckCircleIcon className="w-4 h-4" />
+                        {flipbook.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="published-content-table-cell">
+                    <div className="published-content-actions">
+                      <button
+                        className="published-content-action-btn view"
+                        onClick={() => {
+                          setCurrentFlipbook({
+                            id: flipbook.id,
+                            title: flipbook.name,
+                            url: flipbook.embedUrl,
+                            embedCode: `<iframe src="${flipbook.embedUrl}" width="100%" height="600px" frameborder="0" allowfullscreen></iframe>`,
+                            embed_url: flipbook.embedUrl,
+                            createdAt: flipbook.createdAt,
+                            created_at: flipbook.createdAt,
+                            fileSize: 0,
+                            file_size: 0,
+                            fileName: flipbook.name,
+                            file_name: flipbook.name,
+                            status: 'completed',
+                            type: flipbook.type,
+                            releaseDate: flipbook.releaseDate,
+                            isActive: flipbook.isActive
+                          });
+                          setShowFlipbookModal(true);
+                        }}
+                        title="View Flipbook"
+                      >
+                        <EyeIcon className="w-4 h-4" />
+                      </button>
+                      {(user?.role?.toUpperCase() === 'SECTION_HEAD' || user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
+                        <button
+                          className="published-content-action-btn update"
+                          onClick={() => handleEditFlipbook(flipbook)}
+                          title="Update Online Issue"
+                        >
+                          <PencilIcon className="w-4 h-4" />
+                        </button>
+                      )}
+                      {(user?.role?.toUpperCase() === 'SECTION_HEAD' || user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
+                        <button
+                          className="published-content-action-btn update"
+                          onClick={() => handleToggleFlipbookStatus(flipbook)}
+                          title={`${flipbook.isActive ? 'Deactivate' : 'Activate'} Online Issue`}
+                        >
+                          <PowerIcon className="w-4 h-4" />
+                        </button>
+                      )}
+                      {(user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
+                        <button
+                          className="published-content-action-btn delete"
+                          onClick={() => handleDeleteFlipbook(flipbook)}
+                          title="Delete Online Issue"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+          // Show articles for other filters
+          filteredArticles.length === 0 ? (
           <div className="published-content-empty">
             <DocumentTextIcon className="published-content-empty-icon" />
             <h3 className="published-content-empty-title">No published articles found</h3>
@@ -1031,14 +1691,14 @@ const PublishedContent = () => {
                   <div className="published-content-content-cell">
                     <MediaDisplay
                       mediaUrl={article.featuredImage}
-                      alt={article.title}
+                        alt={article.title}
                       className="published-content-article-image"
                       imageClassName="published-content-featured-image"
                       videoClassName="published-content-featured-image"
                       iconClassName="w-6 h-6"
                     />
                     
-                    <div className="published-content-article-info">
+                  <div className="published-content-article-info">
                       <h4 
                         className="published-content-article-title"
                         onClick={() => handlePreview(article)}
@@ -1047,32 +1707,32 @@ const PublishedContent = () => {
                       >
                         {article.title}
                       </h4>
-                      <div className="published-content-article-meta">
-                        {article.categories.length > 0 && (
-                          <>
-                            <div className="published-content-article-top-line">
-                              <span className="published-content-article-category">
-                                {article.categories[0].name}
-                              </span>
-                              <span className="published-content-article-separator">•</span>
-                              <span className="published-content-article-word-count">
-                                {article.wordCount} words
-                              </span>
-                              <span className="published-content-article-separator">•</span>
-                              <span className="published-content-article-read-time">
-                                {article.readTime}
-                              </span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                      <div className="published-content-article-tags">
-                        {article.tags.slice(0, 3).map((tag, index) => (
-                          <span key={index} className="published-content-tag">{tag.name}</span>
-                        ))}
-                        {article.tags.length > 3 && (
-                          <span className="published-content-tag-more">+{article.tags.length - 3} more</span>
-                        )}
+                    <div className="published-content-article-meta">
+                      {article.categories.length > 0 && (
+                        <>
+                          <div className="published-content-article-top-line">
+                            <span className="published-content-article-category">
+                              {article.categories[0].name}
+                            </span>
+                            <span className="published-content-article-separator">•</span>
+                            <span className="published-content-article-word-count">
+                              {article.wordCount} words
+                            </span>
+                            <span className="published-content-article-separator">•</span>
+                            <span className="published-content-article-read-time">
+                              {article.readTime}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <div className="published-content-article-tags">
+                      {article.tags.slice(0, 3).map((tag, index) => (
+                        <span key={index} className="published-content-tag">{tag.name}</span>
+                      ))}
+                      {article.tags.length > 3 && (
+                        <span className="published-content-tag-more">+{article.tags.length - 3} more</span>
+                      )}
                       </div>
                     </div>
                   </div>
@@ -1118,13 +1778,13 @@ const PublishedContent = () => {
                         <PencilIcon className="w-4 h-4" />
                       </button>
                     ) : (
-                      <button
-                        className="published-content-action-btn update"
-                        onClick={() => handleUpdate(article)}
+                    <button
+                      className="published-content-action-btn update"
+                      onClick={() => handleUpdate(article)}
                         title="Update Content"
-                      >
-                        <PencilIcon className="w-4 h-4" />
-                      </button>
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                    </button>
                     )}
                     {article.status === 'archived' ? (
                       (user?.role?.toUpperCase() === 'SECTION_HEAD' || user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
@@ -1137,13 +1797,13 @@ const PublishedContent = () => {
                         </button>
                       )
                     ) : (
-                      <button
-                        className="published-content-action-btn archive"
-                        onClick={() => handleArchive(article)}
-                        title="Archive Article"
-                      >
-                        <ArchiveBoxIcon className="w-4 h-4" />
-                      </button>
+                    <button
+                      className="published-content-action-btn archive"
+                      onClick={() => handleArchive(article)}
+                      title="Archive Article"
+                    >
+                      <ArchiveBoxIcon className="w-4 h-4" />
+                    </button>
                     )}
                     {(user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
                       <button
@@ -1159,6 +1819,7 @@ const PublishedContent = () => {
               </div>
             ))}
           </div>
+          )
         )}
       </div>
 
@@ -1208,6 +1869,30 @@ const PublishedContent = () => {
         type="danger"
       />
 
+      {/* Delete Flipbook Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteFlipbookModal}
+        onClose={cancelDeleteFlipbook}
+        onConfirm={confirmDeleteFlipbook}
+        title="Delete Online Issue"
+        message={`Are you sure you want to permanently delete "${flipbookToDelete?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+
+      {/* Toggle Flipbook Status Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showToggleFlipbookModal}
+        onClose={cancelToggleFlipbookStatus}
+        onConfirm={confirmToggleFlipbookStatus}
+        title={`${flipbookToToggle?.isActive ? 'Deactivate' : 'Activate'} Online Issue`}
+        message={`Are you sure you want to ${flipbookToToggle?.isActive ? 'deactivate' : 'activate'} "${flipbookToToggle?.name}"?`}
+        confirmText={flipbookToToggle?.isActive ? 'Deactivate' : 'Activate'}
+        cancelText="Cancel"
+        type="warning"
+      />
+
       {/* Notification Modal */}
       <NotificationModal
         key="notification-modal"
@@ -1222,12 +1907,16 @@ const PublishedContent = () => {
       <FlipbookInputForm
         key="flipbook-input-form"
         isOpen={showFlipbookForm}
-        onClose={() => setShowFlipbookForm(false)}
+        onClose={() => {
+          setShowFlipbookForm(false);
+          setCurrentFlipbook(null);
+        }}
         onSubmit={handleFlipbookFormSubmit}
+        editData={currentFlipbook}
       />
 
-      {/* Flipbook Display Modal */}
-      {currentFlipbook && createPortal(
+      {/* Flipbook Display Modal - Only show when viewing, not editing */}
+      {currentFlipbook && showFlipbookModal && createPortal(
         <FlipbookDisplay
           key="flipbook-display"
           flipbook={currentFlipbook}

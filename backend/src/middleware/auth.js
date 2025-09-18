@@ -123,7 +123,6 @@ const requireRole = (...roles) => {
     console.log('   User:', req.user?.username, '(', req.user?.email, ')');
     console.log('   User role:', req.user?.role);
     console.log('   Required roles:', roles);
-    console.log('   User has required role:', roles.includes(req.user?.role));
     console.log('   Request URL:', req.originalUrl);
     console.log('   Request method:', req.method);
     
@@ -132,8 +131,25 @@ const requireRole = (...roles) => {
       return next(new AppError('Authentication required', 401));
     }
 
-    if (!roles.includes(req.user.role)) {
-      console.log('   ❌ User role not in required roles');
+    // Role hierarchy - higher numbers have more permissions
+    const roleHierarchy = {
+      'STAFF': 0,
+      'SECTION_HEAD': 1,
+      'EDITOR_IN_CHIEF': 2,
+      'ADVISER': 3,
+      'SYSTEM_ADMIN': 4
+    };
+
+    const userRoleLevel = roleHierarchy[req.user.role];
+    const requiredRoleLevels = roles.map(role => roleHierarchy[role]);
+    const hasRequiredRole = requiredRoleLevels.some(level => userRoleLevel >= level);
+
+    console.log('   User role level:', userRoleLevel);
+    console.log('   Required role levels:', requiredRoleLevels);
+    console.log('   User has required role:', hasRequiredRole);
+
+    if (!hasRequiredRole) {
+      console.log('   ❌ User role not sufficient');
       logger.warn('Insufficient role access', {
         userId: req.user.id,
         userRole: req.user.role,

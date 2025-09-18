@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   XMarkIcon, 
-  ShareIcon, 
   DocumentTextIcon,
   ClockIcon,
   CheckCircleIcon,
@@ -23,26 +22,6 @@ const FlipbookDisplay = ({ flipbook, onClose, onShare }) => {
 
     return () => clearTimeout(timer);
   }, []);
-
-  const handleShare = () => {
-    if (onShare) {
-      onShare(flipbook);
-    } else {
-      // Default sharing behavior
-      if (navigator.share) {
-        navigator.share({
-          title: flipbook.title,
-          text: `Check out this annual edition: ${flipbook.title}`,
-          url: flipbook.url
-        });
-      } else {
-        // Fallback: copy URL to clipboard
-        navigator.clipboard.writeText(flipbook.url).then(() => {
-          alert('Link copied to clipboard!');
-        });
-      }
-    }
-  };
 
   const getStatusIcon = () => {
     switch (status) {
@@ -105,26 +84,11 @@ const FlipbookDisplay = ({ flipbook, onClose, onShare }) => {
                 <span className="flipbook-modal-date">
                   {formatDate(flipbook.created_at)}
                 </span>
-                {flipbook.releaseDate && (
-                  <>
-                    <span className="flipbook-modal-separator">•</span>
-                    <span className="flipbook-modal-release-date">
-                      Release: {formatDate(flipbook.releaseDate)}
-                    </span>
-                  </>
-                )}
               </div>
             </div>
           </div>
           
           <div className="flipbook-modal-actions">
-            <button
-              className="flipbook-modal-action-btn"
-              onClick={handleShare}
-              title="Share flipbook"
-            >
-              <ShareIcon className="w-5 h-5" />
-            </button>
             <button
               className="flipbook-modal-close-btn"
               onClick={onClose}
@@ -146,10 +110,10 @@ const FlipbookDisplay = ({ flipbook, onClose, onShare }) => {
         {/* Content */}
         <div className="flipbook-modal-content">
           {isLoading ? (
-            <div className="flipbook-modal-loading">
-              <div className="flipbook-modal-spinner"></div>
-              <p className="flipbook-modal-loading-text">
-                Preparing your annual edition flipbook...
+            <div className="uniform-loading">
+              <div className="uniform-spinner-large"></div>
+              <p className="uniform-loading-text">
+                Preparing your online issue flipbook...
               </p>
               <div className="flipbook-modal-progress">
                 <div className="flipbook-modal-progress-bar">
@@ -228,14 +192,6 @@ const FlipbookDisplay = ({ flipbook, onClose, onShare }) => {
             >
               Close
             </button>
-            {status === 'completed' && (
-              <button
-                className="flipbook-modal-footer-btn primary"
-                onClick={handleShare}
-              >
-                Share
-              </button>
-            )}
           </div>
         </div>
       </div>

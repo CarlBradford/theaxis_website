@@ -568,7 +568,7 @@ const ReviewEditContent = () => {
           ...prev,
           featuredImage: fullImageUrl
         }));
-        setUploadedFile(file);
+      setUploadedFile(file);
         setUploadError(null);
         
         // Clear the file input
@@ -577,11 +577,11 @@ const ReviewEditContent = () => {
         }
         
         // Clear media validation error
-        if (errors.media) {
-          setErrors(prev => ({
-            ...prev,
-            media: null
-          }));
+      if (errors.media) {
+        setErrors(prev => ({
+          ...prev,
+          media: null
+        }));
         }
       } else {
         const errorData = await uploadResponse.json().catch(() => ({}));
@@ -932,8 +932,9 @@ const ReviewEditContent = () => {
   if (isLoading) {
     return (
       <div className="create-article-container">
-        <div className="create-article-loading">
-          <div className="create-article-spinner"></div>
+        <div className="uniform-loading">
+          <div className="uniform-spinner"></div>
+          <p className="uniform-loading-text">Loading content editor...</p>
         </div>
       </div>
     );
@@ -1240,29 +1241,56 @@ const ReviewEditContent = () => {
                 </div>
 
                 <div className="create-article-media-row">
-                  <label className="create-article-media-label">Upload media</label>
-                  <div className={`create-article-media-input-container ${(uploadError || errors.media) ? 'error' : ''}`}>
-                    <input
-                      type="text"
-                      className={`create-article-media-input ${(uploadError || errors.media) ? 'error' : ''}`}
-                      placeholder={isUploading ? "Uploading..." : "Upload Media"}
-                      readOnly
-                      value={uploadedFile ? uploadedFile.name : ''}
-                      onClick={() => !isUploading && document.getElementById('file-input').click()}
-                    />
-                    {uploadedFile && !isUploading && (
+                  <label className="create-article-media-label">Featured Media</label>
+                  <div className="create-article-media-upload-container">
+                    <div className={`create-article-media-upload-area ${(uploadError || errors.media) ? 'error' : ''} ${uploadedFile ? 'has-file' : ''}`}>
+                      {!uploadedFile ? (
+                        <div className="create-article-media-upload-content" onClick={() => !isUploading && document.getElementById('file-input').click()}>
+                          <div className="create-article-media-upload-text">
+                            <span className="create-article-media-upload-title">
+                              {isUploading ? "Uploading..." : "Click to upload media"}
+                            </span>
+                            <span className="create-article-media-upload-subtitle">
+                              Max file size: 100MB
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="create-article-media-file-selected">
+                          <div className="create-article-media-file-info">
+                            <div className="create-article-media-file-icon">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10,9 9,9 8,9"/>
+                              </svg>
+                            </div>
+                            <div className="create-article-media-file-details">
+                              <div className="create-article-media-file-name">{uploadedFile.name}</div>
+                              <div className="create-article-media-file-size">
+                                {(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB
+                              </div>
+                            </div>
+                          </div>
+                          {!isUploading && (
                       <button
                         type="button"
                         onClick={() => setUploadedFile(null)}
-                        className="create-article-file-remove"
+                              className="create-article-media-file-remove"
                         title="Remove file"
                       >
-                        <XMarkIcon className="create-article-remove-icon" />
+                              <XMarkIcon className="w-4 h-4" />
                       </button>
+                          )}
+                        </div>
                     )}
-                    {isUploading && (
-                      <div className="create-article-upload-spinner"></div>
-                    )}
+                      {isUploading && (
+                        <div className="create-article-media-upload-spinner">
+                          <div className="uniform-spinner-medium"></div>
+                        </div>
+                      )}
                   </div>
                   <input
                     id="file-input"
@@ -1273,8 +1301,9 @@ const ReviewEditContent = () => {
                     disabled={isUploading}
                   />
                   {(uploadError || errors.media) && (
-                    <div className="create-article-error">{uploadError || errors.media}</div>
+                      <div className="create-article-media-error">{uploadError || errors.media}</div>
                   )}
+                  </div>
                 </div>
 
                 <div className="create-article-media-row">

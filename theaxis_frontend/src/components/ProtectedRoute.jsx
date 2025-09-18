@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
-const ProtectedRoute = ({ children, requiredRole }) => {
-  const { isAuthenticated, loading, hasRole } = useAuth();
+const ProtectedRoute = ({ children, requiredRole, excludeRoles = [] }) => {
+  const { isAuthenticated, loading, hasRole, user } = useAuth();
 
   if (loading) {
     return (
@@ -17,6 +17,11 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   }
 
   if (requiredRole && !hasRole(requiredRole)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Check if user's role is in the excluded roles list
+  if (excludeRoles.includes(user?.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 

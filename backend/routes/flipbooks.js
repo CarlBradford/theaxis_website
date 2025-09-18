@@ -1,14 +1,75 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireRole } = require('../src/middleware/auth');
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Configure multer for image uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `flipbook_${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed!'), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 20 * 1024 * 1024 // 20MB limit
+  }
+});
+
+// Error handling middleware for multer
+const handleMulterError = (error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File size too large. Maximum size is 20MB.'
+      });
+    }
+    if (error.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({
+        success: false,
+        message: 'Too many files uploaded.'
+      });
+    }
+  }
+  
+  if (error.message === 'Only image files are allowed!') {
+    return res.status(400).json({
+      success: false,
+      message: 'Only image files are allowed.'
+    });
+  }
+  
+  next(error);
+};
+
 // Get all flipbooks (with optional filtering)
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const { type, isActive, page = 1, limit = 10 } = req.query;
+    const { type, isActive, page = 1, limit = 10, search, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
     
     const where = {};
     
@@ -22,8 +83,40 @@ router.get('/', authenticateToken, async (req, res) => {
       where.isActive = isActive === 'true';
     }
     
+    // Add search functionality
+    if (search && search.trim()) {
+      where.OR = [
+        {
+          name: {
+            contains: search.trim(),
+            mode: 'insensitive'
+          }
+        },
+        {
+          description: {
+            contains: search.trim(),
+            mode: 'insensitive'
+          }
+        }
+      ];
+    }
+    
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Build orderBy object
+    let orderBy = {};
+    if (sortBy === 'name' || sortBy === 'title') {
+      orderBy.name = sortOrder;
+    } else if (sortBy === 'type') {
+      orderBy.type = sortOrder;
+    } else if (sortBy === 'isActive') {
+      orderBy.isActive = sortOrder;
+    } else if (sortBy === 'releaseDate') {
+      orderBy.releaseDate = sortOrder;
+    } else {
+      orderBy.createdAt = sortOrder;
+    }
     
     const [flipbooks, total] = await Promise.all([
       prisma.flipbook.findMany({
@@ -38,9 +131,7 @@ router.get('/', authenticateToken, async (req, res) => {
             }
           }
         },
-        orderBy: {
-          createdAt: 'desc'
-        },
+        orderBy,
         skip,
         take: parseInt(limit)
       }),
@@ -110,17 +201,45 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // Create a new flipbook
-router.post('/', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN']), async (req, res) => {
+router.post('/', authenticateToken, upload.single('thumbnailImage'), handleMulterError, async (req, res) => {
   try {
     console.log('🔍 Flipbook creation request received:');
     console.log('   User:', req.user.username, '(', req.user.email, ')');
     console.log('   Role:', req.user.role);
     console.log('   User ID:', req.user.id);
+    console.log('   User Active:', req.user.isActive);
     console.log('   Request body:', req.body);
+    console.log('   Uploaded file:', req.file);
+    
+    // Manual role check for debugging
+    const allowedRoles = ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'];
+    const hasRequiredRole = allowedRoles.includes(req.user.role);
+    console.log('   Manual role check - Allowed roles:', allowedRoles);
+    console.log('   Manual role check - User role:', req.user.role);
+    console.log('   Manual role check - Has required role:', hasRequiredRole);
+    
+    if (!hasRequiredRole) {
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient permissions to access this resource',
+        details: {
+          userRole: req.user.role,
+          requiredRoles: allowedRoles,
+          userId: req.user.id
+        }
+      });
+    }
     
     const { name, embedUrl, type, releaseDate } = req.body;
     const description = req.body.description || null; // Make description optional
     const userId = req.user.id;
+    
+    // Handle uploaded image
+    let thumbnailUrl = null;
+    if (req.file) {
+      thumbnailUrl = `/uploads/${req.file.filename}`;
+      console.log('   Thumbnail uploaded:', thumbnailUrl);
+    }
     
     // Validate required fields
     if (!name || !embedUrl || !type) {
@@ -156,6 +275,7 @@ router.post('/', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN_CHIE
         type: type.toUpperCase(),
         description: description?.trim() || null,
         releaseDate: releaseDate ? new Date(releaseDate) : null,
+        thumbnailUrl: thumbnailUrl,
         userId
       },
       include: {
@@ -186,8 +306,34 @@ router.post('/', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN_CHIE
 });
 
 // Update a flipbook
-router.put('/:id', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN']), async (req, res) => {
+router.put('/:id', authenticateToken, upload.single('thumbnailImage'), handleMulterError, async (req, res) => {
   try {
+    console.log('🔍 Flipbook update request received:');
+    console.log('   User:', req.user.username, '(', req.user.email, ')');
+    console.log('   Role:', req.user.role);
+    console.log('   User ID:', req.user.id);
+    console.log('   User Active:', req.user.isActive);
+    console.log('   Flipbook ID:', req.params.id);
+    
+    // Manual role check for debugging
+    const allowedRoles = ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'];
+    const hasRequiredRole = allowedRoles.includes(req.user.role);
+    console.log('   Manual role check - Allowed roles:', allowedRoles);
+    console.log('   Manual role check - User role:', req.user.role);
+    console.log('   Manual role check - Has required role:', hasRequiredRole);
+    
+    if (!hasRequiredRole) {
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient permissions to access this resource',
+        details: {
+          userRole: req.user.role,
+          requiredRoles: allowedRoles,
+          userId: req.user.id
+        }
+      });
+    }
+    
     const { id } = req.params;
     const { name, embedUrl, type, releaseDate, isActive } = req.body;
     const description = req.body.description || null; // Make description optional
@@ -206,12 +352,22 @@ router.put('/:id', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN_CH
     }
     
     // Check if user owns the flipbook or has admin privileges
-    if (existingFlipbook.userId !== userId && !['EDITOR_IN_CHIEF', 'SYSTEM_ADMIN'].includes(req.user.role)) {
+    console.log('🔍 Ownership check:');
+    console.log('   Flipbook owner ID:', existingFlipbook.userId);
+    console.log('   Current user ID:', userId);
+    console.log('   User role:', req.user.role);
+    console.log('   Is owner:', existingFlipbook.userId === userId);
+    console.log('   Is admin role:', ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(req.user.role));
+    
+    if (existingFlipbook.userId !== userId && !['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(req.user.role)) {
+      console.log('   ❌ Ownership check failed');
       return res.status(403).json({
         success: false,
         message: 'You can only edit your own flipbooks'
       });
     }
+    
+    console.log('   ✅ Ownership check passed');
     
     // Validate publication type if provided
     if (type) {
@@ -236,6 +392,13 @@ router.put('/:id', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN_CH
       }
     }
     
+    // Handle uploaded image
+    let thumbnailUrl = existingFlipbook.thumbnailUrl; // Keep existing thumbnail by default
+    if (req.file) {
+      thumbnailUrl = `/uploads/${req.file.filename}`;
+      console.log('   New thumbnail uploaded:', thumbnailUrl);
+    }
+    
     const updateData = {};
     if (name) updateData.name = name.trim();
     if (embedUrl) updateData.embedUrl = embedUrl.trim();
@@ -243,6 +406,7 @@ router.put('/:id', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN_CH
     if (description !== undefined) updateData.description = description?.trim() || null;
     if (releaseDate !== undefined) updateData.releaseDate = releaseDate ? new Date(releaseDate) : null;
     if (isActive !== undefined) updateData.isActive = isActive;
+    updateData.thumbnailUrl = thumbnailUrl; // Always update thumbnailUrl
     
     const flipbook = await prisma.flipbook.update({
       where: { id },
@@ -275,8 +439,34 @@ router.put('/:id', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN_CH
 });
 
 // Delete a flipbook
-router.delete('/:id', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN']), async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
+    console.log('🔍 Flipbook delete request received:');
+    console.log('   User:', req.user.username, '(', req.user.email, ')');
+    console.log('   Role:', req.user.role);
+    console.log('   User ID:', req.user.id);
+    console.log('   User Active:', req.user.isActive);
+    console.log('   Flipbook ID:', req.params.id);
+    
+    // Manual role check for debugging
+    const allowedRoles = ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'];
+    const hasRequiredRole = allowedRoles.includes(req.user.role);
+    console.log('   Manual role check - Allowed roles:', allowedRoles);
+    console.log('   Manual role check - User role:', req.user.role);
+    console.log('   Manual role check - Has required role:', hasRequiredRole);
+    
+    if (!hasRequiredRole) {
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient permissions to access this resource',
+        details: {
+          userRole: req.user.role,
+          requiredRoles: allowedRoles,
+          userId: req.user.id
+        }
+      });
+    }
+    
     const { id } = req.params;
     const userId = req.user.id;
     
@@ -293,12 +483,22 @@ router.delete('/:id', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN
     }
     
     // Check if user owns the flipbook or has admin privileges
-    if (existingFlipbook.userId !== userId && !['EDITOR_IN_CHIEF', 'SYSTEM_ADMIN'].includes(req.user.role)) {
+    console.log('🔍 Ownership check:');
+    console.log('   Flipbook owner ID:', existingFlipbook.userId);
+    console.log('   Current user ID:', userId);
+    console.log('   User role:', req.user.role);
+    console.log('   Is owner:', existingFlipbook.userId === userId);
+    console.log('   Is admin role:', ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(req.user.role));
+    
+    if (existingFlipbook.userId !== userId && !['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(req.user.role)) {
+      console.log('   ❌ Ownership check failed');
       return res.status(403).json({
         success: false,
         message: 'You can only delete your own flipbooks'
       });
     }
+    
+    console.log('   ✅ Ownership check passed');
     
     await prisma.flipbook.delete({
       where: { id }
@@ -319,8 +519,34 @@ router.delete('/:id', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN
 });
 
 // Toggle flipbook active status
-router.patch('/:id/toggle', authenticateToken, requireRole(['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN']), async (req, res) => {
+router.patch('/:id/toggle', authenticateToken, async (req, res) => {
   try {
+    console.log('🔍 Flipbook toggle request received:');
+    console.log('   User:', req.user.username, '(', req.user.email, ')');
+    console.log('   Role:', req.user.role);
+    console.log('   User ID:', req.user.id);
+    console.log('   User Active:', req.user.isActive);
+    console.log('   Flipbook ID:', req.params.id);
+    
+    // Manual role check for debugging
+    const allowedRoles = ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'];
+    const hasRequiredRole = allowedRoles.includes(req.user.role);
+    console.log('   Manual role check - Allowed roles:', allowedRoles);
+    console.log('   Manual role check - User role:', req.user.role);
+    console.log('   Manual role check - Has required role:', hasRequiredRole);
+    
+    if (!hasRequiredRole) {
+      return res.status(403).json({
+        success: false,
+        message: 'Insufficient permissions to access this resource',
+        details: {
+          userRole: req.user.role,
+          requiredRoles: allowedRoles,
+          userId: req.user.id
+        }
+      });
+    }
+    
     const { id } = req.params;
     const userId = req.user.id;
     
@@ -337,7 +563,7 @@ router.patch('/:id/toggle', authenticateToken, requireRole(['SECTION_HEAD', 'EDI
     }
     
     // Check if user owns the flipbook or has admin privileges
-    if (existingFlipbook.userId !== userId && !['EDITOR_IN_CHIEF', 'SYSTEM_ADMIN'].includes(req.user.role)) {
+    if (existingFlipbook.userId !== userId && !['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         message: 'You can only modify your own flipbooks'

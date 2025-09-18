@@ -327,18 +327,18 @@ router.get(
     query('sortOrder').optional().isIn(['asc', 'desc']),
   ],
   asyncHandler(async (req, res) => {
-    const page = req.query.page || 1;
-    const limit = req.query.limit || 20;
-    const skip = (page - 1) * limit;
+      const page = req.query.page || 1;
+      const limit = req.query.limit || 20;
+      const skip = (page - 1) * limit;
     const { status, search, authorId, category, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
 
-    const where = {};
+      const where = {};
     
     // Search filter
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { excerpt: { contains: search, mode: 'insensitive' } },
+      if (search) {
+        where.OR = [
+          { title: { contains: search, mode: 'insensitive' } },
+          { excerpt: { contains: search, mode: 'insensitive' } },
         { author: { 
           OR: [
             { firstName: { contains: search, mode: 'insensitive' } },
@@ -350,10 +350,10 @@ router.get(
     }
     
     // Status filter
-    if (status) where.status = status;
+      if (status) where.status = status;
     
     // Author filter
-    if (authorId) where.authorId = authorId;
+      if (authorId) where.authorId = authorId;
     
     // Category filter
     if (category && category !== 'all') {
@@ -368,7 +368,7 @@ router.get(
     }
     
     // Public users can only see published articles
-    if (!req.user) where.status = 'PUBLISHED';
+      if (!req.user) where.status = 'PUBLISHED';
 
     // Build orderBy clause
     let orderBy = {};
@@ -392,58 +392,58 @@ router.get(
         orderBy = { createdAt: sortOrder };
     }
 
-    const [items, total] = await Promise.all([
-      prisma.article.findMany({
-        where,
-        select: { 
-          id: true, 
-          title: true, 
-          slug: true, 
-          content: true,
-          excerpt: true,
-          featuredImage: true,
-          status: true, 
-          publishedAt: true, 
-          publicationDate: true,
-          viewCount: true,
-          likeCount: true,
-          dislikeCount: true,
-          commentCount: true,
-          socialShares: true,
-          readingTime: true,
-          createdAt: true,
-          updatedAt: true,
-          author: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              username: true
+      const [items, total] = await Promise.all([
+        prisma.article.findMany({
+          where,
+          select: { 
+            id: true, 
+            title: true, 
+            slug: true, 
+            content: true,
+            excerpt: true,
+            featuredImage: true,
+            status: true, 
+            publishedAt: true, 
+            publicationDate: true,
+            viewCount: true,
+            likeCount: true,
+            dislikeCount: true,
+            commentCount: true,
+            socialShares: true,
+            readingTime: true,
+            createdAt: true,
+            updatedAt: true,
+            author: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true
+              }
+            },
+            categories: {
+              select: {
+                id: true,
+                name: true,
+                slug: true
+              }
+            },
+            tags: {
+              select: {
+                id: true,
+                name: true,
+                slug: true
+              }
             }
           },
-          categories: {
-            select: {
-              id: true,
-              name: true,
-              slug: true
-            }
-          },
-          tags: {
-            select: {
-              id: true,
-              name: true,
-              slug: true
-            }
-          }
-        },
-        skip,
-        take: limit,
+          skip,
+          take: limit,
         orderBy,
-      }),
-      prisma.article.count({ where }),
-    ]);
+        }),
+        prisma.article.count({ where }),
+      ]);
 
-    sendSuccessResponse(res, { items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } }, 'Articles retrieved');
+      sendSuccessResponse(res, { items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } }, 'Articles retrieved');
   })
 );
 
@@ -635,6 +635,10 @@ router.get(
  *         name: search
  *         schema: { type: string }
  *       - in: query
+ *         name: category
+ *         schema: { type: string }
+ *         description: Filter by category name or slug
+ *       - in: query
  *         name: sortBy
  *         schema: { type: string, enum: [createdAt, updatedAt, submittedAt, title, author], default: submittedAt }
  *         description: Field to sort by
@@ -663,13 +667,14 @@ router.get(
     query('queueType').optional().isIn(['section-head', 'eic']),
     query('status').optional().isString(),
     query('search').optional().isString(),
+    query('category').optional().isString(),
     query('sortBy').optional().isIn(['createdAt', 'updatedAt', 'submittedAt', 'title', 'author']),
     query('sortOrder').optional().isIn(['asc', 'desc']),
     query('page').optional().isInt({ min: 1 }).toInt(),
     query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
   ],
   asyncHandler(async (req, res) => {
-    const { queueType, status, search, sortBy = 'submittedAt', sortOrder = 'desc', page = 1, limit = 20 } = req.query;
+    const { queueType, status, search, category, sortBy = 'submittedAt', sortOrder = 'desc', page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
     // Determine queue type based on user role if not specified
@@ -711,6 +716,18 @@ router.get(
     // Add status filter if specified
     if (status && status !== 'all') {
       where.status = status;
+    }
+
+    // Add category filter if specified
+    if (category && category !== 'all') {
+      where.categories = {
+        some: {
+          OR: [
+            { name: { contains: category, mode: 'insensitive' } },
+            { slug: { contains: category, mode: 'insensitive' } }
+          ]
+        }
+      };
     }
 
     // Build orderBy clause

@@ -102,7 +102,7 @@ const MyContent = () => {
   const fetchMyContent = async (filters = {}, showLoading = false) => {
     try {
       if (showLoading) {
-        setLoading(true);
+      setLoading(true);
       }
       setError(null);
       
@@ -160,7 +160,7 @@ const MyContent = () => {
       setFilteredArticles([]);
     } finally {
       if (showLoading) {
-        setLoading(false);
+      setLoading(false);
       }
     }
   };
@@ -219,15 +219,15 @@ const MyContent = () => {
   const confirmRestoreArticle = async () => {
     if (!articleToRestore) return;
 
-    try {
+        try {
       await articlesAPI.updateArticleStatus(articleToRestore, 'DRAFT');
-      // Update local state
-      setArticles(articles.map(article => 
-        article.id === articleToRestore 
+          // Update local state
+          setArticles(articles.map(article => 
+            article.id === articleToRestore 
           ? { ...article, status: 'draft' }
-          : article
-      ));
-      
+              : article
+          ));
+          
       showNotification('Success', 'Article restored to draft successfully', 'success');
     } catch (error) {
       console.error('Failed to restore article:', error);
@@ -508,11 +508,13 @@ const MyContent = () => {
     }
   };
 
+  // Show uniform loading animation during transitions
   if (loading) {
     return (
       <div className="mycontent-container">
-        <div className="mycontent-loading">
-          <div className="mycontent-spinner"></div>
+        <div className="uniform-loading">
+          <div className="uniform-spinner"></div>
+          <p className="uniform-loading-text">Loading your content...</p>
         </div>
       </div>
     );
@@ -709,24 +711,24 @@ const MyContent = () => {
               <div className="filter-modal-date-compact">
                 <div className="filter-modal-date-item">
                   <label className="filter-modal-date-label">FROM:</label>
-                  <input
-                    type="date"
-                    value={dateRange.start}
-                    onChange={(e) => handleDateRangeChange('start', e.target.value)}
+                      <input
+                        type="date"
+                        value={dateRange.start}
+                        onChange={(e) => handleDateRangeChange('start', e.target.value)}
                     className="filter-modal-date-input"
-                  />
-                </div>
+                      />
+                    </div>
                 <div className="filter-modal-date-item">
                   <label className="filter-modal-date-label">TO:</label>
-                  <input
-                    type="date"
-                    value={dateRange.end}
-                    onChange={(e) => handleDateRangeChange('end', e.target.value)}
+                      <input
+                        type="date"
+                        value={dateRange.end}
+                        onChange={(e) => handleDateRangeChange('end', e.target.value)}
                     className="filter-modal-date-input"
-                  />
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
             {/* Categories - Simple Two Columns */}
             <div className="filter-modal-section">
@@ -735,16 +737,16 @@ const MyContent = () => {
                 <div className="filter-modal-categories-column">
                   {categories.slice(0, Math.ceil(categories.length / 2)).map(category => (
                     <label key={category.id} className={`filter-modal-checkbox-item ${selectedCategories.includes(category.id) ? 'selected' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(category.id)}
-                        onChange={() => handleCategoryToggle(category.id)}
+                        <input
+                          type="checkbox"
+                          checked={selectedCategories.includes(category.id)}
+                          onChange={() => handleCategoryToggle(category.id)}
                         className="filter-modal-checkbox-input"
-                      />
+                        />
                       <span className="filter-modal-checkbox-label">{category.name}</span>
-                    </label>
-                  ))}
-                </div>
+                      </label>
+                    ))}
+                  </div>
                 <div className="filter-modal-categories-column">
                   {categories.slice(Math.ceil(categories.length / 2)).map(category => (
                     <label key={category.id} className={`filter-modal-checkbox-item ${selectedCategories.includes(category.id) ? 'selected' : ''}`}>
@@ -758,10 +760,10 @@ const MyContent = () => {
                     </label>
                   ))}
                 </div>
+                </div>
               </div>
-            </div>
             </FilterModal>
-          </div>
+            </div>
 
         </div>
 
@@ -817,14 +819,14 @@ const MyContent = () => {
                         return (
                           <img 
                             src={mediaUrl} 
-                            alt={article.title}
-                            className="mycontent-featured-image"
-                            onError={(e) => {
+                      alt={article.title}
+                      className="mycontent-featured-image"
+                      onError={(e) => {
                               console.error('Image failed to load:', mediaUrl);
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
                         );
                       }
                     })()}
@@ -874,13 +876,13 @@ const MyContent = () => {
                         );
                       } else {
                         return (
-                          <button
-                            className="mycontent-action-btn mycontent-action-btn-disabled"
+                    <button
+                      className="mycontent-action-btn mycontent-action-btn-disabled"
                             title={`Cannot edit articles with status: ${getStatusLabel(article.status)}`}
-                            disabled
-                          >
-                            <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                          </button>
+                      disabled
+                    >
+                      <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
+                    </button>
                         );
                       }
                     }
@@ -899,13 +901,13 @@ const MyContent = () => {
                         );
                       } else {
                         return (
-                          <button
-                            className="mycontent-action-btn mycontent-action-btn-disabled"
+                    <button
+                      className="mycontent-action-btn mycontent-action-btn-disabled"
                             title={`Cannot edit articles with status: ${getStatusLabel(article.status)}`}
-                            disabled
-                          >
-                            <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                          </button>
+                      disabled
+                    >
+                      <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
+                    </button>
                         );
                       }
                     }
@@ -914,55 +916,55 @@ const MyContent = () => {
                     if (userRole === 'EDITOR_IN_CHIEF' || userRole === 'ADVISER' || userRole === 'SYSTEM_ADMIN') {
                       if (status === 'draft' || status === 'published' || status === 'approved') {
                         return (
-                          <Link
-                            to={`/content/${article.id}/edit`}
-                            className="mycontent-action-btn"
-                            title="Edit"
-                          >
-                            <PencilIcon className="mycontent-action-icon" />
-                          </Link>
+                  <Link
+                    to={`/content/${article.id}/edit`}
+                    className="mycontent-action-btn"
+                    title="Edit"
+                  >
+                    <PencilIcon className="mycontent-action-icon" />
+                  </Link>
                         );
                       } else {
                         return (
-                          <button
+                  <button
                             className="mycontent-action-btn mycontent-action-btn-disabled"
                             title={`Cannot edit articles with status: ${getStatusLabel(article.status)}`}
                             disabled
                           >
                             <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                          </button>
+                  </button>
                         );
                       }
                     }
                     
                     // Default: Disabled for unknown roles
                     return (
-                      <button
-                        className="mycontent-action-btn mycontent-action-btn-disabled"
+                        <button
+                          className="mycontent-action-btn mycontent-action-btn-disabled"
                         title="Edit not available for your role"
-                        disabled
-                      >
+                          disabled
+                        >
                         <PencilIcon className="mycontent-action-icon mycontent-action-icon-disabled" />
-                      </button>
+                        </button>
                     );
                   })()}
-                  <button
+                      <button
                     onClick={() => handlePreview(article)}
-                    className="mycontent-action-btn"
+                        className="mycontent-action-btn"
                     title={previewLoading ? "Loading..." : "Preview"}
                     disabled={previewLoading}
-                  >
+                      >
                     <EyeIcon className="mycontent-action-icon" />
-                  </button>
+                      </button>
                   {/* Delete Button - Only show for draft articles */}
                   {article.status === 'draft' && (
-                    <button
-                      onClick={() => handleDeleteArticle(article.id)}
-                      className="mycontent-action-btn"
+                  <button
+                    onClick={() => handleDeleteArticle(article.id)}
+                    className="mycontent-action-btn"
                       title="Delete Article"
-                    >
-                      <TrashIcon className="mycontent-action-icon" />
-                    </button>
+                  >
+                    <TrashIcon className="mycontent-action-icon" />
+                  </button>
                   )}
                 </div>
               </div>

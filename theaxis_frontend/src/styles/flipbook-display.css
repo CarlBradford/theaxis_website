@@ -371,11 +371,12 @@
 .flipbook-modal-embed-wrapper {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
   background-color: #f8f9fa;
   min-height: 0;
+  width: 100%;
 }
 
 .flipbook-modal-iframe {
@@ -383,9 +384,12 @@
   height: 100%;
   min-height: 600px;
   border: none;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 0;
+  box-shadow: none;
   background-color: var(--background-white);
+  margin: 0;
+  padding: 0;
+  display: block;
 }
 
 /* Description Section */
@@ -759,4 +763,191 @@
 .flipbook-modal-refresh-btn,
 .flipbook-modal-footer-btn {
   transition: all 0.2s ease;
+}
+
+/* Share Modal Styles */
+.flipbook-share-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  animation: flipbook-modal-fade-in 0.2s ease-out;
+}
+
+.flipbook-share-modal {
+  background-color: var(--background-white);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: flipbook-modal-slide-in 0.2s ease-out;
+}
+
+.flipbook-share-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.flipbook-share-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.flipbook-share-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.flipbook-share-close:hover {
+  background-color: var(--background-gray);
+  color: var(--text-primary);
+}
+
+.flipbook-share-content {
+  padding: 24px;
+}
+
+.flipbook-share-url {
+  margin-bottom: 24px;
+}
+
+.flipbook-share-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.flipbook-share-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.flipbook-share-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-primary);
+  background-color: var(--background-gray);
+  font-family: 'Courier New', monospace;
+}
+
+.flipbook-share-copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--background-white);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.flipbook-share-copy-btn:hover {
+  background-color: var(--primary-light);
+  color: var(--background-white);
+  border-color: var(--primary-light);
+}
+
+.flipbook-share-success {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+.flipbook-share-social {
+  margin-bottom: 0;
+}
+
+.flipbook-share-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.flipbook-share-social-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--background-white);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.flipbook-share-social-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.flipbook-share-social-btn.twitter:hover {
+  background-color: #1da1f2;
+  color: white;
+  border-color: #1da1f2;
+}
+
+.flipbook-share-social-btn.facebook:hover {
+  background-color: #1877f2;
+  color: white;
+  border-color: #1877f2;
+}
+
+.flipbook-share-social-btn.linkedin:hover {
+  background-color: #0077b5;
+  color: white;
+  border-color: #0077b5;
+}
+
+.flipbook-share-social-btn.whatsapp:hover {
+  background-color: #25d366;
+  color: white;
+  border-color: #25d366;
+}
+
+.flipbook-share-social-btn.email:hover {
+  background-color: var(--primary-light);
+  color: white;
+  border-color: var(--primary-light);
+}
+
+.flipbook-share-social-icon {
+  font-size: 16px;
+  font-weight: bold;
+  width: 20px;
+  text-align: center;
 }

@@ -114,6 +114,8 @@ model Comment {
   isApproved       Boolean   @default(false)
   isModerated      Boolean   @default(false)
   moderationReason String?
+  guestName        String?   // For storing additional name info
+  guestEmail       String?   // For storing additional email info
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   authorId         String
@@ -353,6 +355,7 @@ model Flipbook {
   type        PublicationType
   description String?
   releaseDate DateTime?      @map("release_date")
+  thumbnailUrl String?       @map("thumbnail_url")
   isActive    Boolean        @default(true) @map("is_active")
   userId      String         @map("user_id")
   createdAt   DateTime       @default(now()) @map("created_at")

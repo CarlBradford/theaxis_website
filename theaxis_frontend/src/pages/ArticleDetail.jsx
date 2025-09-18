@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import CommentForm from '../components/CommentForm';
+import CommentList from '../components/CommentList';
 
 const ArticleDetail = () => {
   const { id } = useParams();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [commentRefreshKey, setCommentRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchArticle();
@@ -21,6 +24,12 @@ const ArticleDetail = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCommentAdded = () => {
+    // Refresh the comment list by updating the key
+    setCommentRefreshKey(prev => prev + 1);
+    console.log('Comment added successfully');
   };
 
   if (loading) {
@@ -109,6 +118,18 @@ const ArticleDetail = () => {
           </div>
         </footer>
       </article>
+
+      {/* Comments Section */}
+      <div className="space-y-6">
+        {/* Comment Form */}
+        <CommentForm 
+          articleId={article.id} 
+          onCommentAdded={handleCommentAdded} 
+        />
+        
+        {/* Comment List */}
+        <CommentList key={commentRefreshKey} articleId={article.id} />
+      </div>
     </div>
   );
 };

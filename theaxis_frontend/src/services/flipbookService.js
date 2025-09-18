@@ -87,7 +87,27 @@ class FlipbookService {
       console.log('   Token:', localStorage.getItem('token'));
       console.log('   API base URL:', this.api.defaults.baseURL);
       
-      const response = await this.api.post('/', flipbookData);
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('name', flipbookData.name);
+      formData.append('embedUrl', flipbookData.embedUrl);
+      formData.append('type', flipbookData.type);
+      formData.append('releaseDate', flipbookData.releaseDate);
+      
+      // Add image file if present
+      if (flipbookData.thumbnailImage) {
+        formData.append('thumbnailImage', flipbookData.thumbnailImage);
+        console.log('   Image file added to FormData:', flipbookData.thumbnailImage.name);
+      }
+      
+      // Create a new axios instance for this request with multipart headers
+      const response = await axios.post(`${this.api.defaults.baseURL}/`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
       console.log('   Response:', response.data);
       return response.data;
     } catch (error) {
@@ -106,7 +126,28 @@ class FlipbookService {
    */
   async updateFlipbook(id, flipbookData) {
     try {
-      const response = await this.api.put(`/${id}`, flipbookData);
+      console.log('🔍 FlipbookService - Updating flipbook:', id);
+      console.log('   Update data:', flipbookData);
+      
+      const formData = new FormData();
+      formData.append('name', flipbookData.name);
+      formData.append('embedUrl', flipbookData.embedUrl);
+      formData.append('type', flipbookData.type);
+      formData.append('releaseDate', flipbookData.releaseDate);
+      
+      if (flipbookData.thumbnailImage) {
+        formData.append('thumbnailImage', flipbookData.thumbnailImage);
+        console.log('   Image file added to FormData:', flipbookData.thumbnailImage.name);
+      }
+      
+      const response = await this.api.put(`/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      console.log('   Update successful:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error updating flipbook:', error);

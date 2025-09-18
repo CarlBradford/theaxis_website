@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './components/NotificationBell';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -16,17 +17,20 @@ import Media from './pages/Media';
 import Profile from './pages/Profile';
 import UserManagement from './pages/UserManagement';
 import PublishedContent from './pages/PublishedContent';
+import CommentManagement from './pages/CommentManagement';
 import LoginDebug from './pages/LoginDebug';
 import HealthCheck from './pages/HealthCheck';
 import ProtectedRoute from './components/ProtectedRoute';
+import './styles/uniform-loading.css';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
-            <Route path="/" element={<Layout />}>
+      <NotificationProvider>
+        <Router>
+          <div className="min-h-screen bg-gray-50">
+            <Routes>
+              <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="login" element={<Login />} />
               <Route path="login-debug" element={<LoginDebug />} />
@@ -44,12 +48,12 @@ function App() {
               
               {/* Article Management Routes */}
               <Route path="content/mycontent" element={
-                <ProtectedRoute requiredRole="STAFF">
+                <ProtectedRoute requiredRole="STAFF" excludeRoles={['ADVISER']}>
                   <MyContent />
                 </ProtectedRoute>
               } />
               <Route path="content/status" element={
-                <ProtectedRoute requiredRole="STAFF">
+                <ProtectedRoute requiredRole="STAFF" excludeRoles={['ADVISER']}>
                   <ContentStatus />
                 </ProtectedRoute>
               } />
@@ -93,6 +97,12 @@ function App() {
                 </ProtectedRoute>
               } />
               
+              <Route path="comments" element={
+                <ProtectedRoute requiredRole="SECTION_HEAD">
+                  <CommentManagement />
+                </ProtectedRoute>
+              } />
+              
               <Route path="analytics" element={
                 <ProtectedRoute requiredRole="EDITOR_IN_CHIEF">
                   <div>Analytics Dashboard</div>
@@ -110,10 +120,11 @@ function App() {
                   <Profile />
                 </ProtectedRoute>
               } />
-            </Route>
-          </Routes>
-        </div>
-      </Router>
+              </Route>
+            </Routes>
+          </div>
+        </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 }
