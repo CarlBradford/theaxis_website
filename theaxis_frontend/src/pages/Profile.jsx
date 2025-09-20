@@ -1,11 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { authAPI } from '../services/apiService';
 import api from '../services/api';
-import { UserCircleIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { 
+  UserCircleIcon, 
+  EyeIcon, 
+  EyeSlashIcon, 
+  CheckCircleIcon, 
+  ExclamationTriangleIcon,
+  CameraIcon,
+  PencilIcon,
+  XMarkIcon,
+  CheckIcon,
+  ArrowUpTrayIcon
+} from '@heroicons/react/24/outline';
+import '../styles/profile.css';
 
 const Profile = () => {
   const { user } = useAuth();
+  const fileInputRef = useRef(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -14,8 +27,15 @@ const Profile = () => {
     lastName: '',
     username: '',
     email: '',
-    bio: '',
   });
+  
+  // Image upload states
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageError, setImageError] = useState(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [tempImagePreview, setTempImagePreview] = useState(null);
   
   // Password change states
   const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -46,12 +66,175 @@ const Profile = () => {
         lastName: userData.lastName || '',
         username: userData.username || '',
         email: userData.email || '',
-        bio: userData.bio || '',
       });
+      // Set image preview with proper URL construction
+      if (userData.profileImage) {
+        const imageUrl = userData.profileImage.startsWith('http') 
+          ? userData.profileImage 
+          : `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${userData.profileImage}`;
+        setImagePreview(imageUrl);
+      } else {
+        setImagePreview(null);
+      }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Image upload handlers
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setImageError('Please select a valid image file');
+      setTimeout(() => setImageError(null), 5000);
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      setImageError('Image size must be less than 10MB');
+      setTimeout(() => setImageError(null), 5000);
+      return;
+    }
+
+    setImageError(null);
+    
+    // Create preview URL for modal display
+    const previewUrl = URL.createObjectURL(file);
+    setTempImagePreview(previewUrl);
+    setShowUploadModal(true);
+  };
+
+  const confirmImageUpload = async () => {
+    if (!tempImagePreview) return;
+    
+    setImageUploading(true);
+    setShowUploadModal(false);
+
+    try {
+      // Get the file from the input
+      const file = fileInputRef.current?.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('profileImage', file);
+
+      const response = await api.post('/users/upload-profile-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      // Update profile with new image URL
+      const imagePath = response.data.data.profileImage;
+      const imageUrl = imagePath.startsWith('http') 
+        ? imagePath 
+        : `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${imagePath}`;
+      
+      setProfile(prev => ({ ...prev, profileImage: imageUrl }));
+      setImagePreview(imageUrl);
+      
+      // Clean up the preview URL
+      URL.revokeObjectURL(tempImagePreview);
+      setTempImagePreview(null);
+      
+      // Show success message
+      setPasswordSuccess(true);
+      setTimeout(() => setPasswordSuccess(false), 3000);
+      
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      setImageError('Failed to upload image. Please try again.');
+      // Auto-hide error message after 5 seconds
+      setTimeout(() => setImageError(null), 5000);
+      // Revert to previous image on error
+      if (profile?.profileImage) {
+        setImagePreview(profile.profileImage);
+      } else {
+        setImagePreview(null);
+      }
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const cancelImageUpload = () => {
+    setShowUploadModal(false);
+    if (tempImagePreview) {
+      URL.revokeObjectURL(tempImagePreview);
+      setTempImagePreview(null);
+    }
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeImage = async () => {
+    try {
+      await api.delete('/users/profile-image');
+      setProfile(prev => ({ ...prev, profileImage: null }));
+      setImagePreview(null);
+      setPasswordSuccess(true);
+      setTimeout(() => setPasswordSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to remove image:', error);
+      setImageError('Failed to remove image. Please try again.');
+      setTimeout(() => setImageError(null), 5000);
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setImageError('Please select a valid image file');
+        setTimeout(() => setImageError(null), 5000);
+        return;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        setImageError('Image size must be less than 10MB');
+        setTimeout(() => setImageError(null), 5000);
+        return;
+      }
+
+      setImageError(null);
+      
+      // Create preview URL for modal display
+      const previewUrl = URL.createObjectURL(file);
+      setTempImagePreview(previewUrl);
+      setShowUploadModal(true);
+      
+      // Set the file in the input for later use
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      if (fileInputRef.current) {
+        fileInputRef.current.files = dataTransfer.files;
+      }
     }
   };
 
@@ -122,6 +305,18 @@ const Profile = () => {
     if (errors.length >= 2) return { strength: 3, label: 'Fair', color: 'text-yellow-500' };
     if (errors.length >= 1) return { strength: 4, label: 'Good', color: 'text-blue-500' };
     return { strength: 5, label: 'Strong', color: 'text-green-500' };
+  };
+
+  const getRoleDisplayName = (role) => {
+    const roleMap = {
+      'STAFF': 'Staff Member',
+      'SECTION_HEAD': 'Section Head',
+      'EDITOR_IN_CHIEF': 'Editor-in-Chief',
+      'ADVISER': 'Adviser',
+      'SYSTEM_ADMIN': 'System Administrator',
+      'READER': 'Reader'
+    };
+    return roleMap[role] || role;
   };
 
   const handlePasswordSubmit = async (e) => {
@@ -197,360 +392,465 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="profile-container">
+        <div className="profile-loading">
+          <div className="profile-spinner"></div>
+          <p>Loading your profile...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-        <button
-          onClick={() => setEditing(!editing)}
-          className="btn-secondary"
-        >
-          {editing ? 'Cancel' : 'Edit Profile'}
-        </button>
-      </div>
+    <div className="profile-container">
+      {/* Success Message */}
+      {passwordSuccess && (
+        <div className="profile-success-message">
+          <CheckCircleIcon className="profile-success-icon" />
+          <span>Profile updated successfully!</span>
+        </div>
+      )}
 
-      <div className="card">
-        {editing ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="input-field"
-                  required
+      <div className="profile-content">
+        {/* Profile Header Section */}
+        <div className="profile-header-section">
+          <div className="profile-header-info">
+            <div 
+              className={`profile-image-container ${isDragOver ? 'profile-image-drag-over' : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              {imagePreview ? (
+                <img 
+                  src={imagePreview} 
+                  alt="Profile" 
+                  className="profile-image"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="input-field"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                className="input-field"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="input-field"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Bio
-              </label>
-              <textarea
-                name="bio"
-                value={formData.bio}
-                onChange={handleChange}
-                className="input-field"
-                rows={4}
-                placeholder="Tell us about yourself..."
-              />
-            </div>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => setEditing(false)}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary"
-              >
-                {loading ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex-shrink-0">
-                {profile?.profileImage ? (
-                  <img
-                    src={profile.profileImage}
-                    alt="Profile"
-                    className="h-16 w-16 rounded-full"
-                  />
-                ) : (
-                  <UserCircleIcon className="h-16 w-16 text-gray-400" />
+              ) : (
+                <div className="profile-image-placeholder">
+                  <UserCircleIcon className="profile-image-icon" />
+                </div>
+              )}
+              
+              <div className="profile-image-overlay">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={imageUploading}
+                  className="profile-image-upload-btn"
+                >
+                  {imageUploading ? (
+                    <>
+                      <div className="profile-image-spinner"></div>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <CameraIcon className="profile-image-upload-icon" />
+                      Upload
+                    </>
+                  )}
+                </button>
+                
+                {imagePreview && !imageUploading && (
+                  <button
+                    onClick={removeImage}
+                    className="profile-image-remove-btn"
+                  >
+                    <XMarkIcon className="profile-image-remove-icon" />
+                  </button>
                 )}
               </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {profile?.firstName} {profile?.lastName}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  @{profile?.username}
-                </p>
-                <p className="text-sm text-gray-500 capitalize">
-                  {profile?.role?.toLowerCase().replace('_', ' ')}
-                </p>
-              </div>
             </div>
             
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-gray-700">Email</h3>
-                <p className="text-sm text-gray-900">{profile?.email}</p>
-              </div>
-              
-              {profile?.bio && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700">Bio</h3>
-                  <p className="text-sm text-gray-900">{profile.bio}</p>
+            <div className="profile-user-info">
+              <h1 className="profile-user-name">
+                {profile?.firstName} {profile?.lastName}
+              </h1>
+              <p className="profile-user-email">{profile?.email}</p>
+            </div>
+          </div>
+          
+          <div className="profile-header-actions">
+            <button
+              onClick={() => setEditing(!editing)}
+              className="profile-edit-btn"
+            >
+              {editing ? 'Cancel' : 'Edit Profile'}
+            </button>
+          </div>
+        </div>
+        
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="profile-image-input"
+        />
+        
+        {imageError && (
+          <div className="profile-error-message">
+            <ExclamationTriangleIcon className="profile-error-icon" />
+            <span>{imageError}</span>
+          </div>
+        )}
+
+        {/* Personal Information Section */}
+        <div className="profile-form-section">
+          <div className="profile-section-header">
+            <h2 className="profile-section-title">Personal Information</h2>
+            <p className="profile-section-description">Update your personal details</p>
+          </div>
+          
+          {editing ? (
+            <form onSubmit={handleSubmit} className="profile-form">
+              <div className="profile-form-grid">
+                <div className="profile-form-group">
+                  <label className="profile-form-label">First Name</label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    className="profile-form-input"
+                    placeholder="Your First Name"
+                    required
+                  />
                 </div>
-              )}
-              
-              <div>
-                <h3 className="text-sm font-medium text-gray-700">Member Since</h3>
-                <p className="text-sm text-gray-900">
-                  {new Date(profile?.createdAt).toLocaleDateString()}
-                </p>
+                
+                <div className="profile-form-group">
+                  <label className="profile-form-label">Last Name</label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    className="profile-form-input"
+                    placeholder="Your Last Name"
+                    required
+                  />
+                </div>
+                
+                <div className="profile-form-group">
+                  <label className="profile-form-label">Username</label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    className="profile-form-input"
+                    placeholder="Your Username"
+                    required
+                  />
+                </div>
+                
+                <div className="profile-form-group">
+                  <label className="profile-form-label">Email Address</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="profile-form-input"
+                    placeholder="Your Email Address"
+                    required
+                  />
+                </div>
               </div>
               
-              {profile?.lastLoginAt && (
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700">Last Login</h3>
-                  <p className="text-sm text-gray-900">
-                    {new Date(profile.lastLoginAt).toLocaleDateString()}
+              <div className="profile-form-actions">
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="profile-btn profile-btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="profile-btn profile-btn-primary"
+                >
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="profile-info-display">
+              <div className="profile-info-grid">
+                <div className="profile-info-item">
+                  <label className="profile-info-label">First Name</label>
+                  <p className="profile-info-value">{profile?.firstName}</p>
+                </div>
+                
+                <div className="profile-info-item">
+                  <label className="profile-info-label">Last Name</label>
+                  <p className="profile-info-value">{profile?.lastName}</p>
+                </div>
+                
+                <div className="profile-info-item">
+                  <label className="profile-info-label">Username</label>
+                  <p className="profile-info-value">@{profile?.username}</p>
+                </div>
+                
+                <div className="profile-info-item">
+                  <label className="profile-info-label">Email</label>
+                  <p className="profile-info-value">{profile?.email}</p>
+                </div>
+                
+                <div className="profile-info-item">
+                  <label className="profile-info-label">Role</label>
+                  <p className="profile-info-value profile-info-role">
+                    {getRoleDisplayName(profile?.role)}
                   </p>
                 </div>
-              )}
+                
+                <div className="profile-info-item">
+                  <label className="profile-info-label">Member Since</label>
+                  <p className="profile-info-value">
+                    {new Date(profile?.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Change Password Section */}
-      <div className="card">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Change Password</h2>
-          <button
-            onClick={() => setShowPasswordChange(!showPasswordChange)}
-            className="btn-secondary"
-          >
-            {showPasswordChange ? 'Cancel' : 'Change Password'}
-          </button>
+          )}
         </div>
 
-        {showPasswordChange ? (
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            {passwordSuccess && (
-              <div className="bg-green-50 border border-green-200 rounded-md p-4 flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-400 mr-2" />
-                <span className="text-green-800">Password changed successfully!</span>
-              </div>
-            )}
-
-            {passwordErrors.general && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4 flex items-center">
-                <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2" />
-                <span className="text-red-800">{passwordErrors.general}</span>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Current Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPasswords.current ? "text" : "password"}
-                  name="currentPassword"
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  className={`input-field pr-10 ${passwordErrors.currentPassword ? 'border-red-300' : ''}`}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => togglePasswordVisibility('current')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPasswords.current ? (
-                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-              {passwordErrors.currentPassword && (
-                <p className="mt-1 text-sm text-red-600">{passwordErrors.currentPassword}</p>
-              )}
+        {/* Password Change Section */}
+        <div className="profile-password-section">
+          <div className="profile-section">
+            <div className="profile-section-header">
+              <h2 className="profile-section-title">Change Password</h2>
+              <p className="profile-section-description">Update your password to keep your account secure</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                New Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPasswords.new ? "text" : "password"}
-                  name="newPassword"
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  className={`input-field pr-10 ${passwordErrors.newPassword ? 'border-red-300' : ''}`}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => togglePasswordVisibility('new')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPasswords.new ? (
-                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-              {passwordData.newPassword && (
-                <div className="mt-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          getPasswordStrength(passwordData.newPassword).strength >= 4
-                            ? 'bg-green-500'
-                            : getPasswordStrength(passwordData.newPassword).strength >= 3
-                            ? 'bg-yellow-500'
-                            : getPasswordStrength(passwordData.newPassword).strength >= 2
-                            ? 'bg-orange-500'
-                            : 'bg-red-500'
-                        }`}
-                        style={{
-                          width: `${(getPasswordStrength(passwordData.newPassword).strength / 5) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    <span className={`text-sm font-medium ${getPasswordStrength(passwordData.newPassword).color}`}>
-                      {getPasswordStrength(passwordData.newPassword).label}
-                    </span>
+            {showPasswordChange ? (
+              <form onSubmit={handlePasswordSubmit} className="profile-password-form">
+                {passwordErrors.general && (
+                  <div className="profile-error-message">
+                    <ExclamationTriangleIcon className="profile-error-icon" />
+                    <span>{passwordErrors.general}</span>
                   </div>
-                </div>
-              )}
-              {passwordErrors.newPassword && (
-                <p className="mt-1 text-sm text-red-600">{passwordErrors.newPassword}</p>
-              )}
-            </div>
+                )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm New Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPasswords.confirm ? "text" : "password"}
-                  name="confirmPassword"
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                  className={`input-field pr-10 ${passwordErrors.confirmPassword ? 'border-red-300' : ''}`}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => togglePasswordVisibility('confirm')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPasswords.confirm ? (
-                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5 text-gray-400" />
+                <div className="profile-form-group">
+                  <label className="profile-form-label">Current Password</label>
+                  <div className="profile-form-input-container">
+                    <input
+                      type={showPasswords.current ? "text" : "password"}
+                      name="currentPassword"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange}
+                      className={`profile-form-input ${passwordErrors.currentPassword ? 'profile-form-input-error' : ''}`}
+                      placeholder="Enter current password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('current')}
+                      className="profile-form-input-toggle"
+                    >
+                      {showPasswords.current ? (
+                        <EyeSlashIcon className="profile-form-input-toggle-icon" />
+                      ) : (
+                        <EyeIcon className="profile-form-input-toggle-icon" />
+                      )}
+                    </button>
+                  </div>
+                  {passwordErrors.currentPassword && (
+                    <p className="profile-form-error">{passwordErrors.currentPassword}</p>
                   )}
+                </div>
+
+                <div className="profile-form-group">
+                  <label className="profile-form-label">New Password</label>
+                  <div className="profile-form-input-container">
+                    <input
+                      type={showPasswords.new ? "text" : "password"}
+                      name="newPassword"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordChange}
+                      className={`profile-form-input ${passwordErrors.newPassword ? 'profile-form-input-error' : ''}`}
+                      placeholder="Enter new password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('new')}
+                      className="profile-form-input-toggle"
+                    >
+                      {showPasswords.new ? (
+                        <EyeSlashIcon className="profile-form-input-toggle-icon" />
+                      ) : (
+                        <EyeIcon className="profile-form-input-toggle-icon" />
+                      )}
+                    </button>
+                  </div>
+                  
+                  {passwordData.newPassword && (
+                    <div className="profile-password-strength">
+                      <div className="profile-password-strength-bar">
+                        <div
+                          className={`profile-password-strength-fill ${
+                            getPasswordStrength(passwordData.newPassword).strength >= 4
+                              ? 'profile-password-strength-strong'
+                              : getPasswordStrength(passwordData.newPassword).strength >= 3
+                              ? 'profile-password-strength-medium'
+                              : getPasswordStrength(passwordData.newPassword).strength >= 2
+                              ? 'profile-password-strength-weak'
+                              : 'profile-password-strength-very-weak'
+                          }`}
+                          style={{
+                            width: `${(getPasswordStrength(passwordData.newPassword).strength / 5) * 100}%`,
+                          }}
+                        />
+                      </div>
+                      <span className={`profile-password-strength-label ${getPasswordStrength(passwordData.newPassword).color}`}>
+                        {getPasswordStrength(passwordData.newPassword).label}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {passwordErrors.newPassword && (
+                    <p className="profile-form-error">{passwordErrors.newPassword}</p>
+                  )}
+                </div>
+
+                <div className="profile-form-group">
+                  <label className="profile-form-label">Confirm New Password</label>
+                  <div className="profile-form-input-container">
+                    <input
+                      type={showPasswords.confirm ? "text" : "password"}
+                      name="confirmPassword"
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordChange}
+                      className={`profile-form-input ${passwordErrors.confirmPassword ? 'profile-form-input-error' : ''}`}
+                      placeholder="Confirm new password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('confirm')}
+                      className="profile-form-input-toggle"
+                    >
+                      {showPasswords.confirm ? (
+                        <EyeSlashIcon className="profile-form-input-toggle-icon" />
+                      ) : (
+                        <EyeIcon className="profile-form-input-toggle-icon" />
+                      )}
+                    </button>
+                  </div>
+                  {passwordErrors.confirmPassword && (
+                    <p className="profile-form-error">{passwordErrors.confirmPassword}</p>
+                  )}
+                </div>
+
+                <div className="profile-password-requirements">
+                  <h4 className="profile-password-requirements-title">Password Requirements:</h4>
+                  <ul className="profile-password-requirements-list">
+                    <li>At least 8 characters long</li>
+                    <li>Contains uppercase and lowercase letters</li>
+                    <li>Contains at least one number</li>
+                    <li>Contains at least one special character</li>
+                  </ul>
+                </div>
+
+                <div className="profile-form-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPasswordChange(false);
+                      setPasswordData({
+                        currentPassword: '',
+                        newPassword: '',
+                        confirmPassword: '',
+                      });
+                      setPasswordErrors({});
+                    }}
+                    className="profile-btn profile-btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="profile-btn profile-btn-primary"
+                  >
+                    {loading ? 'Changing Password...' : 'Change Password'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="profile-password-display">
+                <div className="profile-password-info">
+                  <p>Keep your account secure with a strong password.</p>
+                  <p>We recommend changing your password regularly.</p>
+                </div>
+                <button
+                  onClick={() => setShowPasswordChange(true)}
+                  className="profile-btn profile-btn-primary"
+                >
+                  Change Password
                 </button>
               </div>
-              {passwordErrors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{passwordErrors.confirmPassword}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    
+    {/* Image Upload Modal */}
+    {showUploadModal && (
+      <div className="profile-upload-modal-overlay" onClick={cancelImageUpload}>
+        <div className="profile-upload-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="profile-upload-modal-header">
+            <h3 className="profile-upload-modal-title">Upload Profile Picture</h3>
+            <button 
+              onClick={cancelImageUpload}
+              className="profile-upload-modal-close"
+            >
+              <XMarkIcon className="profile-upload-modal-close-icon" />
+            </button>
+          </div>
+          
+          <div className="profile-upload-modal-content">
+            <div className="profile-upload-modal-preview">
+              {tempImagePreview && (
+                <img 
+                  src={tempImagePreview} 
+                  alt="Preview" 
+                  className="profile-upload-modal-image"
+                />
               )}
             </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-              <h4 className="text-sm font-medium text-blue-800 mb-2">Password Requirements:</h4>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• At least 8 characters long</li>
-                <li>• Contains uppercase and lowercase letters</li>
-                <li>• Contains at least one number</li>
-                <li>• Contains at least one special character</li>
-              </ul>
+            
+            <div className="profile-upload-modal-info">
+              <p className="profile-upload-modal-text">
+                This will replace your current profile picture.
+              </p>
+              <p className="profile-upload-modal-subtext">
+                Supported formats: JPEG, PNG, GIF, WebP (Max 10MB)
+              </p>
             </div>
-
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPasswordChange(false);
-                  setPasswordData({
-                    currentPassword: '',
-                    newPassword: '',
-                    confirmPassword: '',
-                  });
-                  setPasswordErrors({});
-                }}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary"
-              >
-                {loading ? 'Changing Password...' : 'Change Password'}
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="text-sm text-gray-500">
-            <p>Click "Change Password" to update your password.</p>
-            <p className="mt-1">Make sure to use a strong password for better security.</p>
           </div>
-        )}
+          
+          <div className="profile-upload-modal-actions">
+            <button
+              onClick={cancelImageUpload}
+              className="profile-btn profile-btn-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmImageUpload}
+              className="profile-btn profile-btn-primary"
+            >
+              Upload Picture
+            </button>
+          </div>
+        </div>
       </div>
+    )}
     </div>
   );
 };

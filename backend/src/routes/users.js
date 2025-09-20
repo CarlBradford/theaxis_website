@@ -2,13 +2,47 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { PrismaClient } = require('@prisma/client');
 const argon2 = require('argon2');
+const multer = require('multer');
+const path = require('path');
 const { authenticateToken, requirePermission, requireAnyPermission, canManageUserRole, canCreateUserWithRole } = require('../middleware/auth');
 const { asyncHandler, sendSuccessResponse, sendErrorResponse, createNotFoundError } = require('../middleware/errorHandler');
 const { logger } = require('../utils/logger');
 const { PERMISSIONS } = require('../config/permissions');
+const config = require('../config');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// Multer configuration for profile image uploads
+const profileImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const profileImagesPath = path.join(config.upload.path, 'profile-images');
+    // Ensure directory exists
+    const fs = require('fs');
+    if (!fs.existsSync(profileImagesPath)) {
+      fs.mkdirSync(profileImagesPath, { recursive: true });
+    }
+    cb(null, profileImagesPath);
+  },
+  filename: (req, file, cb) => {
+    const fileExtension = path.extname(file.originalname);
+    const fileName = `profile_${req.user.id}_${Date.now()}${fileExtension}`;
+    cb(null, fileName);
+  },
+});
+
+const profileImageUpload = multer({
+  storage: profileImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'), false);
+    }
+  },
+});
 
 // Password generation utility
 const generatePassword = () => {
@@ -98,12 +132,34 @@ router.get('/', [
     }
   }
   if (search) {
+    const searchTerms = search.trim().split(' ').filter(term => term.length > 0);
+    
     where.OR = [
       { firstName: { contains: search, mode: 'insensitive' } },
       { lastName: { contains: search, mode: 'insensitive' } },
       { username: { contains: search, mode: 'insensitive' } },
       { email: { contains: search, mode: 'insensitive' } },
     ];
+    
+    // If search has multiple terms, add full name search
+    if (searchTerms.length >= 2) {
+      where.OR.push(
+        // Search by full name (firstName + lastName)
+        {
+          AND: [
+            { firstName: { contains: searchTerms[0], mode: 'insensitive' } },
+            { lastName: { contains: searchTerms[1], mode: 'insensitive' } }
+          ]
+        },
+        // Search by full name in reverse order
+        {
+          AND: [
+            { firstName: { contains: searchTerms[1], mode: 'insensitive' } },
+            { lastName: { contains: searchTerms[0], mode: 'insensitive' } }
+          ]
+        }
+      );
+    }
   }
   
   // Hide SYSTEM_ADMIN users from EIC and ADVISER
@@ -135,6 +191,7 @@ router.get('/', [
         role: true,
         isActive: true,
         emailVerified: true,
+        profileImage: true,
         lastLoginAt: true,
         createdAt: true,
         updatedAt: true,
@@ -395,6 +452,7 @@ router.get('/profile', authenticateToken, asyncHandler(async (req, res) => {
       isActive: true,
       emailVerified: true,
       bio: true,
+      profileImage: true,
       lastLoginAt: true,
       createdAt: true,
       updatedAt: true,
@@ -406,6 +464,221 @@ router.get('/profile', authenticateToken, asyncHandler(async (req, res) => {
   }
 
   sendSuccessResponse(res, user, 'Profile retrieved successfully');
+}));
+
+/**
+ * @swagger
+ * /users/profile:
+ *   put:
+ *     summary: Update current user's profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 50
+ *               lastName:
+ *                 type: string
+ *                 minLength: 1
+ *                 maxLength: 50
+ *               username:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 20
+ *                 pattern: '^[a-zA-Z0-9_]+$'
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         description: Validation error or username/email already exists
+ *       401:
+ *         description: Unauthorized
+ */
+// Update current user's profile
+router.put('/profile', [
+  authenticateToken,
+  body('firstName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('First name must be between 1 and 50 characters'),
+  body('lastName')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Last name must be between 1 and 50 characters'),
+  body('username')
+    .optional()
+    .isLength({ min: 3, max: 20 })
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('Username must be 3-20 characters and contain only letters, numbers, and underscores'),
+  body('email')
+    .optional()
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email address'),
+], asyncHandler(async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return sendErrorResponse(res, 400, 'Validation failed', errors.array());
+  }
+
+  const { firstName, lastName, username, email } = req.body;
+  const updateData = {};
+
+  // Check for username conflicts if username is being updated
+  if (username && username.toLowerCase() !== req.user.username) {
+    const existingUserByUsername = await prisma.user.findUnique({
+      where: { username: username.toLowerCase() },
+    });
+    if (existingUserByUsername) {
+      return sendErrorResponse(res, 400, 'Username already exists');
+    }
+    updateData.username = username.toLowerCase();
+  }
+
+  // Check for email conflicts if email is being updated
+  if (email && email.toLowerCase() !== req.user.email) {
+    const existingUserByEmail = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+    if (existingUserByEmail) {
+      return sendErrorResponse(res, 400, 'Email address already exists');
+    }
+    updateData.email = email.toLowerCase();
+  }
+
+  // Add other fields to update data
+  if (firstName !== undefined) updateData.firstName = firstName;
+  if (lastName !== undefined) updateData.lastName = lastName;
+
+  // Update user profile
+  const updatedUser = await prisma.user.update({
+    where: { id: req.user.id },
+    data: updateData,
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      firstName: true,
+      lastName: true,
+      role: true,
+      isActive: true,
+      emailVerified: true,
+      bio: true,
+      profileImage: true,
+      lastLoginAt: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  logger.info('User profile updated', {
+    userId: req.user.id,
+    updatedFields: Object.keys(updateData),
+  });
+
+  sendSuccessResponse(res, updatedUser, 'Profile updated successfully');
+}));
+
+/**
+ * @swagger
+ * /users/upload-profile-image:
+ *   post:
+ *     summary: Upload profile image
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               profileImage:
+ *                 type: string
+ *                 format: binary
+ *                 description: Profile image file
+ *     responses:
+ *       200:
+ *         description: Profile image uploaded successfully
+ *       400:
+ *         description: No file uploaded or invalid file type
+ *       401:
+ *         description: Unauthorized
+ */
+// Upload profile image
+router.post('/upload-profile-image', [
+  authenticateToken,
+  profileImageUpload.single('profileImage'),
+], asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return sendErrorResponse(res, 400, 'No profile image uploaded');
+  }
+
+  // Generate file path for database storage
+  const filePath = `/uploads/profile-images/${req.file.filename}`;
+
+  // Update user profile with image path
+  const updatedUser = await prisma.user.update({
+    where: { id: req.user.id },
+    data: { profileImage: filePath },
+    select: {
+      id: true,
+      profileImage: true,
+    },
+  });
+
+  logger.info('Profile image uploaded', {
+    userId: req.user.id,
+    fileName: req.file.filename,
+  });
+
+  sendSuccessResponse(res, { profileImage: updatedUser.profileImage }, 'Profile image uploaded successfully');
+}));
+
+/**
+ * @swagger
+ * /users/profile-image:
+ *   delete:
+ *     summary: Remove profile image
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile image removed successfully
+ *       401:
+ *         description: Unauthorized
+ */
+// Remove profile image
+router.delete('/profile-image', [
+  authenticateToken,
+], asyncHandler(async (req, res) => {
+  // Update user profile to remove image
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { profileImage: null },
+  });
+
+  logger.info('Profile image removed', {
+    userId: req.user.id,
+  });
+
+  sendSuccessResponse(res, null, 'Profile image removed successfully');
 }));
 
 /**

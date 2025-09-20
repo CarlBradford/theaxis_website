@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { usersAPI } from '../services/apiService';
 import { useAuth } from '../hooks/useAuth';
 import { canManageRole, canCreateUserRole } from '../config/permissions';
+import api from '../services/api';
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -35,12 +36,7 @@ const UserManagement = () => {
   const [sortOrder, setSortOrder] = useState('desc');
   const [emailError, setEmailError] = useState('');
   const [usernameError, setUsernameError] = useState('');
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0
-  });
+  const [userProfileImages, setUserProfileImages] = useState({});
 
   const allRoles = [
     { value: 'STAFF', label: 'Publication Staff', description: 'Can write and submit articles' },
@@ -75,9 +71,21 @@ const UserManagement = () => {
     }
   }, [availableRoles, formData.role]);
 
+  // Fetch users when component mounts
   useEffect(() => {
-    fetchUsers();
-  }, [pagination.page, searchTerm, roleFilter, statusFilter, sortBy, sortOrder]);
+    fetchUsers({}, true); // Show loading on initial load
+  }, []);
+
+  // Apply filters and reload users
+  useEffect(() => {
+    fetchUsers({
+      search: searchTerm,
+      role: roleFilter,
+      status: statusFilter,
+      sortBy: sortBy,
+      sortOrder: sortOrder
+    }, false); // Don't show loading on filter changes
+  }, [searchTerm, roleFilter, statusFilter, sortBy, sortOrder]);
 
   // Prevent body scrolling when component mounts
   useEffect(() => {
@@ -106,28 +114,60 @@ const UserManagement = () => {
     };
   }, [openDropdown, showFilterDropdown]);
 
-  const fetchUsers = async () => {
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const fetchUsers = async (filters = {}, showLoading = false) => {
     try {
-      setLoading(true);
-      const params = {
-        page: pagination.page,
-        limit: pagination.limit,
-        ...(searchTerm && { search: searchTerm }),
-        ...(roleFilter && { role: roleFilter }),
-        ...(statusFilter && { status: statusFilter }),
-        sortBy,
-        sortOrder
-      };
+      if (showLoading) {
+        setLoading(true);
+      }
+      setError(null);
       
+      // Build API parameters
+      const params = {};
+      
+      // Add filter parameters
+      if (filters.search && filters.search.trim()) {
+        params.search = filters.search.trim();
+      }
+      if (filters.role && filters.role !== '') {
+        params.role = filters.role;
+      }
+      if (filters.status && filters.status !== '') {
+        params.status = filters.status;
+      }
+      if (filters.sortBy) {
+        params.sortBy = filters.sortBy;
+      }
+      if (filters.sortOrder) {
+        params.sortOrder = filters.sortOrder;
+      }
+      
+      console.log('UserManagement API params:', params);
       const response = await usersAPI.getUsers(params);
       setUsers(response.data.users);
-      setPagination(response.data.pagination);
+      
+      // Process profile images from the users data
+      const imageMap = {};
+      response.data.users.forEach(user => {
+        if (user.profileImage) {
+          const imageUrl = user.profileImage.startsWith('http') 
+            ? user.profileImage 
+            : `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}${user.profileImage}`;
+          imageMap[user.id] = imageUrl;
+        }
+      });
+      setUserProfileImages(imageMap);
     } catch (error) {
       setError('Failed to fetch users');
       setTimeout(() => setError(''), 5000); // Clear error after 5 seconds
       console.error('Error fetching users:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -207,7 +247,13 @@ const UserManagement = () => {
       setUsernameError('');
       
       // Refresh users list
-      fetchUsers();
+      fetchUsers({
+        search: searchTerm,
+        role: roleFilter,
+        status: statusFilter,
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      }, false);
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to create user';
       
@@ -262,7 +308,13 @@ const UserManagement = () => {
       }
       
       // Refresh the list to ensure consistency and handle any filtering issues
-      await fetchUsers();
+      await fetchUsers({
+        search: searchTerm,
+        role: roleFilter,
+        status: statusFilter,
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      }, false);
     } catch (error) {
       // Revert the optimistic update on error
       setUsers(prevUsers => 
@@ -319,7 +371,13 @@ const UserManagement = () => {
       setTimeout(() => setError(''), 3000); // Clear success message after 3 seconds
       
       // Refresh the list to ensure consistency
-      await fetchUsers();
+      await fetchUsers({
+        search: searchTerm,
+        role: roleFilter,
+        status: statusFilter,
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      }, false);
     } catch (error) {
       // Revert the optimistic update on error
       setUsers(prevUsers => 
@@ -357,7 +415,13 @@ const UserManagement = () => {
       await usersAPI.deleteUser(userToDelete.id);
       setShowDeleteModal(false);
       setUserToDelete(null);
-      fetchUsers(); // Refresh the list
+      fetchUsers({
+        search: searchTerm,
+        role: roleFilter,
+        status: statusFilter,
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      }, false); // Refresh the list
     } catch (error) {
       setError(error.response?.data?.message || 'Failed to delete user');
       setTimeout(() => setError(''), 5000); // Clear error after 5 seconds
@@ -467,12 +531,8 @@ const UserManagement = () => {
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = !searchTerm || 
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    // Only apply client-side filters for role and status
+    // Search is handled by the backend
     const matchesRole = !roleFilter || user.role === roleFilter;
     const matchesStatus = !statusFilter || 
       (statusFilter === 'active' && user.isActive) ||
@@ -481,7 +541,7 @@ const UserManagement = () => {
     // Hide SYSTEM_ADMIN users from EIC and ADVISER
     const isVisibleToCurrentUser = currentUser?.role === 'SYSTEM_ADMIN' || user.role !== 'SYSTEM_ADMIN';
     
-    return matchesSearch && matchesRole && matchesStatus && isVisibleToCurrentUser;
+    return matchesRole && matchesStatus && isVisibleToCurrentUser;
   });
 
   if (loading && users.length === 0) {
@@ -498,7 +558,7 @@ const UserManagement = () => {
       <div className="user-management-header">
           <div>
           <h1 className="user-management-title">
-            All Users <span className="user-count">{pagination.total}</span>
+            All Users <span className="user-count">{users.length}</span>
           </h1>
           <p className="user-management-subtitle">Manage user accounts, roles, and permissions</p>
           </div>
@@ -508,7 +568,7 @@ const UserManagement = () => {
               type="text"
               placeholder="Search users, emails, or roles..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               className="search-input"
             />
             <MagnifyingGlassIcon className="search-icon" />
@@ -655,16 +715,24 @@ const UserManagement = () => {
                 <td className="table-cell">
                   <div className="user-profile-info">
                     <div className="user-avatar">
-                      <svg className="user-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                      </svg>
-                        </div>
+                      {userProfileImages[user.id] ? (
+                        <img 
+                          src={userProfileImages[user.id]} 
+                          alt={`${user.firstName} ${user.lastName}`}
+                          className="user-avatar-image"
+                        />
+                      ) : (
+                        <svg className="user-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                      )}
+                    </div>
                     <div className="user-details">
                       <p className="user-name">{user.firstName} {user.lastName}</p>
                       <p className="user-email">{user.email}</p>
-                      </div>
                     </div>
-                  </td>
+                  </div>
+                </td>
                 <td className="table-cell center">
                   <span className={`role-badge ${getRoleBadgeClass(user.role)}`}>
                     {getRoleDisplayName(user.role)}
