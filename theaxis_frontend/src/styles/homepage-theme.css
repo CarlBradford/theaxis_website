@@ -1,0 +1,92 @@
+/* Homepage Color Theme */
+:root {
+  --cyan-primary: #215d55;
+  --cyan-dark: #1c4643;
+  --gray-light: #b3b0ac;
+  --gray-dark: #656362;
+}
+
+/* Homepage Background */
+.homepage-bg {
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+/* Override announcement section colors for homepage theme */
+.homepage-bg .announcement-section-title {
+  background: linear-gradient(135deg, var(--cyan-primary), var(--cyan-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.homepage-bg .announcement-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(33, 93, 85, 0.1);
+  box-shadow: 0 10px 25px rgba(28, 70, 67, 0.15);
+}
+
+.homepage-bg .announcement-card:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 20px 40px rgba(28, 70, 67, 0.2);
+  border-color: rgba(33, 93, 85, 0.2);
+}
+
+.homepage-bg .announcement-title {
+  color: var(--cyan-dark);
+}
+
+.homepage-bg .announcement-icon {
+  color: var(--cyan-primary);
+}
+
+.homepage-bg .announcement-author-name {
+  color: var(--cyan-dark);
+}
+
+.homepage-bg .announcement-empty {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(33, 93, 85, 0.1);
+}
+
+.homepage-bg .announcement-empty-icon {
+  color: var(--gray-dark);
+}
+
+.homepage-bg .announcement-empty-text {
+  color: var(--gray-dark);
+}
+
+.homepage-bg .announcement-empty-subtext {
+  color: var(--gray-light);
+}
+
+/* Update announcement section subtitle */
+.homepage-bg .announcement-section-subtitle {
+  color: var(--gray-dark);
+}
+
+/* Update announcement meta text */
+.homepage-bg .announcement-date,
+.homepage-bg .announcement-time {
+  color: var(--gray-dark);
+}
+
+.homepage-bg .announcement-description {
+  color: var(--gray-dark);
+}
+
+.homepage-bg .announcement-author-label {
+  color: var(--gray-dark);
+}
+
+.homepage-bg .announcement-more-text {
+  color: var(--gray-dark);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .homepage-bg {
+    background: #ffffff;
+  }
+}

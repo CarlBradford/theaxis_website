@@ -19,6 +19,7 @@ const categoryRoutes = require('./routes/categories');
 const editorialNoteRoutes = require('./routes/editorialNotes');
 const analyticsRoutes = require('./routes/analytics');
 const flipbookRoutes = require('../routes/flipbooks');
+const announcementRoutes = require('./routes/announcements');
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -38,7 +39,16 @@ const uploadsAbsolutePath = path.isAbsolute(config.upload.path)
 if (!fs.existsSync(uploadsAbsolutePath)) {
   fs.mkdirSync(uploadsAbsolutePath, { recursive: true });
 }
-app.use('/uploads', express.static(uploadsAbsolutePath));
+// Serve static files with proper headers for videos
+app.use('/uploads', (req, res, next) => {
+  // Set proper headers for video files
+  if (req.path.endsWith('.mp4') || req.path.endsWith('.webm') || req.path.endsWith('.ogg')) {
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.setHeader('Accept-Ranges', 'bytes');
+  }
+  next();
+}, express.static(uploadsAbsolutePath));
 
 // Security middleware
 app.use(helmet({
@@ -48,6 +58,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
+      mediaSrc: ["'self'", "data:", "blob:"],
     },
   },
   crossOriginEmbedderPolicy: false,
@@ -138,6 +149,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/editorial-notes', editorialNoteRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/flipbooks', flipbookRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // API documentation
 if (config.apiDocs.enabled) {

@@ -35,6 +35,7 @@ model User {
   editorialNotes         EditorialNote[]
   reviewFeedback         ReviewFeedback[]
   flipbooks              Flipbook[]
+  announcements          Announcement[]
 
   @@index([email])
   @@index([username])
@@ -368,4 +369,22 @@ model Flipbook {
   @@index([isActive])
   @@index([createdAt])
   @@map("flipbooks")
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String?   @map("image_url")
+  isActive    Boolean   @default(true) @map("is_active")
+  userId      String    @map("user_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  user        User      @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("announcements")
 }

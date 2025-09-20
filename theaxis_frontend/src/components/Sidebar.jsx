@@ -19,10 +19,9 @@ import {
   TagIcon,
   FolderIcon,
   ChevronDownIcon,
-  QuestionMarkCircleIcon,
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
-import '../styles/dashboard.css';
+import '../styles/navbar-sidebar.css';
 import theaxisLogo from '../assets/theaxis_logo.png';
 
 const Sidebar = () => {
@@ -204,10 +203,6 @@ const Sidebar = () => {
 
       {/* Footer */}
       <div className="sidebar-footer">
-        <Link to="/help" className="footer-item">
-          <QuestionMarkCircleIcon className="footer-item-icon" />
-          Help
-        </Link>
         <button className="footer-item" onClick={handleLogout}>
           <ArrowRightOnRectangleIcon className="footer-item-icon" />
           Log Out

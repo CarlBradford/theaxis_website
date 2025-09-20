@@ -138,8 +138,10 @@ body.user-management-page {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 9px;
+  margin-bottom: 20px;
   flex-shrink: 0;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
 }
 
 .user-management-title {
@@ -1405,6 +1407,8 @@ body.user-management-page {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
   }
   
   .action-bar {

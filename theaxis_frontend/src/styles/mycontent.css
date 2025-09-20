@@ -291,29 +291,32 @@
 .mycontent-article-card {
   background-color: #ffffff;
   border-radius: 8px;
-  border: 1px solid #d1d5db;
-  padding: 20px;
+  border: 1px solid #e5e7eb;
+  padding: 16px;
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: 12px;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 8px;
 }
 
 .mycontent-article-card:hover {
-  border-color: #9ca3af;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-color: #215d55;
+  box-shadow: 0 8px 25px rgba(33, 93, 85, 0.15);
+  transform: translateY(-2px);
 }
 
 .mycontent-article-icon {
   width: 48px;
   height: 48px;
-  background-color: #f8f9fa;
+  background-color: #f8fafc;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid #e5e7eb;
 }
 
 .mycontent-article-image {
@@ -321,6 +324,9 @@
   width: 48px;
   height: 48px;
   flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
 }
 
 .mycontent-featured-image {
@@ -328,13 +334,13 @@
   height: 100%;
   object-fit: cover;
   border-radius: 8px;
-  background-color: #f8f9fa;
+  background-color: #f8fafc;
 }
 
 .mycontent-group-icon {
-  width: 24px;
-  height: 24px;
-  color: #1a1a1a;
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
 }
 
 .mycontent-article-content {
@@ -343,25 +349,35 @@
 }
 
 .mycontent-article-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #1a1a1a;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
   margin: 0 0 8px 0;
   line-height: 1.4;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .mycontent-article-meta {
-  font-size: 14px;
-  color: #666666;
-  margin: 0 0 12px 0;
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 8px 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .mycontent-meta-separator {
-  color: #1a1a1a;
-  font-weight: bold;
+  color: #d1d5db;
+  font-weight: 400;
+  font-size: 10px;
+}
+
+.mycontent-article-category {
+  color: #6b7280;
+  font-size: 12px;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 .mycontent-article-stats {
@@ -381,8 +397,9 @@
 .mycontent-article-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-left: 16px;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .mycontent-action-btn {
@@ -394,12 +411,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  color: #6b7280;
 }
 
 .mycontent-action-btn:hover {
-  background-color: #f8f9fa;
+  background-color: #f3f4f6;
+  color: #215d55;
 }
 
 .mycontent-action-btn:disabled {
@@ -469,15 +488,36 @@
   .mycontent-article-card {
     flex-direction: column;
     gap: 12px;
+    padding: 16px;
   }
   
   .mycontent-article-image {
     align-self: center;
+    width: 60px;
+    height: 60px;
+  }
+  
+  .mycontent-article-icon {
+    align-self: center;
+    width: 60px;
+    height: 60px;
   }
   
   .mycontent-article-actions {
     margin-left: 0;
     justify-content: center;
+    gap: 12px;
+  }
+  
+  .mycontent-article-meta {
+    font-size: 11px;
+    gap: 4px;
+    justify-content: center;
+  }
+  
+  .mycontent-article-title {
+    font-size: 16px;
+    text-align: center;
   }
 }
 

@@ -1784,7 +1784,9 @@
 .create-article-file-name {
   font-size: 12px;
   text-align: center;
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   max-width: 120px;
 }
 

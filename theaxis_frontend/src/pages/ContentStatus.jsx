@@ -16,7 +16,8 @@ import {
   FunnelIcon,
   UserGroupIcon,
   CalendarIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  PlusIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../hooks/useAuth';
 import FilterModal from '../components/FilterModal';
@@ -33,7 +34,7 @@ const ContentStatus = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortBy, setSortBy] = useState('publicationDate');
   const [sortOrder, setSortOrder] = useState('desc');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -526,7 +527,7 @@ const ContentStatus = () => {
             to="/content/create"
             className="content-status-create-btn"
           >
-            <DocumentTextIcon className="w-4 h-4" />
+            <PlusIcon className="w-4 h-4" />
             New Content
           </Link>
         </div>
@@ -632,16 +633,16 @@ const ContentStatus = () => {
               />
               <span className="filter-modal-radio-label">Last Updated</span>
             </label>
-            <label className={`filter-modal-radio-item ${sortBy === 'publishedAt' ? 'selected' : ''}`}>
+            <label className={`filter-modal-radio-item ${sortBy === 'publicationDate' ? 'selected' : ''}`}>
               <input
                 type="radio"
                 name="sortBy"
-                value="publishedAt"
-                checked={sortBy === 'publishedAt'}
+                value="publicationDate"
+                checked={sortBy === 'publicationDate'}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Published Date</span>
+              <span className="filter-modal-radio-label">Publication Date</span>
             </label>
             <label className={`filter-modal-radio-item ${sortBy === 'title' ? 'selected' : ''}`}>
               <input

@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import '../styles/public-footer.css';
+import theaxisWordmark from '../assets/theaxis_wordmark.png';
+import theaxisLogo from '../assets/theaxis_logo.png';
 
 const PublicFooter = () => {
   return (
@@ -9,13 +11,11 @@ const PublicFooter = () => {
           {/* Logo and Description */}
           <div className="public-footer-brand">
             <div className="public-footer-logo">
-              <div className="public-footer-logo-icon">
-                <span className="public-footer-logo-icon-text">A</span>
-              </div>
-              <div className="public-footer-logo-text">
-                <span className="public-footer-logo-title">The AXIS</span>
-                <span className="public-footer-logo-subtitle">GROUP OF PUBLICATIONS</span>
-              </div>
+              <img 
+                src={theaxisWordmark} 
+                alt="The AXIS Wordmark" 
+                className="public-footer-wordmark"
+              />
             </div>
             <p className="public-footer-description">
               Your student publication platform for sharing stories, ideas, and perspectives. 
@@ -63,6 +63,19 @@ const PublicFooter = () => {
               <div className="public-footer-contact-item">
                 <span>Address: University Campus</span>
               </div>
+            </div>
+          </div>
+
+          {/* Login Logo */}
+          <div className="public-footer-login">
+            <div className="public-footer-login-logo">
+              <Link to="/login" className="public-footer-login-link">
+                <img 
+                  src={theaxisLogo} 
+                  alt="The AXIS Logo - Login" 
+                  className="public-footer-login-img"
+                />
+              </Link>
             </div>
           </div>
         </div>

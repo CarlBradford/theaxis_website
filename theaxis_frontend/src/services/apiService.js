@@ -161,6 +161,19 @@ export const articlesAPI = {
   getArticleStats: async (params = {}) => {
     const response = await api.get('/articles/stats', { params });
     return response.data;
+  },
+
+  // Get recent articles for dashboard
+  getRecentArticles: async (params = {}) => {
+    const response = await api.get('/articles', { 
+      params: { 
+        limit: 5,
+        sortBy: 'publicationDate', // Default to publication date
+        sortOrder: 'desc',
+        ...params 
+      } 
+    });
+    return response.data;
   }
 };
 
@@ -374,6 +387,39 @@ export const mediaAPI = {
 };
 
 
+// Announcements API
+export const announcementsAPI = {
+  // Create announcement
+  createAnnouncement: async (announcementData) => {
+    const response = await api.post('/announcements', announcementData);
+    return response.data;
+  },
+
+  // Get all announcements
+  getAnnouncements: async (params = {}) => {
+    const response = await api.get('/announcements', { params });
+    return response.data;
+  },
+
+  // Get active announcements
+  getActiveAnnouncements: async () => {
+    const response = await api.get('/announcements/active');
+    return response.data;
+  },
+
+  // Update announcement
+  updateAnnouncement: async (id, announcementData) => {
+    const response = await api.put(`/announcements/${id}`, announcementData);
+    return response.data;
+  },
+
+  // Delete announcement
+  deleteAnnouncement: async (id) => {
+    const response = await api.delete(`/announcements/${id}`);
+    return response.data;
+  }
+};
+
 // Utility functions
 export const utils = {
   // Check if user has required role
@@ -426,5 +472,6 @@ export default {
   analytics: analyticsAPI,
   media: mediaAPI,
   users: usersAPI,
+  announcements: announcementsAPI,
   utils
 };

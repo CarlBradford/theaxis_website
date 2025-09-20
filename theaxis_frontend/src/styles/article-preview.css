@@ -452,8 +452,11 @@
   color: #1e293b;
   font-size: 14px;
   text-align: center;
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   margin-bottom: 4px;
+  max-width: 200px;
 }
 
 .article-preview-file-type {

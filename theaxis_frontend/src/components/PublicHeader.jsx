@@ -50,24 +50,6 @@ const PublicHeader = () => {
             </Link>
           </nav>
 
-          {/* Auth Button */}
-          <div className="public-header-auth">
-            {isAuthenticated ? (
-              <Link
-                to="/dashboard"
-                className="public-header-auth-button"
-              >
-                Dashboard
-              </Link>
-            ) : (
-              <Link
-                to="/login"
-                className="public-header-auth-button"
-              >
-                Sign In
-              </Link>
-            )}
-          </div>
         </div>
       </div>
     </header>

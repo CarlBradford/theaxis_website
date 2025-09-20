@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ROLE_DISPLAY_NAMES } from '../config/permissions';
 import { NotificationBell } from './NotificationBell';
-import '../styles/dashboard.css';
+import '../styles/navbar-sidebar.css';
 
 const Navbar = () => {
   const { user, isAuthenticated } = useAuth();

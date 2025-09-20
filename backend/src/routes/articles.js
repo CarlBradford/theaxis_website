@@ -308,6 +308,14 @@ router.post(
  *         name: sortOrder
  *         schema: { type: string, enum: [asc, desc], default: desc }
  *         description: Sort order
+ *       - in: query
+ *         name: publicationDateStart
+ *         schema: { type: string, format: date-time }
+ *         description: Filter articles published after this date
+ *       - in: query
+ *         name: publicationDateEnd
+ *         schema: { type: string, format: date-time }
+ *         description: Filter articles published before this date
  *     responses:
  *       200:
  *         description: Articles retrieved
@@ -323,14 +331,16 @@ router.get(
     query('search').optional().isString(),
     query('authorId').optional().isString(),
     query('category').optional().isString(),
-    query('sortBy').optional().isIn(['createdAt', 'updatedAt', 'publishedAt', 'title', 'viewCount', 'author']),
+    query('sortBy').optional().isIn(['createdAt', 'updatedAt', 'publishedAt', 'publicationDate', 'title', 'viewCount', 'author']),
     query('sortOrder').optional().isIn(['asc', 'desc']),
+    query('publicationDateStart').optional().isISO8601(),
+    query('publicationDateEnd').optional().isISO8601(),
   ],
   asyncHandler(async (req, res) => {
       const page = req.query.page || 1;
       const limit = req.query.limit || 20;
       const skip = (page - 1) * limit;
-    const { status, search, authorId, category, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    const { status, search, authorId, category, sortBy = 'createdAt', sortOrder = 'desc', publicationDateStart, publicationDateEnd } = req.query;
 
       const where = {};
     
@@ -367,6 +377,17 @@ router.get(
       };
     }
     
+    // Publication date range filter
+    if (publicationDateStart || publicationDateEnd) {
+      where.publicationDate = {};
+      if (publicationDateStart) {
+        where.publicationDate.gte = new Date(publicationDateStart);
+      }
+      if (publicationDateEnd) {
+        where.publicationDate.lte = new Date(publicationDateEnd);
+      }
+    }
+    
     // Public users can only see published articles
       if (!req.user) where.status = 'PUBLISHED';
 
@@ -381,6 +402,9 @@ router.get(
         break;
       case 'publishedAt':
         orderBy = { publishedAt: sortOrder };
+        break;
+      case 'publicationDate':
+        orderBy = { publicationDate: sortOrder };
         break;
       case 'updatedAt':
         orderBy = { updatedAt: sortOrder };
@@ -464,6 +488,14 @@ router.get(
  *         name: queueType
  *         schema: { type: string, enum: [section-head, eic] }
  *         description: Queue type for review queue stats
+ *       - in: query
+ *         name: publicationDateStart
+ *         schema: { type: string, format: date-time }
+ *         description: Filter stats for articles published after this date
+ *       - in: query
+ *         name: publicationDateEnd
+ *         schema: { type: string, format: date-time }
+ *         description: Filter stats for articles published before this date
  *     responses:
  *       200:
  *         description: Article statistics retrieved
@@ -477,9 +509,11 @@ router.get(
     authenticateToken,
     query('authorId').optional().isString(),
     query('queueType').optional().isIn(['section-head', 'eic']),
+    query('publicationDateStart').optional().isISO8601(),
+    query('publicationDateEnd').optional().isISO8601(),
   ],
   asyncHandler(async (req, res) => {
-    const { authorId, queueType } = req.query;
+    const { authorId, queueType, publicationDateStart, publicationDateEnd } = req.query;
     const userId = req.user.id;
     const userRole = req.user.role;
 
@@ -489,6 +523,17 @@ router.get(
     let baseWhere = {};
     if (authorId) {
       baseWhere.authorId = authorId;
+    }
+    
+    // Add publication date range filter
+    if (publicationDateStart || publicationDateEnd) {
+      baseWhere.publicationDate = {};
+      if (publicationDateStart) {
+        baseWhere.publicationDate.gte = new Date(publicationDateStart);
+      }
+      if (publicationDateEnd) {
+        baseWhere.publicationDate.lte = new Date(publicationDateEnd);
+      }
     }
 
     // Role-based stats

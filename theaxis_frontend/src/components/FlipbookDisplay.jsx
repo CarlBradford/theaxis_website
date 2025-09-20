@@ -182,7 +182,7 @@ const FlipbookDisplay = ({ flipbook, onClose, onShare }) => {
         <div className="flipbook-modal-footer">
           <div className="flipbook-modal-footer-info">
             <span className="flipbook-modal-footer-text">
-              Online Issue • The Axis Student Publication
+              Online Issue • The AXIS
             </span>
           </div>
           <div className="flipbook-modal-footer-actions">

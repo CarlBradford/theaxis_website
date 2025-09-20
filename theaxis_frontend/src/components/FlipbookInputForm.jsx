@@ -314,7 +314,7 @@ const FlipbookInputForm = ({ isOpen, onClose, onSubmit, editData = null }) => {
                   value={formData.name}
                   onChange={handleInputChange}
                   className={`flipbook-form-input ${errors.name ? 'error' : ''}`}
-                  placeholder="e.g., The Axis Magazine Issue 2024"
+                  placeholder="e.g., The AXIS Magazine Issue 2024"
                   required
                 />
                 {errors.name && <span className="flipbook-form-error">{errors.name}</span>}

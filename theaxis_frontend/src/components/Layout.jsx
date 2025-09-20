@@ -2,7 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
-import '../styles/dashboard.css';
+import '../styles/navbar-sidebar.css';
 
 const Layout = () => {
   const { isAuthenticated } = useAuth();

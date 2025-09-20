@@ -2,97 +2,21 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
+import AnnouncementSection from '../components/AnnouncementSection';
+import '../styles/homepage-theme.css';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col homepage-bg">
       <PublicHeader />
       
       {/* Main Content */}
       <main className="flex-1 flex flex-col justify-center items-center">
         <div className="max-w-6xl mx-auto px-6 lg:px-8 w-full">
-          {/* Hero Section */}
-          <div className="text-center py-12">
-            <div className="mx-auto w-20 h-20 bg-gradient-to-r from-blue-600 to-blue-600 rounded-xl flex items-center justify-center mb-8">
-              <span className="text-white font-bold text-3xl">A</span>
-            </div>
-            <h1 className="text-5xl font-bold sm:text-6xl md:text-7xl mb-6">
-              Welcome to{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
-                The AXIS
-              </span>
-            </h1>
-            <p className="mt-6 max-w-2xl mx-auto text-xl text-gray-600 leading-relaxed mb-10">
-              Your student publication platform for sharing stories, ideas, and perspectives. 
-              Connect, create, and inspire.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {isAuthenticated ? (
-                <Link
-                  to="/dashboard"
-                  className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105 shadow-lg"
-                >
-                  Go to Dashboard
-                </Link>
-              ) : (
-                <Link
-                  to="/login"
-                  className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105 shadow-lg"
-                >
-                  Sign In
-                </Link>
-              )}
-            </div>
-          </div>
-
-          {/* Features Section */}
-          <div className="mt-16">
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 max-w-4xl mx-auto">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-8 hover:shadow-xl hover:bg-white/90 transition-all duration-300">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-500 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Latest Articles</h3>
-                <p className="text-gray-600 mb-6">
-                  Discover the latest stories and insights from our student writers.
-                </p>
-                <Link
-                  to="/content"
-                  className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
-                >
-                  Browse Articles
-                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
-
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-8 hover:shadow-xl hover:bg-white/90 transition-all duration-300">
-                <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Stay Connected</h3>
-                <p className="text-gray-600 mb-6">
-                  Follow us for updates on new content and upcoming events.
-                </p>
-                <Link
-                  to="/content"
-                  className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
-                >
-                  Learn More
-                  <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
-            </div>
-          </div>
+          {/* Announcements Section */}
+          <AnnouncementSection />
         </div>
       </main>
 

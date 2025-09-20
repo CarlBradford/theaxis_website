@@ -47,7 +47,7 @@ const PublishedContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('publishedAt');
+  const [sortBy, setSortBy] = useState('publicationDate');
   const [sortOrder, setSortOrder] = useState('desc');
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('published');
@@ -701,7 +701,7 @@ const PublishedContent = () => {
     } else {
       // Set appropriate defaults for article view
       if (sortBy === 'type' || sortBy === 'isActive') {
-        setSortBy('publishedAt');
+        setSortBy('publicationDate');
       }
     }
   };
@@ -1321,7 +1321,7 @@ const PublishedContent = () => {
         onApply={() => setShowFilters(false)}
         onClear={() => {
           setSelectedCategory('all');
-          setSortBy(activeFilter === 'online_issues' ? 'createdAt' : 'publishedAt');
+          setSortBy(activeFilter === 'online_issues' ? 'createdAt' : 'publicationDate');
           setSortOrder('desc');
         }}
       >
@@ -1427,16 +1427,16 @@ const PublishedContent = () => {
             ) : (
               // Show article-specific sort options
               <>
-                <label className={`filter-modal-radio-item ${sortBy === 'publishedAt' ? 'selected' : ''}`}>
+                <label className={`filter-modal-radio-item ${sortBy === 'publicationDate' ? 'selected' : ''}`}>
                   <input
                     type="radio"
                     name="sortBy"
-                    value="publishedAt"
-                    checked={sortBy === 'publishedAt'}
+                    value="publicationDate"
+                    checked={sortBy === 'publicationDate'}
                     onChange={(e) => setSortBy(e.target.value)}
                     className="filter-modal-radio-input"
                   />
-                  <span className="filter-modal-radio-label">Published Date</span>
+                  <span className="filter-modal-radio-label">Publication Date</span>
                 </label>
                 <label className={`filter-modal-radio-item ${sortBy === 'createdAt' ? 'selected' : ''}`}>
                   <input
@@ -1747,8 +1747,8 @@ const PublishedContent = () => {
                 <div className="published-content-table-cell">
                   <div className="published-content-date">
                     {article.status === 'archived' 
-                      ? formatDate(article.publishedAt || article.createdAt || article.updatedAt)
-                      : formatDate(article.publishedAt || article.createdAt)
+                      ? formatDate(article.publishedAt || article.publicationDate || article.createdAt || article.updatedAt)
+                      : formatDate(article.publishedAt || article.publicationDate || article.createdAt)
                     }
                   </div>
                 </div>

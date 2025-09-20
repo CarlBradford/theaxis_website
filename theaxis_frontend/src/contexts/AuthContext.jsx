@@ -87,6 +87,12 @@ export function AuthProvider({ children }) {
       'SYSTEM_ADMIN': 4
     };
     
+    // Handle array of roles - user needs to have at least one of the required roles
+    if (Array.isArray(requiredRole)) {
+      return requiredRole.some(role => roleHierarchy[user.role] >= roleHierarchy[role]);
+    }
+    
+    // Handle single role
     return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
   };
 

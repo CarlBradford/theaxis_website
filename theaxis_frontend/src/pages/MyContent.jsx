@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { articlesAPI, categoriesAPI } from '../services/apiService';
 import ArticlePreviewModal from '../components/ArticlePreviewModal';
@@ -28,18 +28,19 @@ import '../styles/filter-modal.css';
 
 const MyContent = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [articles, setArticles] = useState([]);
   const [filteredArticles, setFilteredArticles] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState(searchParams.get('tab') || 'all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortBy, setSortBy] = useState('publicationDate');
   const [sortOrder, setSortOrder] = useState('desc');
   const [showPreview, setShowPreview] = useState(false);
   const [previewArticle, setPreviewArticle] = useState(null);
@@ -62,6 +63,7 @@ const MyContent = () => {
     setShowNotificationModal(false);
     setNotificationData({ title: '', message: '', type: 'success' });
   };
+
 
   // Debug logging
   console.log('MyContent component rendered');
@@ -145,6 +147,8 @@ const MyContent = () => {
         },
         viewCount: article.viewCount || 0,
         createdAt: article.createdAt,
+        publishedAt: article.publishedAt,
+        publicationDate: article.publicationDate,
         excerpt: article.excerpt || article.title, // Use title as excerpt if no excerpt
         categories: article.categories || [], // Use categories from backend
         tags: article.tags || [], // Use tags from backend
@@ -258,6 +262,7 @@ const MyContent = () => {
   const handleFilterChange = (filter) => {
     setActiveFilter(filter);
     setShowAdditionalFilters(false);
+    setSearchParams({ tab: filter });
   };
 
   const handleSearchChange = (e) => {
@@ -848,7 +853,9 @@ const MyContent = () => {
                   <div className="mycontent-article-meta">
                     <span>By {article.author?.name || 'Author Name'}</span>
                     <span className="mycontent-meta-separator">•</span>
-                    <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                    <span className="mycontent-article-category">{article.categories?.[0]?.name || 'Uncategorized'}</span>
+                    <span className="mycontent-meta-separator">•</span>
+                    <span>{new Date(article.publicationDate || article.publishedAt || article.createdAt).toLocaleDateString()}</span>
                     <span className="mycontent-meta-separator">•</span>
                     <span>{getStatusLabel(article.status)}</span>
                     <span className="mycontent-meta-separator">•</span>
