@@ -47,9 +47,11 @@ const ArticlePreviewModal = ({ isOpen, onClose, articleData }) => {
               <div className="article-preview-meta-item">
                 <UserIcon className="article-preview-meta-icon" />
                 <span className="article-preview-meta-text">
-                  {articleData.authors && articleData.authors.length > 0 
-                    ? articleData.authors.map(author => author.name).join(', ')
-                    : 'No authors'
+                  {articleData.articleAuthors && articleData.articleAuthors.length > 0 
+                    ? articleData.articleAuthors.map(authorData => `${authorData.user.firstName || ''} ${authorData.user.lastName || ''}`.trim() || authorData.user.username || 'Unknown Author').join(', ')
+                    : articleData.author 
+                      ? `${articleData.author.firstName || ''} ${articleData.author.lastName || ''}`.trim() || articleData.author.username || 'Unknown Author'
+                      : 'No authors'
                   }
                 </span>
               </div>

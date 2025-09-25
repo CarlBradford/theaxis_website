@@ -471,6 +471,13 @@
   align-items: center;
 }
 
+/* Additional centering for author column */
+.review-queue-table-row .review-queue-table-cell:nth-child(4) {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
 .review-queue-table-cell input[type="checkbox"] {
   width: 16px;
   height: 16px;
@@ -604,6 +611,8 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
+  text-align: center;
+  width: 100%;
 }
 
 /* Status Container */
@@ -1051,6 +1060,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .simple-approve-modal-button.cancel {
@@ -1070,9 +1082,38 @@
   border-color: #10b981;
 }
 
-.simple-approve-modal-button.approve:hover {
+.simple-approve-modal-button.approve:hover:not(:disabled) {
   background-color: #059669;
   border-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.simple-approve-modal-button.approve:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.simple-approve-modal-button.approve:disabled {
+  background-color: #d1d5db;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Loading Spinner for Approve Modal */
+.simple-approve-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: simpleApproveSpin 1s linear infinite;
+}
+
+@keyframes simpleApproveSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Mobile responsive for approve modal */
@@ -1186,6 +1227,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .simple-publish-modal-button.cancel {
@@ -1205,9 +1249,38 @@
   border-color: var(--success-color);
 }
 
-.simple-publish-modal-button.publish:hover {
+.simple-publish-modal-button.publish:hover:not(:disabled) {
   background-color: var(--success-dark);
   border-color: var(--success-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.simple-publish-modal-button.publish:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.simple-publish-modal-button.publish:disabled {
+  background-color: #d1d5db;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Loading Spinner for Publish Modal */
+.simple-publish-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: simplePublishSpin 1s linear infinite;
+}
+
+@keyframes simplePublishSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Mobile responsive for publish modal */
@@ -1226,9 +1299,6 @@
     width: 100%;
     justify-content: center;
   }
-}
-
-  line-height: 1.5;
 }
 
 .simple-publish-details {
@@ -1260,6 +1330,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .simple-publish-modal-button.cancel {
@@ -1279,9 +1352,38 @@
   border-color: var(--success-color);
 }
 
-.simple-publish-modal-button.publish:hover {
+.simple-publish-modal-button.publish:hover:not(:disabled) {
   background-color: var(--success-dark);
   border-color: var(--success-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.simple-publish-modal-button.publish:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.simple-publish-modal-button.publish:disabled {
+  background-color: #d1d5db;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Loading Spinner for Publish Modal */
+.simple-publish-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: simplePublishSpin 1s linear infinite;
+}
+
+@keyframes simplePublishSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Mobile responsive for publish modal */

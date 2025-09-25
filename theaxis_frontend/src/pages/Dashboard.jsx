@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { articlesAPI } from '../services/apiService';
 import MediaDisplay from '../components/MediaDisplay';
-import CreateAnnouncementModal from '../components/CreateAnnouncementModal';
 import { 
   PlusIcon,
   DocumentTextIcon,
@@ -13,8 +12,14 @@ import {
   ChevronDownIcon,
   ChartBarSquareIcon,
   NewspaperIcon,
-  SpeakerWaveIcon
+  StarIcon,
+  HomeIcon,
 } from '@heroicons/react/24/outline';
+import { 
+  HomeIcon as HomeIconSolid,
+  ChartBarSquareIcon as ChartBarSquareIconSolid,
+  NewspaperIcon as NewspaperIconSolid,
+} from '@heroicons/react/24/solid';
 import '../styles/dashboard.css';
 import '../styles/media-display.css';
 
@@ -32,7 +37,6 @@ const Dashboard = () => {
     thisWeek: 0
   });
   const [statsLoading, setStatsLoading] = useState(true);
-  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
 
   // Update time every second
   useEffect(() => {
@@ -103,8 +107,11 @@ const Dashboard = () => {
         const transformedArticles = articlesResponse.data?.items?.map(article => {
           // Handle image URL - prepend base URL if it's a relative path
           let imageUrl = article.featuredImage;
+          
           if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('data:')) {
-            imageUrl = `http://localhost:3001${imageUrl}`;
+            // Use the same base URL as the API
+            const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+            imageUrl = `${baseUrl}${imageUrl}`;
           }
           
           return {
@@ -115,7 +122,7 @@ const Dashboard = () => {
             publishedAt: article.publishedAt,
             publicationDate: article.publicationDate,
             views: article.viewCount || 0,
-            thumbnail: imageUrl || "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=200&fit=crop",
+            thumbnail: imageUrl || null,
             category: article.categories?.[0]?.name || "Uncategorized"
           };
         }) || [];
@@ -207,11 +214,11 @@ const Dashboard = () => {
       case 'review-pending':
         navigate('/content/pending');
         break;
-      case 'create-announcement':
-        setShowAnnouncementModal(true);
-        break;
       case 'view-analytics':
         navigate('/analytics');
+        break;
+      case 'manage-featured':
+        navigate('/featured-articles');
         break;
       default:
         break;
@@ -224,6 +231,7 @@ const Dashboard = () => {
         {/* Header Section */}
         <div className="dashboard-header">
           <div className="dashboard-header-left">
+            
             <div className="dashboard-header-info">
               <div className="dashboard-time-range">
                 <select 
@@ -259,15 +267,6 @@ const Dashboard = () => {
                 </button>
               )}
               
-              {hasRole(['EDITOR_IN_CHIEF']) && (
-                <button 
-                  className="dashboard-quick-action-btn"
-                  onClick={() => handleQuickAction('create-announcement')}
-                >
-                  <SpeakerWaveIcon className="dashboard-action-icon" />
-                  <span>Create Announcement</span>
-          </button>
-              )}
               
               {hasRole(['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN']) && (
                 <button 
@@ -276,7 +275,17 @@ const Dashboard = () => {
                 >
                   <DocumentTextIcon className="dashboard-action-icon" />
                   <span>Review Pending</span>
-          </button>
+                </button>
+              )}
+              
+              {hasRole(['EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN']) && (
+                <button 
+                  className="dashboard-quick-action-btn"
+                  onClick={() => handleQuickAction('manage-featured')}
+                >
+                  <StarIcon className="dashboard-action-icon" />
+                  <span>Manage Featured</span>
+                </button>
               )}
               
               <button 
@@ -295,8 +304,10 @@ const Dashboard = () => {
           {/* Key Metrics Section */}
           <div className="dashboard-key-metrics">
             <div className="dashboard-key-metrics-header">
-              <ChartBarSquareIcon className="dashboard-key-metrics-icon" />
-              <h2 className="dashboard-key-metrics-title">Key Metrics</h2>
+              <div className="flex items-center space-x-3">
+                <ChartBarSquareIconSolid className="h-6 w-6 text-gray-600" />
+                <h2 className="text-xl font-bold text-gray-900">Key Metrics</h2>
+              </div>
             </div>
             
             <div className="dashboard-personal-stats">
@@ -353,9 +364,11 @@ const Dashboard = () => {
           {/* Recent Articles Section */}
           <div className="dashboard-recent-articles">
             <div className="dashboard-recent-articles-header">
-              <NewspaperIcon className="dashboard-recent-articles-icon" />
-              <h2 className="dashboard-recent-articles-title">Recent Articles</h2>
-      </div>
+              <div className="flex items-center space-x-3">
+                <NewspaperIconSolid className="h-6 w-6 text-gray-600" />
+                <h2 className="text-xl font-bold text-gray-900">Recent Articles</h2>
+              </div>
+            </div>
 
             <div className="dashboard-recent-articles-list">
               {articlesLoading ? (
@@ -386,7 +399,7 @@ const Dashboard = () => {
                         >
                           {article.status.charAt(0).toUpperCase() + article.status.slice(1)}
                         </span>
-        </div>
+                      </div>
                       <div className="dashboard-article-meta">
                         <span className="dashboard-article-category">{article.category}</span>
                         <span className="dashboard-article-date">
@@ -397,9 +410,9 @@ const Dashboard = () => {
                             {article.views} views
                           </span>
                         )}
-        </div>
-      </div>
-    </div>
+                      </div>
+                    </div>
+                  </div>
                 ))
               ) : (
                 <div className="dashboard-empty-state">
@@ -408,18 +421,8 @@ const Dashboard = () => {
               )}
             </div>
           </div>
-          </div>
+        </div>
       </div>
-
-      {/* Create Announcement Modal */}
-      <CreateAnnouncementModal
-        isOpen={showAnnouncementModal}
-        onClose={() => setShowAnnouncementModal(false)}
-        onSuccess={(announcement) => {
-          console.log('Announcement created:', announcement);
-          // You can add a success notification here
-        }}
-      />
     </div>
   );
 };

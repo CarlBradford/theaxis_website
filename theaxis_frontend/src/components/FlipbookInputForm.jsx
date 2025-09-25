@@ -159,8 +159,8 @@ const FlipbookInputForm = ({ isOpen, onClose, onSubmit, editData = null }) => {
       console.log('🔍 Validation error: Publication type is required');
     }
 
-    // Validate thumbnail image (required)
-    if (!formData.thumbnailImage) {
+    // Validate thumbnail image (required for new flipbooks, optional for edits if existing image exists)
+    if (!formData.thumbnailImage && !imagePreview) {
       newErrors.thumbnailImage = 'Thumbnail image is required';
       console.log('🔍 Validation error: Thumbnail image is required');
     }

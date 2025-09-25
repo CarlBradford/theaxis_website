@@ -17,8 +17,12 @@ import {
   UserGroupIcon,
   CalendarIcon,
   ChartBarIcon,
-  PlusIcon
+  PlusIcon,
+  ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
+import { 
+  ClipboardDocumentListIcon as ClipboardDocumentListIconSolid,
+} from '@heroicons/react/24/solid';
 import { useAuth } from '../hooks/useAuth';
 import FilterModal from '../components/FilterModal';
 import '../styles/content-status.css';
@@ -60,7 +64,16 @@ const ContentStatus = () => {
         params.search = filters.search.trim();
       }
       if (filters.status && filters.status !== 'all') {
-        params.status = filters.status.toUpperCase();
+        // Map frontend status values to backend database values
+        const statusMap = {
+          'pending': 'IN_REVIEW',
+          'needs_revision': 'NEEDS_REVISION',
+          'approved': 'APPROVED',
+          'draft': 'DRAFT',
+          'published': 'PUBLISHED',
+          'archived': 'ARCHIVED'
+        };
+        params.status = statusMap[filters.status.toLowerCase()] || filters.status.toUpperCase();
       }
       if (filters.sortBy) {
         params.sortBy = filters.sortBy;
@@ -88,7 +101,7 @@ const ContentStatus = () => {
           createdAt: article.createdAt,
           updatedAt: article.updatedAt,
           publishedAt: article.publishedAt,
-          excerpt: article.excerpt || createExcerpt(article.content) || article.title,
+          excerpt: createExcerpt(article.content) || article.title,
           content: article.content,
           wordCount: calculateWordCount(article.content),
           readTime: article.readingTime ? `${article.readingTime} min read` : calculateReadTime(article.content),
@@ -374,9 +387,14 @@ const ContentStatus = () => {
       <div className="content-status-container">
       {/* Header */}
       <div className="content-status-header">
-        <div className="content-status-title-section">
-          <h1 className="content-status-title">Content Status</h1>
-          <p className="content-status-subtitle">Track your content and its current status</p>
+        <div className="flex items-center space-x-4">
+          <div>
+            <ClipboardDocumentListIconSolid className="h-8 w-8 text-black" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-black">Content Status</h1>
+            <p className="text-gray-600">Track your content and its current status</p>
+          </div>
         </div>
         <div className="content-status-stats">
           {/* Role-based stats */}
@@ -681,7 +699,7 @@ const ContentStatus = () => {
                 onChange={(e) => setSortOrder(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Newest First</span>
+              <span className="filter-modal-radio-label">Descending</span>
             </label>
             <label className={`filter-modal-radio-item ${sortOrder === 'asc' ? 'selected' : ''}`}>
               <input
@@ -692,7 +710,7 @@ const ContentStatus = () => {
               onChange={(e) => setSortOrder(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Oldest First</span>
+              <span className="filter-modal-radio-label">Ascending</span>
             </label>
           </div>
         </div>

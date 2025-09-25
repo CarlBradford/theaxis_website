@@ -1,0 +1,316 @@
+/* Settings Page Styles */
+.settings-container {
+  min-height: 100vh;
+  background-color: var(--color-background, #f8fafc);
+  color: var(--color-text-primary, #1f2937);
+}
+
+/* Settings Header */
+.settings-header {
+  background-color: var(--color-surface, #ffffff);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+}
+
+.settings-header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.settings-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  background-color: var(--color-primary, #215d55);
+  border-radius: 0.75rem;
+}
+
+.settings-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-text-inverse, #ffffff);
+}
+
+.settings-header-text h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #1f2937);
+  margin: 0 0 0.25rem 0;
+}
+
+.settings-header-text p {
+  font-size: 1rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+}
+
+/* Settings Content */
+.settings-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  min-height: calc(100vh - 200px);
+  background-color: var(--color-surface, #ffffff);
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+}
+
+/* Settings Sidebar */
+.settings-sidebar {
+  background-color: var(--color-surface, #ffffff);
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border, #e5e7eb);
+  padding: 1.5rem;
+  height: fit-content;
+  position: sticky;
+  top: 2rem;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.settings-nav-item:hover {
+  background-color: var(--color-surface-hover, #f1f5f9);
+}
+
+.settings-nav-item.active {
+  background-color: var(--color-primary, #215d55);
+  color: var(--color-text-inverse, #ffffff);
+}
+
+.settings-nav-item.active .settings-nav-icon {
+  color: var(--color-text-inverse, #ffffff);
+}
+
+.settings-nav-item.active .settings-nav-name {
+  color: var(--color-text-inverse, #ffffff);
+}
+
+.settings-nav-item.active .settings-nav-description {
+  color: var(--color-text-inverse, #ffffff);
+  opacity: 0.9;
+}
+
+.settings-nav-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-text-secondary, #6b7280);
+  flex-shrink: 0;
+}
+
+.settings-nav-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.settings-nav-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary, #1f2937);
+}
+
+.settings-nav-description {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #6b7280);
+  line-height: 1.2;
+}
+
+/* Settings Main - Removed wrapper, content goes directly in settings-content */
+
+/* Settings Placeholder */
+.settings-placeholder {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.settings-placeholder h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+  margin: 0 0 1rem 0;
+}
+
+.settings-placeholder > p {
+  font-size: 1rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0 0 2rem 0;
+}
+
+.settings-placeholder-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  text-align: left;
+}
+
+.settings-placeholder-item {
+  background-color: var(--color-surface-hover, #f8fafc);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.settings-placeholder-item h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+  margin: 0 0 0.5rem 0;
+}
+
+.settings-placeholder-item p {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Access Denied */
+.settings-access-denied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 2rem;
+}
+
+.access-denied-icon {
+  width: 4rem;
+  height: 4rem;
+  color: var(--color-error, #ef4444);
+  margin-bottom: 1rem;
+}
+
+.settings-access-denied h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary, #1f2937);
+  margin: 0 0 0.5rem 0;
+}
+
+.settings-access-denied p {
+  font-size: 1rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .settings-content {
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-header-content {
+    padding: 0 1rem;
+  }
+  
+  .settings-content {
+    padding: 0 1rem;
+  }
+  
+  .settings-main-content {
+    padding: 1.5rem;
+  }
+  
+  .settings-main-header {
+    padding: 1rem 1.5rem;
+  }
+}
+
+/* Color Palette Integration */
+.color-palette-settings {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.color-palette-settings .color-palette-header {
+  display: none;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-main-content > * {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Focus States */
+.settings-nav-item:focus {
+  outline: 2px solid var(--color-focus, #3b82f6);
+  outline-offset: 2px;
+}
+
+/* Loading State */
+.settings-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+/* Success/Error Messages */
+.settings-message {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.settings-message.success {
+  background-color: #f0f9f7;
+  border: 1px solid var(--color-success, #10b981);
+  color: var(--color-success, #10b981);
+}
+
+.settings-message.error {
+  background-color: #fef2f2;
+  border: 1px solid var(--color-error, #ef4444);
+  color: var(--color-error, #ef4444);
+}
+
+.settings-message.warning {
+  background-color: #fffbeb;
+  border: 1px solid var(--color-warning, #f59e0b);
+  color: var(--color-warning, #f59e0b);
+}

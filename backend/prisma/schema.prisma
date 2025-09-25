@@ -35,7 +35,7 @@ model User {
   editorialNotes         EditorialNote[]
   reviewFeedback         ReviewFeedback[]
   flipbooks              Flipbook[]
-  announcements          Announcement[]
+  notifications          Notification[]
 
   @@index([email])
   @@index([username])
@@ -50,7 +50,6 @@ model Article {
   title           String
   slug            String               @unique
   content         String
-  excerpt         String?
   
   // Media Fields
   featuredImage   String?
@@ -60,7 +59,6 @@ model Article {
   status          ArticleStatus        @default(DRAFT)
   publicationDate DateTime?
   publishedAt     DateTime?
-  scheduledAt     DateTime?
   archivedAt      DateTime?
   
   // Analytics and Engagement
@@ -73,7 +71,6 @@ model Article {
   
   // Content Management
   featured        Boolean              @default(false)
-  priority        Int                  @default(0)
   
   // Timestamps
   createdAt       DateTime             @default(now())
@@ -103,7 +100,6 @@ model Article {
   @@index([publicationDate])
   @@index([publishedAt])
   @@index([featured])
-  @@index([priority])
   @@index([createdAt])
   @@index([slug])
 }
@@ -354,7 +350,6 @@ model Flipbook {
   name        String
   embedUrl    String         @map("embed_url")
   type        PublicationType
-  description String?
   releaseDate DateTime?      @map("release_date")
   thumbnailUrl String?       @map("thumbnail_url")
   isActive    Boolean        @default(true) @map("is_active")
@@ -371,20 +366,67 @@ model Flipbook {
   @@map("flipbooks")
 }
 
-model Announcement {
-  id          String    @id @default(cuid())
+model Notification {
+  id          String             @id @default(cuid())
   title       String
-  description String?
-  imageUrl    String?   @map("image_url")
-  isActive    Boolean   @default(true) @map("is_active")
-  userId      String    @map("user_id")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  message     String
+  type        NotificationType   @default(INFO)
+  isRead      Boolean            @default(false)
+  data        Json?              // Additional data (articleId, etc.)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
   
-  user        User      @relation(fields: [userId], references: [id])
+  // Relationships
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  // Indexes for Performance
   @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  ARTICLE_SUBMITTED
+  ARTICLE_APPROVED
+  ARTICLE_REJECTED
+  ARTICLE_PUBLISHED
+  COMMENT_APPROVED
+  COMMENT_REJECTED
+}
+
+model SiteSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  updatedBy   String
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@index([key])
+  @@index([updatedAt])
+}
+
+model SiteAsset {
+  id          String   @id @default(cuid())
+  assetType   String   // 'logo', 'wordmark', 'favicon', etc.
+  fileName    String
+  originalName String
+  filePath    String
+  fileSize    Int
+  mimeType    String
+  uploadedBy  String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([assetType])
   @@index([isActive])
   @@index([createdAt])
-  @@map("announcements")
 }

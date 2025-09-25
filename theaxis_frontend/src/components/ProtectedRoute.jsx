@@ -13,7 +13,7 @@ const ProtectedRoute = ({ children, requiredRole, excludeRoles = [] }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin-portal" replace />;
   }
 
   if (requiredRole && !hasRole(requiredRole)) {

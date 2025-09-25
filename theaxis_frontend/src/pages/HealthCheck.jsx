@@ -117,7 +117,7 @@ const HealthCheck = () => {
             <h3 className="text-lg font-semibold mb-4">Quick Links:</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <a href="/" className="text-blue-600 hover:text-blue-800 underline">Home</a>
-              <a href="/login" className="text-blue-600 hover:text-blue-800 underline">Login</a>
+              <a href="/admin-portal" className="text-blue-600 hover:text-blue-800 underline">Login</a>
               <a href="/dashboard" className="text-blue-600 hover:text-blue-800 underline">Dashboard</a>
               <a href="/content" className="text-blue-600 hover:text-blue-800 underline">Articles</a>
             </div>

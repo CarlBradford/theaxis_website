@@ -791,6 +791,44 @@
     align-items: stretch;
   }
   
+  .profile-color-display {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .profile-color-groups {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .profile-logo-uploads {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .profile-logo-display {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .profile-file-upload-area {
+    padding: 1.5rem;
+  }
+  
+  .profile-preview-image {
+    max-height: 80px;
+  }
+  
+  .profile-image-preview {
+    min-height: 80px;
+  }
+  
+  .profile-file-info {
+    padding: 0.5rem;
+  }
+  
   .profile-form-actions {
     flex-direction: column;
   }
@@ -1034,4 +1072,290 @@
   .profile-upload-modal-actions .profile-btn {
     width: 100%;
   }
+}
+
+/* Color Customization Section */
+.profile-color-section {
+  margin-bottom: 2rem;
+}
+
+.profile-color-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-color-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.profile-color-group {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.profile-color-group-header {
+  margin-bottom: 1rem;
+}
+
+.profile-color-group-title {
+  margin: 0 0 0.5rem 0;
+  color: #215d55;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.profile-color-group-description {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.profile-color-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.profile-color-picker-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.profile-color-picker {
+  width: 40px;
+  height: 32px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  background: none;
+  transition: border-color 0.2s ease;
+}
+
+.profile-color-picker:focus {
+  outline: none;
+  border-color: #215d55;
+  box-shadow: 0 0 0 2px rgba(33, 93, 85, 0.1);
+}
+
+.profile-color-display {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.profile-color-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-color-info p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Logo and Wordmark Customization Section */
+.profile-logo-section {
+  margin-bottom: 2rem;
+}
+
+.profile-logo-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-logo-uploads {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.profile-logo-upload-group {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.profile-form-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0.5rem 0 1rem 0;
+  line-height: 1.4;
+}
+
+.profile-file-preview {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.profile-file-preview p {
+  margin: 0 0 0.25rem 0;
+}
+
+.profile-file-preview p:last-child {
+  margin-bottom: 0;
+}
+
+.profile-logo-display {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.profile-logo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-logo-info p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Enhanced File Upload Design */
+.profile-file-upload-area {
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  background-color: #f9fafb;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.profile-file-upload-area:hover {
+  border-color: #215d55;
+  background-color: #f0f9f7;
+}
+
+.profile-file-input {
+  display: none;
+}
+
+.profile-file-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.profile-upload-icon {
+  width: 2rem;
+  height: 2rem;
+  color: #9ca3af;
+}
+
+
+/* Image Preview Design */
+.profile-image-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.profile-image-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  min-height: 100px;
+  width: 100%;
+}
+
+.profile-preview-image {
+  display: block;
+  max-width: 100%;
+  max-height: 100px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.profile-remove-image-btn {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 0.75rem;
+}
+
+.profile-remove-image-btn:hover {
+  background-color: #dc2626;
+}
+
+.profile-remove-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.profile-file-info {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.profile-file-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  margin: 0 0 0.25rem 0;
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+.profile-file-size {
+  font-size: 0.6875rem;
+  color: #6b7280;
+  margin: 0;
+  font-weight: 400;
 }

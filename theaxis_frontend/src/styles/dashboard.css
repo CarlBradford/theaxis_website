@@ -10,7 +10,7 @@
   margin-right: 16px;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
   position: fixed;
 }
 
@@ -20,12 +20,10 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
   margin: 0;
   padding: 0;
   margin-bottom: 25px;
   position: relative;
-  overflow: hidden;
 }
 
 /* Header Section - Matching MyContent */
@@ -169,7 +167,6 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  overflow-y: auto;
   padding-right: 8px;
 }
 
@@ -433,20 +430,20 @@
 
 
 /* Custom Scrollbar */
-.dashboard-main-content::-webkit-scrollbar {
+.dashboard-container::-webkit-scrollbar {
   width: 6px;
 }
 
-.dashboard-main-content::-webkit-scrollbar-track {
+.dashboard-container::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.dashboard-main-content::-webkit-scrollbar-thumb {
+.dashboard-container::-webkit-scrollbar-thumb {
   background: rgba(156, 163, 175, 0.5);
   border-radius: 3px;
 }
 
-.dashboard-main-content::-webkit-scrollbar-thumb:hover {
+.dashboard-container::-webkit-scrollbar-thumb:hover {
   background: rgba(156, 163, 175, 0.7);
 }
 

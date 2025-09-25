@@ -11,8 +11,12 @@ import {
   BoldIcon,
   ItalicIcon,
   ListBulletIcon,
-  LinkIcon
+  LinkIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline';
+import { 
+  PencilIcon as PencilIconSolid,
+} from '@heroicons/react/24/solid';
 import ArticlePreviewModal from '../components/ArticlePreviewModal';
 import NotificationModal from '../components/NotificationModal';
 import '../styles/createarticle.css';
@@ -36,6 +40,8 @@ const EditContent = () => {
   });
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [sendLoading, setSendLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [newAuthor, setNewAuthor] = useState('');
   const [newTag, setNewTag] = useState('');
@@ -55,6 +61,11 @@ const EditContent = () => {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationData, setNotificationData] = useState({ title: '', message: '', type: 'success' });
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showSendToEICModal, setShowSendToEICModal] = useState(false);
+  const [sendToEICLoading, setSendToEICLoading] = useState(false);
+  const [showSubmitToSectionHeadModal, setShowSubmitToSectionHeadModal] = useState(false);
+  const [submitToSectionHeadLoading, setSubmitToSectionHeadLoading] = useState(false);
+  const [publishLoading, setPublishLoading] = useState(false);
   const [articleStatus, setArticleStatus] = useState('');
   const [articleDataLoaded, setArticleDataLoaded] = useState(false);
   const contentRef = useRef(null);
@@ -593,15 +604,16 @@ const EditContent = () => {
     }
   };
 
-  const handleSave = async (status = 'DRAFT', contentOnly = false) => {
-    console.log('handleSave called with status:', status, 'contentOnly:', contentOnly);
+  const handleSave = async (status = 'DRAFT', contentOnly = false, loadingState = 'isSubmitting') => {
+    console.log('handleSave called with status:', status, 'contentOnly:', contentOnly, 'loadingState:', loadingState);
     // Trigger form submission with specific status
     const form = document.querySelector('.create-article-form');
     if (form) {
-      // Store the desired status in a data attribute
+      // Store the desired status and loading state in data attributes
       form.dataset.articleStatus = status;
       form.dataset.contentOnly = contentOnly;
-      console.log('Form dataset set to:', form.dataset.articleStatus, 'contentOnly:', form.dataset.contentOnly);
+      form.dataset.loadingState = loadingState;
+      console.log('Form dataset set to:', form.dataset.articleStatus, 'contentOnly:', form.dataset.contentOnly, 'loadingState:', form.dataset.loadingState);
       form.requestSubmit();
     } else {
       console.error('Form not found!');
@@ -613,31 +625,68 @@ const EditContent = () => {
     if (!validateForm(true)) {
       return;
     }
-    handleSave('DRAFT');
+    handleSave('DRAFT', false, 'saveLoading');
   };
 
   const handleSubmitToSectionHead = () => {
-    console.log('Submitting to Section Head');
-    handleSave('IN_REVIEW');
+    console.log('Showing Submit to Section Head confirmation modal');
+    setShowSubmitToSectionHeadModal(true);
+  };
+
+  const confirmSubmitToSectionHead = async () => {
+    setSubmitToSectionHeadLoading(true);
+    try {
+      console.log('Submitting to Section Head confirmed');
+      // Call handleSave without affecting the main form loading state
+      await handleSave('IN_REVIEW', false, 'none');
+    } finally {
+      setSubmitToSectionHeadLoading(false);
+      setShowSubmitToSectionHeadModal(false);
+    }
+  };
+
+  const cancelSubmitToSectionHead = () => {
+    setShowSubmitToSectionHeadModal(false);
   };
 
   const handleSendToEIC = () => {
-    console.log('Sending to EIC');
-    handleSave('APPROVED');
+    console.log('Showing Submit to EIC confirmation modal');
+    setShowSendToEICModal(true);
+  };
+
+  const confirmSendToEIC = async () => {
+    setSendToEICLoading(true);
+    try {
+      console.log('Sending to EIC confirmed');
+      // Call handleSave without affecting the main form loading state
+      await handleSave('APPROVED', false, 'none');
+    } finally {
+      setSendToEICLoading(false);
+      setShowSendToEICModal(false);
+    }
+  };
+
+  const cancelSendToEIC = () => {
+    setShowSendToEICModal(false);
   };
 
   const handlePublish = () => {
     setShowPublishModal(true);
   };
 
-  const confirmPublish = () => {
+  const confirmPublish = async () => {
+    setPublishLoading(true);
+    try {
     setShowPublishModal(false);
     console.log('Publishing/Updating article');
     // For published articles, only update content without changing status
     if (articleStatus === 'PUBLISHED') {
-      handleSave('PUBLISHED', true); // true indicates content-only update
+        await handleSave('PUBLISHED', true, 'none'); // true indicates content-only update
     } else {
-      handleSave('PUBLISHED');
+        await handleSave('PUBLISHED', false, 'none');
+      }
+    } finally {
+      setPublishLoading(false);
     }
   };
 
@@ -652,18 +701,28 @@ const EditContent = () => {
     const form = e.target;
     const articleStatus = form.dataset.articleStatus || 'DRAFT';
     const contentOnly = form.dataset.contentOnly === 'true';
+    const loadingState = form.dataset.loadingState || 'isSubmitting';
     const isDraftSave = articleStatus === 'DRAFT';
     
-    console.log('handleSubmit called with status:', articleStatus, 'isDraftSave:', isDraftSave, 'contentOnly:', contentOnly);
+    console.log('handleSubmit called with status:', articleStatus, 'isDraftSave:', isDraftSave, 'contentOnly:', contentOnly, 'loadingState:', loadingState);
     
     if (!validateForm(isDraftSave)) {
       console.log('Validation failed - keeping form data intact');
-      setIsSubmitting(false);
       return;
     }
     
     console.log('Validation passed, proceeding with submission');
+    
+    // Set the appropriate loading state
+    if (loadingState === 'saveLoading') {
+      setSaveLoading(true);
+    } else if (loadingState === 'sendLoading') {
+      setSendLoading(true);
+    } else if (loadingState === 'none') {
+      // Don't set any loading state - modal handles its own loading
+    } else {
     setIsSubmitting(true);
+    }
     
     try {
 
@@ -695,13 +754,11 @@ const EditContent = () => {
       // Validate data before sending
       if (!articleData.title || articleData.title.length < 3) {
         showNotification('Error', 'Title must be at least 3 characters long', 'error');
-        setIsSubmitting(false);
         return;
       }
 
       if (!articleData.content || articleData.content.length < 1) {
         showNotification('Error', 'Content cannot be empty', 'error');
-        setIsSubmitting(false);
         return;
       }
 
@@ -723,7 +780,6 @@ const EditContent = () => {
         }
         
         showNotification('Error', errorMessage, 'error');
-        setIsSubmitting(false);
         return;
       }
       
@@ -741,6 +797,14 @@ const EditContent = () => {
           setTimeout(() => {
             navigate(redirectPath);
           }, 2000);
+          // Reset the appropriate loading state
+          if (loadingState === 'saveLoading') {
+            setSaveLoading(false);
+          } else if (loadingState === 'sendLoading') {
+            setSendLoading(false);
+          } else {
+            setIsSubmitting(false);
+          }
           return;
         }
       }
@@ -791,7 +855,16 @@ const EditContent = () => {
       
       showNotification('Error', errorMessage, 'error');
     } finally {
+      // Reset the appropriate loading state
+      if (loadingState === 'saveLoading') {
+        setSaveLoading(false);
+      } else if (loadingState === 'sendLoading') {
+        setSendLoading(false);
+      } else if (loadingState === 'none') {
+        // Don't reset any loading state - modal handles its own loading
+      } else {
       setIsSubmitting(false);
+      }
     }
   };
 
@@ -858,7 +931,15 @@ const EditContent = () => {
       <div className="create-article-content">
         {/* Header */}
         <div className="create-article-header">
-          <h1 className="create-article-title">{articleStatus === 'PUBLISHED' ? 'Update Content' : 'Edit Content'}</h1>
+          <div className="flex items-center space-x-4">
+            <div>
+              <PencilIconSolid className="h-8 w-8 text-black" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-black">{articleStatus === 'PUBLISHED' ? 'Update Content' : 'Edit Content'}</h1>
+              <p className="text-gray-600">Modify your article content</p>
+            </div>
+          </div>
           <div className="create-article-header-buttons">
             <button
               type="button"
@@ -875,19 +956,18 @@ const EditContent = () => {
                   <button
                     type="button"
                     onClick={handleSaveAsDraft}
-                    disabled={isSubmitting}
+                    disabled={saveLoading || sendLoading}
                     className="create-article-save-btn"
                   >
-                    {isSubmitting ? 'Saving...' : 'Save as Draft'}
+                    {saveLoading ? 'Saving...' : 'Save as Draft'}
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={handleSubmitToSectionHead}
-                  disabled={isSubmitting}
                   className="create-article-submit-btn"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit to Section Head'}
+                  Submit to Section Head
                 </button>
               </>
             )}
@@ -904,14 +984,23 @@ const EditContent = () => {
                     {isSubmitting ? 'Updating...' : 'Update'}
                   </button>
                 ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleSaveAsDraft}
+                      disabled={saveLoading || sendLoading}
+                      className="create-article-save-btn"
+                    >
+                      {saveLoading ? 'Saving...' : 'Save as Draft'}
+                    </button>
                 <button
                   type="button"
                   onClick={handleSendToEIC}
-                  disabled={isSubmitting}
                   className="create-article-submit-btn"
                 >
-                  {isSubmitting ? 'Sending...' : 'Send to EIC'}
+                      Submit to EIC
                 </button>
+                  </>
                 )}
               </>
             )}
@@ -931,10 +1020,9 @@ const EditContent = () => {
                 <button
                   type="button"
                   onClick={handlePublish}
-                  disabled={isSubmitting}
                   className="create-article-publish-btn"
                 >
-                  {isSubmitting ? (articleStatus === 'PUBLISHED' ? 'Updating...' : 'Publishing...') : (articleStatus === 'PUBLISHED' ? 'Update' : 'Publish')}
+                  {articleStatus === 'PUBLISHED' ? 'Update' : 'Publish'}
                 </button>
               </>
             )}
@@ -1418,15 +1506,134 @@ const EditContent = () => {
             <div className="simple-publish-modal-buttons">
               <button
                 onClick={cancelPublish}
+                disabled={publishLoading}
                 className="simple-publish-modal-button cancel"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmPublish}
+                disabled={publishLoading}
                 className="simple-publish-modal-button publish"
               >
-                {articleStatus === 'PUBLISHED' ? 'Update Content' : 'Publish Article'}
+                {publishLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="simple-publish-spinner"></div>
+                    {articleStatus === 'PUBLISHED' ? 'Updating...' : 'Publishing...'}
+                  </div>
+                ) : (
+                  articleStatus === 'PUBLISHED' ? 'Update Content' : 'Publish Article'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send to EIC Confirmation Modal */}
+      {showSendToEICModal && (
+        <div className="simple-publish-modal-overlay">
+          <div className="simple-publish-modal">
+            <div className="simple-publish-modal-header">
+              <h3 className="simple-publish-modal-title">Submit to EIC</h3>
+              <button
+                onClick={cancelSendToEIC}
+                className="simple-publish-modal-close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="simple-publish-modal-content">
+              <p className="simple-publish-warning-text">
+                Are you sure you want to send "{formData.title}" to the Editor-in-Chief for review?
+              </p>
+              <p className="simple-publish-details">
+                Category: {formData.category || 'Uncategorized'}
+              </p>
+              <p className="simple-publish-note">
+                This will send the article to the EIC for final review and potential publication.
+              </p>
+            </div>
+            
+            <div className="simple-publish-modal-buttons">
+              <button
+                onClick={cancelSendToEIC}
+                disabled={sendToEICLoading}
+                className="simple-publish-modal-button cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSendToEIC}
+                disabled={sendToEICLoading}
+                className="simple-publish-modal-button publish"
+              >
+                {sendToEICLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="simple-publish-spinner"></div>
+                    Sending...
+                  </div>
+                ) : (
+                  'Submit to EIC'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submit to Section Head Confirmation Modal */}
+      {showSubmitToSectionHeadModal && (
+        <div className="simple-publish-modal-overlay">
+          <div className="simple-publish-modal">
+            <div className="simple-publish-modal-header">
+              <h3 className="simple-publish-modal-title">Submit to Section Head</h3>
+              <button
+                onClick={cancelSubmitToSectionHead}
+                className="simple-publish-modal-close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="simple-publish-modal-content">
+              <p className="simple-publish-warning-text">
+                Are you sure you want to submit "{formData.title}" to your Section Head for review?
+              </p>
+              <p className="simple-publish-details">
+                Category: {formData.category || 'Uncategorized'}
+              </p>
+              <p className="simple-publish-note">
+                This will send the article to your Section Head for review and feedback.
+              </p>
+            </div>
+            
+            <div className="simple-publish-modal-buttons">
+              <button
+                onClick={cancelSubmitToSectionHead}
+                disabled={submitToSectionHeadLoading}
+                className="simple-publish-modal-button cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSubmitToSectionHead}
+                disabled={submitToSectionHeadLoading}
+                className="simple-publish-modal-button publish"
+              >
+                {submitToSectionHeadLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="simple-publish-spinner"></div>
+                    Submitting...
+                  </div>
+                ) : (
+                  'Submit to Section Head'
+                )}
               </button>
             </div>
           </div>

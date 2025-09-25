@@ -135,12 +135,6 @@ const FlipbookDisplay = ({ flipbook, onClose, onShare }) => {
                   className="flipbook-modal-iframe"
                 />
               </div>
-              {flipbook.description && (
-                <div className="flipbook-modal-description">
-                  <h4 className="flipbook-modal-description-title">Description</h4>
-                  <p className="flipbook-modal-description-text">{flipbook.description}</p>
-                </div>
-              )}
               <div className="flipbook-modal-demo-info">
                 <p className="flipbook-modal-demo-note">
                   <strong>Note:</strong> This flipbook is embedded from the provided URL.

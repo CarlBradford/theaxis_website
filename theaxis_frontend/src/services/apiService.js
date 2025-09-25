@@ -32,6 +32,18 @@ export const authAPI = {
     return response.data;
   },
 
+  // Forgot password
+  forgotPassword: async (email) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  // Reset password
+  resetPassword: async (token, newPassword) => {
+    const response = await api.post('/auth/reset-password', { token, newPassword });
+    return response.data;
+  },
+
   // Logout (client-side)
   logout: () => {
     // Note: AuthContext handles the actual logout logic and navigation
@@ -173,6 +185,18 @@ export const articlesAPI = {
         ...params 
       } 
     });
+    return response.data;
+  },
+
+  // Get featured articles
+  getFeaturedArticles: async () => {
+    const response = await api.get('/articles/featured');
+    return response.data;
+  },
+
+  // Update featured articles
+  updateFeaturedArticles: async (articleIds) => {
+    const response = await api.put('/articles/featured', { articleIds });
     return response.data;
   }
 };
@@ -387,38 +411,6 @@ export const mediaAPI = {
 };
 
 
-// Announcements API
-export const announcementsAPI = {
-  // Create announcement
-  createAnnouncement: async (announcementData) => {
-    const response = await api.post('/announcements', announcementData);
-    return response.data;
-  },
-
-  // Get all announcements
-  getAnnouncements: async (params = {}) => {
-    const response = await api.get('/announcements', { params });
-    return response.data;
-  },
-
-  // Get active announcements
-  getActiveAnnouncements: async () => {
-    const response = await api.get('/announcements/active');
-    return response.data;
-  },
-
-  // Update announcement
-  updateAnnouncement: async (id, announcementData) => {
-    const response = await api.put(`/announcements/${id}`, announcementData);
-    return response.data;
-  },
-
-  // Delete announcement
-  deleteAnnouncement: async (id) => {
-    const response = await api.delete(`/announcements/${id}`);
-    return response.data;
-  }
-};
 
 // Utility functions
 export const utils = {
@@ -472,6 +464,5 @@ export default {
   analytics: analyticsAPI,
   media: mediaAPI,
   users: usersAPI,
-  announcements: announcementsAPI,
   utils
 };

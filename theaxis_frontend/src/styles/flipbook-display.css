@@ -392,27 +392,6 @@
   display: block;
 }
 
-/* Description Section */
-.flipbook-modal-description {
-  padding: 20px 32px;
-  background-color: var(--background-gray);
-  border-top: 1px solid var(--border-color);
-}
-
-.flipbook-modal-description-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0 0 8px 0;
-}
-
-.flipbook-modal-description-text {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin: 0;
-  line-height: 1.5;
-}
-
 /* Demo Notice for Free Plan */
 .flipbook-modal-demo-notice {
   display: flex;

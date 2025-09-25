@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/apiService';
 import { hasPermission as checkPermission, hasAnyPermission as checkAnyPermission, hasAllPermissions as checkAllPermissions } from '../config/permissions';
+import { trackLogout } from '../config/analytics';
 
 export const AuthContext = createContext();
 
@@ -70,10 +71,18 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    // Track logout event
+    trackLogout();
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');
     authAPI.logout();
+  };
+
+  const refreshUser = async () => {
+    if (token) {
+      await fetchUser();
+    }
   };
 
   const hasRole = (requiredRole) => {
@@ -116,6 +125,7 @@ export function AuthProvider({ children }) {
     loading,
     login,
     logout,
+    refreshUser,
     hasRole,
     hasPermission,
     hasAnyPermission,

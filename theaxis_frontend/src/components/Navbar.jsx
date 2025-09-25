@@ -88,7 +88,7 @@ const Navbar = () => {
           </Link>
         ) : (
           <Link 
-            to="/login" 
+            to="/admin-portal" 
             className="dropdown-item"
           >
             Login

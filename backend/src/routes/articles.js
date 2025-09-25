@@ -18,6 +18,8 @@ const {
   createNotFoundError,
   createValidationError,
 } = require('../middleware/errorHandler');
+const { NotificationService } = require('../services/notificationService');
+const notificationService = NotificationService;
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -192,12 +194,16 @@ router.post(
     // Determine initial status based on user role and action
     let initialStatus = status;
     if (req.user.role === 'SECTION_HEAD') {
-      // Section Head content goes directly to EIC only when explicitly submitted for review
-      // "Save as Draft" stays as DRAFT, "Send to EIC" becomes APPROVED
+      // Section Head content workflow:
+      // - "Save as Draft" stays as DRAFT
+      // - "Submit for Review" becomes IN_REVIEW (goes to Section Head queue for review)
+      // - "Send to EIC" becomes APPROVED (bypasses Section Head review)
       if (status === 'IN_REVIEW') {
-        initialStatus = 'APPROVED'; // Send to EIC action
+        initialStatus = 'IN_REVIEW'; // Keep as IN_REVIEW for Section Head review
+      } else if (status === 'APPROVED') {
+        initialStatus = 'APPROVED'; // Direct to EIC
       }
-      // If status is 'DRAFT', keep it as 'DRAFT' (Save as Draft action)
+      // If status is 'DRAFT', keep it as 'DRAFT'
     }
 
     const baseSlug = generateSlug(title);
@@ -229,6 +235,20 @@ router.post(
         publicationDate: publicationDate ? new Date(publicationDate) : null,
         status: initialStatus,
         authorId: req.user.id,
+        // Set reviewerId for Section Head when they approve/send to EIC
+        ...(req.user.role === 'SECTION_HEAD' && initialStatus === 'APPROVED' && {
+          reviewerId: req.user.id
+        }),
+        // Set publishedAt and publicationDate for PUBLISHED status
+        ...(initialStatus === 'PUBLISHED' && {
+          publishedAt: new Date(),
+          publicationDate: publicationDate ? new Date(publicationDate) : new Date()
+        }),
+        // Set archivedAt for ARCHIVED status (only if previously published)
+        ...(initialStatus === 'ARCHIVED' && {
+          publishedAt: new Date(), // Assume it was published first
+          archivedAt: new Date()
+        }),
         readingTime: calculateReadTime(content), // Calculate and store read time
         // connect tags/categories if provided as array of slugs
         ...(tags.length > 0 && {
@@ -255,6 +275,17 @@ router.post(
         readingTime: true,
       },
     });
+
+    // Send notifications based on initial status
+    try {
+      if (initialStatus === 'IN_REVIEW') {
+        // Notify Section Head when article is created and submitted for review
+        await notificationService.notifySectionHeadArticleSubmitted(created.id, req.user);
+      }
+    } catch (notificationError) {
+      // Log notification error but don't fail the request
+      console.error('Notification error during article creation:', notificationError);
+    }
 
     // Create additional authors if provided
     if (authors.length > 0) {
@@ -291,7 +322,7 @@ router.post(
  *       - in: query
  *         name: search
  *         schema: { type: string }
- *         description: Search in title, excerpt, and author name
+ *         description: Search in title and author name
  *       - in: query
  *         name: authorId
  *         schema: { type: string }
@@ -348,7 +379,6 @@ router.get(
       if (search) {
         where.OR = [
           { title: { contains: search, mode: 'insensitive' } },
-          { excerpt: { contains: search, mode: 'insensitive' } },
         { author: { 
           OR: [
             { firstName: { contains: search, mode: 'insensitive' } },
@@ -360,7 +390,19 @@ router.get(
     }
     
     // Status filter
-      if (status) where.status = status;
+      if (status) {
+        // Convert lowercase status to uppercase enum value
+        const statusMap = {
+          'draft': 'DRAFT',
+          'in_review': 'IN_REVIEW',
+          'needs_revision': 'NEEDS_REVISION',
+          'approved': 'APPROVED',
+          'scheduled': 'SCHEDULED',
+          'published': 'PUBLISHED',
+          'archived': 'ARCHIVED'
+        };
+        where.status = statusMap[status.toLowerCase()] || status.toUpperCase();
+      }
     
     // Author filter
       if (authorId) where.authorId = authorId;
@@ -424,7 +466,6 @@ router.get(
             title: true, 
             slug: true, 
             content: true,
-            excerpt: true,
             featuredImage: true,
             status: true, 
             publishedAt: true, 
@@ -443,6 +484,24 @@ router.get(
                 firstName: true,
                 lastName: true,
                 username: true
+              }
+            },
+            articleAuthors: {
+              select: {
+                user: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    username: true,
+                    role: true
+                  }
+                },
+                role: true,
+                order: true
+              },
+              orderBy: {
+                order: 'asc'
               }
             },
             categories: {
@@ -747,7 +806,6 @@ router.get(
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
-        { excerpt: { contains: search, mode: 'insensitive' } },
         { author: { 
           OR: [
             { firstName: { contains: search, mode: 'insensitive' } },
@@ -801,7 +859,6 @@ router.get(
           id: true,
           title: true,
           slug: true,
-          excerpt: true,
           featuredImage: true,
           status: true,
           createdAt: true,
@@ -853,10 +910,10 @@ router.get(
       category: article.categories[0]?.name || 'Uncategorized',
       submittedAt: article.createdAt,
       status: article.status.toLowerCase().replace('_', '-'),
-      wordCount: Math.ceil((article.excerpt?.length || 0) / 5), // Rough word count
+      wordCount: Math.ceil((article.content?.length || 0) / 5), // Rough word count
       estimatedReadTime: article.readingTime ? `${article.readingTime} min` : '5 min',
       tags: article.tags.map(tag => tag.slug),
-      excerpt: article.excerpt || '',
+      excerpt: article.content ? article.content.substring(0, 150) + '...' : '',
       featuredImage: article.featuredImage,
       reviewer: article.reviewer ? `${article.reviewer.firstName} ${article.reviewer.lastName}` : null
     }));
@@ -947,8 +1004,10 @@ router.patch(
 
     switch (action) {
       case 'approve-to-eic':
+        // Only allow approval if article is IN_REVIEW
         if (article.status !== 'IN_REVIEW') {
-          throw createValidationError('action', 'Can only approve articles that are in review');
+          console.error(`Article ${id} status is ${article.status}, expected IN_REVIEW for approval`);
+          throw createValidationError('action', `Can only approve articles that are in review. Current status: ${article.status}`);
         }
         newStatus = 'APPROVED';
         break;
@@ -1006,7 +1065,233 @@ router.patch(
       });
     }
 
+    // Send notifications based on review action using comprehensive role-based notifications
+    try {
+      await notificationService.notifyRoleBasedStatusChange(
+        id, 
+        article.status, 
+        newStatus, 
+        feedback, 
+        req.user.role
+      );
+    } catch (notificationError) {
+      // Log notification error but don't fail the request
+      console.error('Notification error:', notificationError);
+    }
+
     sendSuccessResponse(res, updated, 'Article status updated');
+  })
+);
+
+/**
+ * @swagger
+ * /articles/featured:
+ *   get:
+ *     summary: Get featured articles
+ *     tags: [Articles]
+ *     responses:
+ *       200:
+ *         description: Featured articles retrieved
+ */
+// Get featured articles
+router.get(
+  '/featured',
+  asyncHandler(async (req, res) => {
+    const featuredArticles = await prisma.article.findMany({
+      where: {
+        featured: true,
+        status: 'PUBLISHED'
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        featuredImage: true,
+        publicationDate: true,
+        publishedAt: true,
+        viewCount: true,
+        createdAt: true,
+        categories: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        tags: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            role: true
+          }
+        },
+        articleAuthors: {
+          select: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true,
+                role: true
+              }
+            },
+            role: true,
+            order: true
+          },
+          orderBy: {
+            order: 'asc'
+          }
+        }
+      },
+      orderBy: {
+        publicationDate: 'desc'
+      },
+      take: 5 // Limit to 5 featured articles
+    });
+
+    sendSuccessResponse(res, featuredArticles, 'Featured articles retrieved');
+  })
+);
+
+/**
+ * @swagger
+ * /articles/featured:
+ *   put:
+ *     summary: Update featured articles
+ *     tags: [Articles]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [articleIds]
+ *             properties:
+ *               articleIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 maxItems: 5
+ *                 description: Array of article IDs to feature (max 5)
+ *     responses:
+ *       200:
+ *         description: Featured articles updated
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ */
+// Update featured articles
+router.put(
+  '/featured',
+  [
+    authenticateToken,
+    requireRole('EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
+    body('articleIds').isArray({ max: 5 }).withMessage('Maximum 5 articles can be featured'),
+    body('articleIds.*').isString().withMessage('Article ID must be a string')
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return sendErrorResponse(res, 400, 'Validation failed', errors.array());
+    }
+
+    const { articleIds } = req.body;
+
+    // Validate that all articles exist and are published
+    const articles = await prisma.article.findMany({
+      where: {
+        id: { in: articleIds },
+        status: 'PUBLISHED'
+      },
+      select: {
+        id: true,
+        title: true
+      }
+    });
+
+    if (articles.length !== articleIds.length) {
+      return sendErrorResponse(res, 400, 'One or more articles not found or not published');
+    }
+
+    // First, unfeature all articles
+    await prisma.article.updateMany({
+      where: {
+        featured: true
+      },
+      data: {
+        featured: false
+      }
+    });
+
+    // Then feature the selected articles
+    if (articleIds.length > 0) {
+      await prisma.article.updateMany({
+        where: {
+          id: { in: articleIds }
+        },
+        data: {
+          featured: true
+        }
+      });
+    }
+
+    // Return the updated featured articles
+    const updatedFeaturedArticles = await prisma.article.findMany({
+      where: {
+        featured: true,
+        status: 'PUBLISHED'
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        featuredImage: true,
+        publicationDate: true,
+        publishedAt: true,
+        viewCount: true,
+        createdAt: true,
+        categories: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        tags: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true
+          }
+        }
+      },
+      orderBy: {
+        publicationDate: 'desc'
+      }
+    });
+
+    sendSuccessResponse(res, updatedFeaturedArticles, 'Featured articles updated');
   })
 );
 
@@ -1042,7 +1327,6 @@ router.get(
         id: true,
         title: true,
         slug: true,
-        excerpt: true,
         content: true,
         featuredImage: true,
         mediaCaption: true,
@@ -1173,7 +1457,7 @@ router.put(
     }
 
     const { id } = req.params;
-    const existing = await prisma.article.findUnique({ where: { id }, select: { id: true, title: true } });
+    const existing = await prisma.article.findUnique({ where: { id }, select: { id: true, title: true, status: true } });
     if (!existing) throw createNotFoundError('Article', id);
 
     const { 
@@ -1192,7 +1476,7 @@ router.put(
       content, 
       featuredImage, 
       mediaCaption,
-      publicationDate: publicationDate ? new Date(publicationDate) : null,
+      publicationDate: publicationDate ? new Date(publicationDate) : undefined,
       readingTime: content ? calculateReadTime(content) : undefined, // Calculate read time if content is updated
     };
 
@@ -1233,6 +1517,23 @@ router.put(
       data: updateData,
       select: { id: true, title: true, slug: true, updatedAt: true },
     });
+
+    // Send notifications if article is updated during review
+    try {
+      if (existing.status === 'IN_REVIEW' && content) {
+        // Notify reviewers when article content is updated during review
+        await notificationService.notifyReviewersArticleUpdated(id, req.user);
+      }
+      
+      // Check if this is an update to a published article by a Section Head
+      if (existing.status === 'PUBLISHED' && req.user.role === 'SECTION_HEAD' && (title || content || featuredImage)) {
+        // Notify EIC when Section Head updates and republishes an article
+        await notificationService.notifyEICArticleUpdatedAndPublished(id, req.user.id);
+      }
+    } catch (notificationError) {
+      // Log notification error but don't fail the request
+      console.error('Notification error during article update:', notificationError);
+    }
 
     // Handle additional authors if provided
     if (authors.length > 0) {
@@ -1280,9 +1581,6 @@ router.put(
  *               status:
  *                 type: string
  *                 enum: [DRAFT, IN_REVIEW, NEEDS_REVISION, APPROVED, SCHEDULED, PUBLISHED, ARCHIVED]
- *               scheduledAt:
- *                 type: string
- *                 format: date-time
  *     responses:
  *       200:
  *         description: Status updated
@@ -1302,7 +1600,6 @@ router.patch(
     authenticateToken,
     requireOwnership('article', 'id'),
     body('status').isIn(allowedStatuses),
-    body('scheduledAt').optional().isISO8601(),
   ],
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -1311,7 +1608,7 @@ router.patch(
     }
 
     const { id } = req.params;
-    const { status, scheduledAt } = req.body;
+    const { status } = req.body;
     const article = await prisma.article.findUnique({ where: { id }, select: { id: true, status: true } });
     if (!article) throw createNotFoundError('Article', id);
 
@@ -1326,9 +1623,10 @@ router.patch(
       ARCHIVED: ['DRAFT', 'IN_REVIEW'],
     };
 
-    // Section Heads can directly submit to EIC (skip section review)
+    // Section Heads can submit their own articles for review or directly to EIC
     if (req.user.role === 'SECTION_HEAD') {
       transitions.DRAFT = ['IN_REVIEW', 'APPROVED', 'PUBLISHED'];
+      transitions.IN_REVIEW = ['NEEDS_REVISION', 'APPROVED']; // Allow Section Heads to approve their own articles
     }
 
     if (!transitions[article.status].includes(status)) {
@@ -1336,11 +1634,52 @@ router.patch(
     }
 
     const data = { status };
-    if (status === 'SCHEDULED' && scheduledAt) data.scheduledAt = new Date(scheduledAt);
-    if (status === 'PUBLISHED') data.publishedAt = new Date();
-    if (status === 'ARCHIVED') data.archivedAt = new Date();
+    if (status === 'PUBLISHED') {
+      data.publishedAt = new Date();
+      // Ensure publication date is set when publishing
+      const existingArticle = await prisma.article.findUnique({
+        where: { id },
+        select: { publicationDate: true, publishedAt: true }
+      });
+      if (!existingArticle?.publicationDate) {
+        data.publicationDate = new Date();
+      }
+    }
+    if (status === 'ARCHIVED') {
+      // Only set archivedAt if the article was previously published
+      const existingArticle = await prisma.article.findUnique({
+        where: { id },
+        select: { publishedAt: true }
+      });
+      if (existingArticle?.publishedAt) {
+        data.archivedAt = new Date();
+      }
+    }
 
-    const updated = await prisma.article.update({ where: { id }, data, select: { id: true, status: true, publishedAt: true, scheduledAt: true, archivedAt: true } });
+    const updated = await prisma.article.update({ where: { id }, data, select: { id: true, status: true, publishedAt: true, archivedAt: true } });
+
+    // Send notifications based on status change using comprehensive role-based notifications
+    try {
+      await notificationService.notifyRoleBasedStatusChange(
+        id, 
+        article.status, 
+        status, 
+        null, 
+        req.user.role
+      );
+
+      // Additional specific notifications for Published Content actions
+      if (status === 'ARCHIVED' && req.user.role === 'SECTION_HEAD') {
+        // Notify EIC when Section Head archives an article
+        await notificationService.notifyEICArticleArchived(id, req.user.id);
+      } else if (status === 'IN_REVIEW' && req.user.role === 'EDITOR_IN_CHIEF') {
+        // Notify Section Heads when EIC restores an article
+        await notificationService.notifySectionHeadsArticleRestored(id, req.user.id);
+      }
+    } catch (notificationError) {
+      // Log notification error but don't fail the request
+      console.error('Notification error:', notificationError);
+    }
 
     sendSuccessResponse(res, updated, 'Status updated');
   })
@@ -1379,7 +1718,32 @@ router.delete(
     const { id } = req.params;
     const exists = await prisma.article.findUnique({ where: { id }, select: { id: true } });
     if (!exists) throw createNotFoundError('Article', id);
+    
+    // Delete related records first to avoid foreign key constraint violations
+    // Delete comments first
+    await prisma.comment.deleteMany({ where: { articleId: id } });
+    
+    // Delete article authors
+    await prisma.articleAuthor.deleteMany({ where: { articleId: id } });
+    
+    // Delete article likes
+    await prisma.articleLikeHistory.deleteMany({ where: { articleId: id } });
+    
+    // Delete article views
+    await prisma.articleViewHistory.deleteMany({ where: { articleId: id } });
+    
+    // Delete editorial notes
+    await prisma.editorialNote.deleteMany({ where: { articleId: id } });
+    
+    // Delete review feedback
+    await prisma.reviewFeedback.deleteMany({ where: { articleId: id } });
+    
+    // Delete flipbook articles
+    await prisma.flipbookArticle.deleteMany({ where: { articleId: id } });
+    
+    // Finally delete the article
     await prisma.article.delete({ where: { id } });
+    
     sendSuccessResponse(res, null, 'Article deleted');
   })
 );
@@ -1764,5 +2128,6 @@ router.get(
     sendSuccessResponse(res, analytics, 'Article analytics retrieved');
   })
 );
+
 
 module.exports = router;

@@ -1,14 +1,14 @@
-/* Homepage Color Theme */
+/* Homepage Color Theme - Connected to Color Palette */
 :root {
-  --cyan-primary: #215d55;
-  --cyan-dark: #1c4643;
+  --cyan-primary: var(--color-primary, #215d55);
+  --cyan-dark: var(--color-textPrimary, #1c4643);
   --gray-light: #b3b0ac;
-  --gray-dark: #656362;
+  --gray-dark: var(--color-secondary, #656362);
 }
 
 /* Homepage Background */
 .homepage-bg {
-  background: #ffffff;
+  background: var(--color-background, #ffffff);
   min-height: 100vh;
 }
 
@@ -22,14 +22,14 @@
 
 .homepage-bg .announcement-card {
   background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(33, 93, 85, 0.1);
-  box-shadow: 0 10px 25px rgba(28, 70, 67, 0.15);
+  border: 1px solid var(--cyan-primary, rgba(33, 93, 85, 0.1));
+  box-shadow: 0 10px 25px var(--cyan-primary, rgba(28, 70, 67, 0.15));
 }
 
 .homepage-bg .announcement-card:hover {
   background: rgba(255, 255, 255, 1);
-  box-shadow: 0 20px 40px rgba(28, 70, 67, 0.2);
-  border-color: rgba(33, 93, 85, 0.2);
+  box-shadow: 0 20px 40px var(--cyan-primary, rgba(28, 70, 67, 0.2));
+  border-color: var(--cyan-primary, rgba(33, 93, 85, 0.2));
 }
 
 .homepage-bg .announcement-title {
@@ -46,7 +46,7 @@
 
 .homepage-bg .announcement-empty {
   background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(33, 93, 85, 0.1);
+  border: 1px solid var(--cyan-primary, rgba(33, 93, 85, 0.1));
 }
 
 .homepage-bg .announcement-empty-icon {
@@ -87,6 +87,6 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .homepage-bg {
-    background: #ffffff;
+    background: var(--color-background, #ffffff);
   }
 }

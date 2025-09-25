@@ -7,6 +7,7 @@ const {
   optionalAuth,
   requireSectionHead,
   requireOwnership,
+  requireRole,
   auditLog,
 } = require('../middleware/auth');
 const {
@@ -15,6 +16,8 @@ const {
   sendErrorResponse,
   createNotFoundError,
 } = require('../middleware/errorHandler');
+const { NotificationService } = require('../services/notificationService');
+const notificationService = NotificationService;
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -132,6 +135,14 @@ router.post(
       select: { id: true, isApproved: true, content: true, createdAt: true, moderationReason: true },
     });
 
+    // Send notification to article author when comment is posted
+    try {
+      await notificationService.notifyArticleAuthorNewComment(articleId, created.id);
+    } catch (notificationError) {
+      // Log notification error but don't fail the request
+      console.error('Notification error during comment creation:', notificationError);
+    }
+
     const message = moderationResult.isClean 
       ? 'Comment posted successfully' 
       : 'Comment posted (content was cleaned)';
@@ -245,7 +256,7 @@ router.put(
  */
 router.post(
   '/:id/approve',
-  [authenticateToken, requireSectionHead, param('id').isString()],
+  [authenticateToken, requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'), param('id').isString()],
   auditLog('approve', 'comment'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -260,6 +271,14 @@ router.post(
       prisma.comment.update({ where: { id }, data: { isApproved: true, isModerated: false, moderationReason: null } }),
       prisma.article.update({ where: { id: comment.articleId }, data: { commentCount: { increment: 1 } } }),
     ]);
+
+    // Send notification to comment author when comment is approved
+    try {
+      await notificationService.notifyCommentAuthorStatusChange(id, 'APPROVED');
+    } catch (notificationError) {
+      // Log notification error but don't fail the request
+      console.error('Notification error during comment approval:', notificationError);
+    }
 
     sendSuccessResponse(res, { id }, 'Comment approved');
   })
@@ -291,7 +310,7 @@ router.post(
  */
 router.post(
   '/:id/reject',
-  [authenticateToken, requireSectionHead, param('id').isString()],
+  [authenticateToken, requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'), param('id').isString()],
   auditLog('reject', 'comment'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -300,6 +319,15 @@ router.post(
     if (!comment) throw createNotFoundError('Comment', id);
 
     await prisma.comment.update({ where: { id }, data: { isApproved: false, isModerated: true, moderationReason: reason || 'Rejected' } });
+
+    // Send notification to comment author when comment is rejected
+    try {
+      await notificationService.notifyCommentAuthorStatusChange(id, 'REJECTED', reason);
+    } catch (notificationError) {
+      // Log notification error but don't fail the request
+      console.error('Notification error during comment rejection:', notificationError);
+    }
+
     sendSuccessResponse(res, { id }, 'Comment rejected');
   })
 );
@@ -323,7 +351,7 @@ router.post(
  */
 router.delete(
   '/:id',
-  [authenticateToken, requireSectionHead],
+  [authenticateToken, requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN')],
   auditLog('delete', 'comment'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -384,7 +412,7 @@ router.get(
   '/admin',
   [
     authenticateToken,
-    requireSectionHead,
+    requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
     query('page').optional().isInt({ min: 1 }).toInt(),
     query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
     query('status').optional().isIn(['all', 'pending', 'approved', 'rejected']),

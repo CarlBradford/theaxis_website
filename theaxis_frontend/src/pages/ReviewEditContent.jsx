@@ -12,8 +12,12 @@ import {
   BoldIcon,
   ItalicIcon,
   ListBulletIcon,
-  LinkIcon
+  LinkIcon,
+  ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline';
+import { 
+  ClipboardDocumentCheckIcon as ClipboardDocumentCheckIconSolid,
+} from '@heroicons/react/24/solid';
 import ArticlePreviewModal from '../components/ArticlePreviewModal';
 import NotificationModal from '../components/NotificationModal';
 import SuccessModal from '../components/SuccessModal';
@@ -58,6 +62,9 @@ const ReviewEditContent = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showSendToEICModal, setShowSendToEICModal] = useState(false);
+  const [sendToEICLoading, setSendToEICLoading] = useState(false);
+  const [publishLoading, setPublishLoading] = useState(false);
   const [articleStatus, setArticleStatus] = useState('');
   const [articleDataLoaded, setArticleDataLoaded] = useState(false);
   const contentRef = useRef(null);
@@ -624,18 +631,22 @@ const ReviewEditContent = () => {
     handleSave('IN_REVIEW');
   };
 
-  const handleSendToEIC = async () => {
-    console.log('Sending to EIC');
-    console.log('Current article status:', articleStatus);
-    
-    // For sending to EIC, we need to use the review action endpoint to set reviewer
-    if (!validateForm(false)) {
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
+  const handleSendToEIC = () => {
+    console.log('Showing Submit to EIC confirmation modal');
+    setShowSendToEICModal(true);
+  };
+
+  const confirmSendToEIC = async () => {
+    setSendToEICLoading(true);
     try {
+      console.log('Sending to EIC confirmed');
+      console.log('Current article status:', articleStatus);
+      
+      // For sending to EIC, we need to use the review action endpoint to set reviewer
+      if (!validateForm(false)) {
+        return;
+      }
+      
       // First update the article content
       const articleData = {
         title: formData.title.trim(),
@@ -697,22 +708,79 @@ const ReviewEditContent = () => {
       
       alert(`Error: ${errorMessage}`);
     } finally {
-      setIsSubmitting(false);
+      setSendToEICLoading(false);
+      setShowSendToEICModal(false);
     }
+  };
+
+  const cancelSendToEIC = () => {
+    setShowSendToEICModal(false);
   };
 
   const handlePublish = () => {
     setShowPublishModal(true);
   };
 
-  const confirmPublish = () => {
-    setShowPublishModal(false);
-    console.log('Publishing/Updating article');
-    // For published articles, only update content without changing status
-    if (articleStatus === 'PUBLISHED') {
-      handleSave('PUBLISHED', true); // true indicates content-only update
-    } else {
-      handleSave('PUBLISHED');
+  const confirmPublish = async () => {
+    setPublishLoading(true);
+    try {
+      setShowPublishModal(false);
+      console.log('Publishing/Updating article');
+      
+      // Validate form before submission
+      if (!validateForm(false)) {
+        return;
+      }
+      
+      // Prepare data for submission
+      const articleData = {
+        title: formData.title.trim(),
+        content: formData.content.trim() || '',
+        featuredImage: formData.featuredImage || '',
+        mediaCaption: formData.mediaCaption.trim() || '',
+        publicationDate: formData.publicationDate && formData.publicationDate.trim() ? 
+          (() => {
+            const date = new Date(formData.publicationDate);
+            return !isNaN(date.getTime()) ? date.toISOString() : undefined;
+          })() : undefined,
+        categories: formData.category && formData.category.trim() ? 
+          [categories.find(cat => cat.name === formData.category)?.slug].filter(Boolean) : [],
+        tags: formData.tags && formData.tags.length > 0 ? formData.tags.map(tag => 
+          tag.toLowerCase()
+             .trim()
+             .replace(/[^a-z0-9\s-]/g, '')
+             .replace(/\s+/g, '-')
+             .replace(/-+/g, '-')
+        ).filter(Boolean) : [],
+        authors: formData.authors && formData.authors.length > 0 ? 
+          formData.authors.filter(author => author.id).map(author => author.id) : []
+      };
+
+      // For published articles, only update content without changing status
+      if (articleStatus === 'PUBLISHED') {
+        // Update content only
+        await articlesAPI.updateArticle(id, articleData);
+        setSuccessMessage(`Article "${formData.title}" updated successfully!`);
+      } else {
+        // Publish the article
+        await articlesAPI.updateArticle(id, { ...articleData, status: 'PUBLISHED' });
+        setSuccessMessage(`Article "${formData.title}" published successfully!`);
+      }
+      
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        navigate('/content/pending');
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error publishing/updating article:', error);
+      let errorMessage = 'Failed to publish/update article';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      showNotification('Error', errorMessage, 'error');
+    } finally {
+      setPublishLoading(false);
     }
   };
 
@@ -945,7 +1013,15 @@ const ReviewEditContent = () => {
       <div className="create-article-content">
         {/* Header */}
         <div className="create-article-header">
-          <h1 className="create-article-title">{articleStatus === 'PUBLISHED' ? 'Update Content' : 'Edit Content'}</h1>
+          <div className="flex items-center space-x-4">
+            <div>
+              <ClipboardDocumentCheckIconSolid className="h-8 w-8 text-black" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-black">{articleStatus === 'PUBLISHED' ? 'Update Content' : 'Review & Edit Content'}</h1>
+              <p className="text-gray-600">Review and edit articles in the review queue</p>
+            </div>
+          </div>
           <div className="create-article-header-buttons">
             <button
               type="button"
@@ -994,10 +1070,9 @@ const ReviewEditContent = () => {
                 <button
                   type="button"
                   onClick={handleSendToEIC}
-                  disabled={isSubmitting}
                   className="create-article-submit-btn"
                 >
-                  {isSubmitting ? 'Sending...' : 'Send to EIC'}
+                  Submit to EIC
                 </button>
               </>
             )}
@@ -1017,10 +1092,9 @@ const ReviewEditContent = () => {
                 <button
                   type="button"
                   onClick={handlePublish}
-                  disabled={isSubmitting}
                   className="create-article-publish-btn"
                 >
-                  {isSubmitting ? (articleStatus === 'PUBLISHED' ? 'Updating...' : 'Publishing...') : (articleStatus === 'PUBLISHED' ? 'Update' : 'Publish')}
+                  {articleStatus === 'PUBLISHED' ? 'Update' : 'Publish'}
                 </button>
               </>
             )}
@@ -1513,15 +1587,79 @@ const ReviewEditContent = () => {
             <div className="simple-publish-modal-buttons">
               <button
                 onClick={cancelPublish}
+                disabled={publishLoading}
                 className="simple-publish-modal-button cancel"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmPublish}
+                disabled={publishLoading}
                 className="simple-publish-modal-button publish"
               >
-                {articleStatus === 'PUBLISHED' ? 'Update Article' : 'Publish Article'}
+                {publishLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="simple-publish-spinner"></div>
+                    {articleStatus === 'PUBLISHED' ? 'Updating...' : 'Publishing...'}
+                  </div>
+                ) : (
+                  articleStatus === 'PUBLISHED' ? 'Update Article' : 'Publish Article'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send to EIC Confirmation Modal */}
+      {showSendToEICModal && (
+        <div className="simple-publish-modal-overlay">
+          <div className="simple-publish-modal">
+            <div className="simple-publish-modal-header">
+              <h3 className="simple-publish-modal-title">Submit to EIC</h3>
+              <button
+                onClick={cancelSendToEIC}
+                className="simple-publish-modal-close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="simple-publish-modal-content">
+              <p className="simple-publish-warning-text">
+                Are you sure you want to send "{formData.title}" to the Editor-in-Chief for review?
+              </p>
+              <p className="simple-publish-details">
+                Category: {formData.category || 'Uncategorized'}
+              </p>
+              <p className="simple-publish-note">
+                This will send the article to the EIC for final review and potential publication.
+              </p>
+            </div>
+            
+            <div className="simple-publish-modal-buttons">
+              <button
+                onClick={cancelSendToEIC}
+                disabled={sendToEICLoading}
+                className="simple-publish-modal-button cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSendToEIC}
+                disabled={sendToEICLoading}
+                className="simple-publish-modal-button publish"
+              >
+                {sendToEICLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="simple-publish-spinner"></div>
+                    Sending...
+                  </div>
+                ) : (
+                  'Submit to EIC'
+                )}
               </button>
             </div>
           </div>

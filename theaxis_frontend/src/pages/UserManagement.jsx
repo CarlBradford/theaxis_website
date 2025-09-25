@@ -10,8 +10,12 @@ import {
   EllipsisVerticalIcon,
   XMarkIcon,
   PencilIcon, 
-  TrashIcon
+  TrashIcon,
+  UsersIcon
 } from '@heroicons/react/24/outline';
+import { 
+  UsersIcon as UsersIconSolid,
+} from '@heroicons/react/24/solid';
 import '../styles/user-management.css';
 
 const UserManagement = () => {
@@ -556,12 +560,17 @@ const UserManagement = () => {
     <div className="user-management-container">
       {/* Header */}
       <div className="user-management-header">
+        <div className="flex items-center space-x-4">
           <div>
-          <h1 className="user-management-title">
-            All Users <span className="user-count">{users.length}</span>
-          </h1>
-          <p className="user-management-subtitle">Manage user accounts, roles, and permissions</p>
+            <UsersIconSolid className="h-8 w-8 text-black" />
           </div>
+          <div>
+            <h1 className="text-3xl font-bold text-black">
+              All Users <span className="user-count">{users.length}</span>
+            </h1>
+            <p className="text-gray-600">Manage user accounts, roles, and permissions</p>
+          </div>
+        </div>
         <div className="action-bar">
           <div style={{ position: 'relative' }}>
             <input

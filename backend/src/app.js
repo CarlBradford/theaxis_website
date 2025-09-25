@@ -19,7 +19,9 @@ const categoryRoutes = require('./routes/categories');
 const editorialNoteRoutes = require('./routes/editorialNotes');
 const analyticsRoutes = require('./routes/analytics');
 const flipbookRoutes = require('../routes/flipbooks');
-const announcementRoutes = require('./routes/announcements');
+const notificationRoutes = require('./routes/notifications');
+const realtimeNotificationRoutes = require('./routes/realtime-notifications');
+const siteSettingsRoutes = require('../routes/siteSettings');
 
 // Import middleware
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -72,7 +74,12 @@ app.use(cors({
     
     const allowedOrigins = Array.isArray(config.corsOrigin) ? config.corsOrigin : [config.corsOrigin];
     
+    // Debug logging
+    console.log('CORS check - Origin:', origin);
+    console.log('CORS check - Allowed origins:', allowedOrigins);
+    
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log('CORS check - Origin allowed:', origin);
       callback(null, true);
     } else {
       console.log('CORS blocked origin:', origin);
@@ -149,7 +156,13 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/editorial-notes', editorialNoteRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/flipbooks', flipbookRoutes);
-app.use('/api/announcements', announcementRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/realtime', realtimeNotificationRoutes.router);
+app.use('/api/admin', siteSettingsRoutes);
+
+// Initialize real-time notifications
+const { setRealtimeNotifications } = require('./services/notificationService');
+setRealtimeNotifications(realtimeNotificationRoutes);
 
 // API documentation
 if (config.apiDocs.enabled) {

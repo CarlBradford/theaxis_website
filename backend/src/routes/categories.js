@@ -3,6 +3,7 @@ const { body, param, query, validationResult } = require('express-validator');
 const { PrismaClient } = require('@prisma/client');
 const {
   authenticateToken,
+  optionalAuth,
   requireSectionHead,
   requireEditorInChief,
   auditLog,
@@ -136,7 +137,7 @@ router.post(
  */
 router.get(
   '/',
-  [authenticateToken, query('search').optional().isString(), query('includeSubcategories').optional().isBoolean()],
+  [optionalAuth, query('search').optional().isString(), query('includeSubcategories').optional().isBoolean()],
   asyncHandler(async (req, res) => {
     const { search, includeSubcategories } = req.query;
     const where = {};

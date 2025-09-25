@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateToken, requireRole } = require('../src/middleware/auth');
+const notificationService = require('../src/services/notificationService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -88,12 +89,6 @@ router.get('/', authenticateToken, async (req, res) => {
       where.OR = [
         {
           name: {
-            contains: search.trim(),
-            mode: 'insensitive'
-          }
-        },
-        {
-          description: {
             contains: search.trim(),
             mode: 'insensitive'
           }
@@ -231,7 +226,6 @@ router.post('/', authenticateToken, upload.single('thumbnailImage'), handleMulte
     }
     
     const { name, embedUrl, type, releaseDate } = req.body;
-    const description = req.body.description || null; // Make description optional
     const userId = req.user.id;
     
     // Handle uploaded image
@@ -273,7 +267,6 @@ router.post('/', authenticateToken, upload.single('thumbnailImage'), handleMulte
         name: name.trim(),
         embedUrl: embedUrl.trim(),
         type: type.toUpperCase(),
-        description: description?.trim() || null,
         releaseDate: releaseDate ? new Date(releaseDate) : null,
         thumbnailUrl: thumbnailUrl,
         userId
@@ -289,6 +282,16 @@ router.post('/', authenticateToken, upload.single('thumbnailImage'), handleMulte
         }
       }
     });
+    
+    // Send notification to EIC when Section Head creates a flipbook
+    try {
+      if (req.user.role === 'SECTION_HEAD') {
+        await notificationService.notifyEICFlipbookCreated(flipbook.id, req.user.id);
+      }
+    } catch (notificationError) {
+      // Log notification error but don't fail the request
+      console.error('Notification error during flipbook creation:', notificationError);
+    }
     
     res.status(201).json({
       success: true,
@@ -336,7 +339,6 @@ router.put('/:id', authenticateToken, upload.single('thumbnailImage'), handleMul
     
     const { id } = req.params;
     const { name, embedUrl, type, releaseDate, isActive } = req.body;
-    const description = req.body.description || null; // Make description optional
     const userId = req.user.id;
     
     // Check if flipbook exists
@@ -403,7 +405,6 @@ router.put('/:id', authenticateToken, upload.single('thumbnailImage'), handleMul
     if (name) updateData.name = name.trim();
     if (embedUrl) updateData.embedUrl = embedUrl.trim();
     if (type) updateData.type = type.toUpperCase();
-    if (description !== undefined) updateData.description = description?.trim() || null;
     if (releaseDate !== undefined) updateData.releaseDate = releaseDate ? new Date(releaseDate) : null;
     if (isActive !== undefined) updateData.isActive = isActive;
     updateData.thumbnailUrl = thumbnailUrl; // Always update thumbnailUrl
@@ -422,6 +423,16 @@ router.put('/:id', authenticateToken, upload.single('thumbnailImage'), handleMul
         }
       }
     });
+    
+    // Send notification to EIC when Section Head updates a flipbook
+    try {
+      if (req.user.role === 'SECTION_HEAD') {
+        await notificationService.notifyEICFlipbookUpdated(id, req.user.id);
+      }
+    } catch (notificationError) {
+      // Log notification error but don't fail the request
+      console.error('Notification error during flipbook update:', notificationError);
+    }
     
     res.json({
       success: true,

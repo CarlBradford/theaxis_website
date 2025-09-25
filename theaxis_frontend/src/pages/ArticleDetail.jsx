@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import { 
+  DocumentTextIcon as DocumentTextIconSolid,
+} from '@heroicons/react/24/solid';
 import CommentForm from '../components/CommentForm';
 import CommentList from '../components/CommentList';
+import { trackArticleView } from '../config/analytics';
 
 const ArticleDetail = () => {
   const { id } = useParams();
@@ -18,7 +22,17 @@ const ArticleDetail = () => {
   const fetchArticle = async () => {
     try {
       const response = await api.get(`/articles/${id}`);
-      setArticle(response.data.data);
+      const articleData = response.data.data;
+      setArticle(articleData);
+      
+      // Track article view
+      if (articleData) {
+        trackArticleView(
+          articleData.id,
+          articleData.title,
+          articleData.category?.name || 'Uncategorized'
+        );
+      }
     } catch (error) {
       console.error('Failed to fetch article:', error);
     } finally {
@@ -57,19 +71,38 @@ const ArticleDetail = () => {
       <article className="card">
         {/* Article Header */}
         <header className="mb-8">
-          <div className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
-            <span className="capitalize px-2 py-1 bg-gray-100 rounded-full">
-              {article.status.toLowerCase()}
-            </span>
-            <span>{new Date(article.createdAt).toLocaleDateString()}</span>
-            {article.author && (
-              <span>by {article.author.firstName} {article.author.lastName}</span>
-            )}
+          <div className="flex items-center space-x-4 mb-6">
+            <div>
+              <DocumentTextIconSolid className="h-8 w-8 text-blue-600" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {article.title}
+              </h1>
+              <div className="flex items-center space-x-2 text-sm text-gray-500 mt-2">
+                <span className="capitalize px-2 py-1 bg-gray-100 rounded-full">
+                  {article.status.toLowerCase()}
+                </span>
+                <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                {article.articleAuthors && article.articleAuthors.length > 0 ? (
+                  <span>
+                    by {article.articleAuthors.map((authorData, index) => (
+                      <span key={authorData.user.id || index}>
+                        {`${authorData.user.firstName || ''} ${authorData.user.lastName || ''}`.trim() || authorData.user.username || 'Unknown Author'}
+                        {index < article.articleAuthors.length - 1 && (
+                          <span>
+                            {index === article.articleAuthors.length - 2 ? ' and ' : ', '}
+                          </span>
+                        )}
+                      </span>
+                    ))}
+                  </span>
+                ) : article.author ? (
+                  <span>by {article.author.firstName} {article.author.lastName}</span>
+                ) : null}
+              </div>
+            </div>
           </div>
-          
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            {article.title}
-          </h1>
           
           {article.excerpt && (
             <p className="text-xl text-gray-600 mb-6">

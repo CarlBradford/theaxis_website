@@ -22,8 +22,12 @@ import {
   ChartBarIcon,
   TrashIcon,
   CloudArrowUpIcon,
-  PowerIcon
+  PowerIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/outline';
+import { 
+  GlobeAltIcon as GlobeAltIconSolid,
+} from '@heroicons/react/24/solid';
 import { useAuth } from '../hooks/useAuth';
 import FilterModal from '../components/FilterModal';
 import '../styles/published-content.css';
@@ -31,6 +35,7 @@ import '../styles/media-display.css';
 import '../styles/filter-modal.css';
 import '../styles/flipbook-display.css';
 import '../styles/flipbook-input-form.css';
+import '../styles/mycontent.css';
 
 const PublishedContent = () => {
   const navigate = useNavigate();
@@ -57,10 +62,13 @@ const PublishedContent = () => {
   const [notificationData, setNotificationData] = useState({ title: '', message: '', type: 'success' });
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [articleToArchive, setArticleToArchive] = useState(null);
+  const [archiveLoading, setArchiveLoading] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [articleToRestore, setArticleToRestore] = useState(null);
+  const [restoreLoading, setRestoreLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [filterCounts, setFilterCounts] = useState({
     published: 0,
     archived: 0,
@@ -268,7 +276,7 @@ const PublishedContent = () => {
           createdAt: article.createdAt,
           updatedAt: article.updatedAt,
           publishedAt: article.publishedAt || article.publicationDate,
-          excerpt: article.excerpt || createExcerpt(article.content) || article.title,
+          excerpt: createExcerpt(article.content) || article.title,
           content: article.content,
           wordCount: calculateWordCount(article.content),
           readTime: article.readingTime ? `${article.readingTime} min read` : calculateReadTime(article.content),
@@ -477,6 +485,7 @@ const PublishedContent = () => {
     if (!articleToArchive) return;
 
     try {
+      setArchiveLoading(true);
       await articlesAPI.updateArticleStatus(articleToArchive, 'ARCHIVED');
       
       // Remove the archived article from the current list since it's no longer published
@@ -525,6 +534,7 @@ const PublishedContent = () => {
       
       showNotification('Error', errorMessage, 'error');
     } finally {
+      setArchiveLoading(false);
       setShowArchiveModal(false);
       setArticleToArchive(null);
     }
@@ -544,6 +554,7 @@ const PublishedContent = () => {
     if (!articleToRestore) return;
 
     try {
+      setRestoreLoading(true);
       await articlesAPI.updateArticleStatus(articleToRestore, 'IN_REVIEW');
       
       // Remove the restored article from the current list since it's no longer archived
@@ -592,6 +603,7 @@ const PublishedContent = () => {
       
       showNotification('Error', errorMessage, 'error');
     } finally {
+      setRestoreLoading(false);
       setShowRestoreModal(false);
       setArticleToRestore(null);
     }
@@ -611,6 +623,7 @@ const PublishedContent = () => {
     if (!articleToDelete) return;
 
     try {
+      setDeleteLoading(true);
       await articlesAPI.deleteArticle(articleToDelete);
       
       // Update both articles and filteredArticles states
@@ -645,6 +658,7 @@ const PublishedContent = () => {
       
       showNotification('Error', errorMessage, 'error');
     } finally {
+      setDeleteLoading(false);
       setShowDeleteModal(false);
       setArticleToDelete(null);
     }
@@ -742,9 +756,13 @@ const PublishedContent = () => {
         name: formData.name,
         embedUrl: formData.embedLink,
         type: formData.type.toUpperCase(),
-        releaseDate: formData.releaseDate || null,
-        thumbnailImage: formData.thumbnailImage // Include the uploaded image
+        releaseDate: formData.releaseDate || null
       };
+
+      // Only include thumbnailImage if a new image was uploaded
+      if (formData.thumbnailImage) {
+        flipbookData.thumbnailImage = formData.thumbnailImage;
+      }
 
       let response;
       let isEdit = currentFlipbook && currentFlipbook.id;
@@ -1195,9 +1213,14 @@ const PublishedContent = () => {
     <div className={`published-content-container ${showFilters ? 'filters-open' : ''}`}>
       {/* Header */}
       <div className="published-content-header">
-        <div className="published-content-title-section">
-          <h1 className="published-content-title">Published Content</h1>
-          <p className="published-content-subtitle">Manage all published contents</p>
+        <div className="flex items-center space-x-4">
+          <div>
+            <GlobeAltIconSolid className="h-8 w-8 text-black" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-black">Published Content</h1>
+            <p className="text-gray-600">Manage all published contents</p>
+          </div>
         </div>
         <div className="published-content-header-stats">
           {activeFilter === 'online_issues' ? (
@@ -1510,7 +1533,7 @@ const PublishedContent = () => {
                 onChange={(e) => setSortOrder(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Newest First</span>
+              <span className="filter-modal-radio-label">Descending</span>
             </label>
             <label className={`filter-modal-radio-item ${sortOrder === 'asc' ? 'selected' : ''}`}>
               <input
@@ -1521,7 +1544,7 @@ const PublishedContent = () => {
                 onChange={(e) => setSortOrder(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Oldest First</span>
+              <span className="filter-modal-radio-label">Ascending</span>
             </label>
           </div>
         </div>
@@ -1570,11 +1593,6 @@ const PublishedContent = () => {
                             </span>
                           </div>
                         </div>
-                        {flipbook.description && (
-                          <div className="published-content-article-tags">
-                            <span className="published-content-tag">{flipbook.description}</span>
-                          </div>
-                        )}
                         </div>
                       </div>
                     </div>
@@ -1765,7 +1783,7 @@ const PublishedContent = () => {
                     <button
                       className="published-content-action-btn view"
                       onClick={() => handlePreview(article)}
-                      title="View Article"
+                      title="View Content"
                     >
                       <EyeIcon className="w-4 h-4" />
                     </button>
@@ -1781,7 +1799,7 @@ const PublishedContent = () => {
                     <button
                       className="published-content-action-btn update"
                       onClick={() => handleUpdate(article)}
-                        title="Update Content"
+                      title="Update Content"
                     >
                       <PencilIcon className="w-4 h-4" />
                     </button>
@@ -1791,7 +1809,7 @@ const PublishedContent = () => {
                         <button
                           className="published-content-action-btn restore"
                           onClick={() => handleRestoreArticle(article)}
-                          title="Restore Article"
+                          title="Restore Content"
                         >
                           <ArrowUturnLeftIcon className="w-4 h-4" />
                         </button>
@@ -1800,16 +1818,16 @@ const PublishedContent = () => {
                     <button
                       className="published-content-action-btn archive"
                       onClick={() => handleArchive(article)}
-                      title="Archive Article"
+                      title="Archive Content"
                     >
                       <ArchiveBoxIcon className="w-4 h-4" />
                     </button>
                     )}
-                    {(user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
+                    {(user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && article.status === 'archived' && (
                       <button
                         className="published-content-action-btn delete"
                         onClick={() => handleDeleteArticle(article)}
-                        title="Delete Article"
+                        title="Delete Content"
                       >
                         <TrashIcon className="w-4 h-4" />
                       </button>
@@ -1838,11 +1856,12 @@ const PublishedContent = () => {
         isOpen={showArchiveModal}
         onClose={cancelArchiveArticle}
         onConfirm={confirmArchiveArticle}
-        title="Archive Article"
+        title="Archive Content"
         message={`Are you sure you want to archive this article? This will remove it from the published content list.`}
         confirmText="Archive"
         cancelText="Cancel"
         type="warning"
+        isLoading={archiveLoading}
       />
 
       {/* Restore Confirmation Modal */}
@@ -1850,11 +1869,12 @@ const PublishedContent = () => {
         isOpen={showRestoreModal}
         onClose={cancelRestoreArticle}
         onConfirm={confirmRestoreArticle}
-        title="Restore Article"
+        title="Restore Content"
         message="Are you sure you want to restore this article? It will be sent back to the review queue for EIC approval."
         confirmText="Restore"
         cancelText="Cancel"
         type="info"
+        isLoading={restoreLoading}
       />
 
       {/* Delete Confirmation Modal */}
@@ -1862,11 +1882,12 @@ const PublishedContent = () => {
         isOpen={showDeleteModal}
         onClose={cancelDeleteArticle}
         onConfirm={confirmDeleteArticle}
-        title="Delete Article"
+        title="Delete Content"
         message="Are you sure you want to permanently delete this article? This action cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
         type="danger"
+        isLoading={deleteLoading}
       />
 
       {/* Delete Flipbook Confirmation Modal */}

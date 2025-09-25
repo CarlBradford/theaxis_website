@@ -6,13 +6,18 @@ import {
   ClockIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  CalendarIcon
+  CalendarIcon,
+  ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline';
+import { 
+  ClipboardDocumentCheckIcon as ClipboardDocumentCheckIconSolid,
+} from '@heroicons/react/24/solid';
 import '../styles/review-queue.css';
 import '../styles/filter-modal.css';
 import { reviewQueueService } from '../services/reviewQueueService';
 import { articlesAPI } from '../services/apiService';
 import { useNotifications } from './NotificationBell';
+import { trackArticleApproval, trackArticleRejection, trackError } from '../config/analytics';
 import ConfirmationModal from './ConfirmationModal';
 import ArticlePreviewModal from './ArticlePreviewModal';
 import SuccessModal from './SuccessModal';
@@ -23,7 +28,10 @@ import FilterModal from './FilterModal';
 
 const ReviewQueue = ({ queueType = 'section-head' }) => {
   const navigate = useNavigate();
-  const { addNotification } = useNotifications();
+  const notifications = useNotifications();
+  const addNotification = notifications?.addNotification || (() => {
+    console.warn('addNotification not available - notifications may not work properly');
+  });
   const [articles, setArticles] = useState([]);
   const [filteredArticles, setFilteredArticles] = useState([]);
   const [error, setError] = useState(null);
@@ -36,10 +44,12 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
   const [selectedArticles, setSelectedArticles] = useState([]);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewArticle, setPreviewArticle] = useState(null);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [articleToApprove, setArticleToApprove] = useState(null);
+  const [approveLoading, setApproveLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showRevisionModal, setShowRevisionModal] = useState(false);
@@ -47,6 +57,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
   const [revisionLoading, setRevisionLoading] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [articleToPublish, setArticleToPublish] = useState(null);
+  const [publishLoading, setPublishLoading] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [articleToReturn, setArticleToReturn] = useState(null);
   const [returnLoading, setReturnLoading] = useState(false);
@@ -136,7 +147,16 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
     };
 
     try {
-      const result = await reviewQueueService.bulkUpdateArticles(selectedArticles, pendingBulkAction);
+      setBulkLoading(true);
+      
+      // Add timeout handling for slow operations
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout - operation is taking longer than expected')), 30000)
+      );
+      
+      const bulkPromise = reviewQueueService.bulkUpdateArticles(selectedArticles, pendingBulkAction);
+      
+      const result = await Promise.race([bulkPromise, timeoutPromise]);
       
       console.log(`Bulk action ${pendingBulkAction} completed:`, result);
       
@@ -159,15 +179,39 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       });
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
+      setSelectedArticles([]);
       
-      // Clear selection
-    setSelectedArticles([]);
     } catch (error) {
       console.error('Error performing bulk action:', error);
-      alert(`Error performing bulk action: ${error.response?.data?.message || error.message}`);
+      
+      if (error.message.includes('timeout')) {
+        // Show processing message instead of error
+        setSuccessMessage(`Processing bulk ${actionLabels[pendingBulkAction] || pendingBulkAction} for ${selectedArticles.length} article(s)... This may take a moment. The page will refresh automatically to show the result.`);
+        setShowSuccessModal(true);
+        
+        // Auto-refresh after 5 seconds
+        setTimeout(async () => {
+          try {
+            const response = await reviewQueueService.getReviewQueue(queueType, {
+              status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
+              search: searchTerm || undefined,
+              category: selectedCategory !== 'all' ? selectedCategory : undefined
+            });
+            setArticles(response.data.articles);
+            setFilteredArticles(response.data.articles);
+            setSelectedArticles([]);
+            setShowSuccessModal(false);
+          } catch (refreshError) {
+            console.error('Error refreshing articles:', refreshError);
+          }
+        }, 5000);
+      } else {
+        alert(`Error performing bulk action: ${error.response?.data?.message || error.message}`);
+      }
     } finally {
       setShowConfirmationModal(false);
       setPendingBulkAction(null);
+      setBulkLoading(false);
     }
   };
 
@@ -276,21 +320,40 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
     }
 
     try {
+      setApproveLoading(true);
       console.log('Approving article:', articleToApprove);
       console.log('Article ID:', articleToApprove.id);
       console.log('Article status:', articleToApprove.status);
       
-      await reviewQueueService.updateArticleStatus(articleToApprove.id, 'approve-to-eic');
+      // Add timeout handling for slow operations
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout - operation is taking longer than expected')), 20000)
+      );
+      
+      const approvePromise = reviewQueueService.updateArticleStatus(articleToApprove.id, 'approve-to-eic');
+      
+      await Promise.race([approvePromise, timeoutPromise]);
       console.log(`Article ${articleToApprove.id} approved for EIC review`);
       
+      // Track article approval
+      trackArticleApproval(
+        articleToApprove.id,
+        articleToApprove.title,
+        articleToApprove.category?.name || 'Uncategorized'
+      );
+      
       // Add notification for article approval
-      addNotification({
-        type: 'approval',
-        title: 'Article Approved',
-        message: `Your article "${articleToApprove.title}" has been approved by Section Head and forwarded to Editor-in-Chief for final review.`,
-        articleTitle: articleToApprove.title,
-        articleId: articleToApprove.id
-      });
+      try {
+        addNotification({
+          type: 'approval',
+          title: 'Article Approved',
+          message: `Your article "${articleToApprove.title}" has been approved by Section Head and forwarded to Editor-in-Chief for final review.`,
+          articleTitle: articleToApprove.title,
+          articleId: articleToApprove.id
+        });
+      } catch (notificationError) {
+        console.warn('Failed to add notification:', notificationError);
+      }
       
       // Show success message
       setSuccessMessage(`Successfully approved "${articleToApprove.title}" for EIC review`);
@@ -310,15 +373,45 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       
-      let errorMessage = 'Failed to approve article';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.errors) {
-        errorMessage = error.response.data.errors.map(err => err.msg).join(', ');
-      }
+      // Track approval error
+      trackError(
+        error.response?.data?.message || 'Article approval failed',
+        'ARTICLE_APPROVAL_ERROR',
+        'review-queue'
+      );
       
-      alert(`Error approving article: ${errorMessage}`);
+      if (error.message.includes('timeout')) {
+        // Show processing message instead of error
+        setSuccessMessage(`Processing approval for "${articleToApprove.title}"... This may take a moment. The page will refresh automatically to show the result.`);
+        setShowSuccessModal(true);
+        
+        // Auto-refresh after 3 seconds
+        setTimeout(async () => {
+          try {
+            const response = await reviewQueueService.getReviewQueue(queueType, {
+              status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
+              search: searchTerm || undefined,
+              category: selectedCategory !== 'all' ? selectedCategory : undefined
+            });
+            setArticles(response.data.articles);
+            setFilteredArticles(response.data.articles);
+            setShowSuccessModal(false);
+          } catch (refreshError) {
+            console.error('Error refreshing articles:', refreshError);
+          }
+        }, 3000);
+      } else {
+        let errorMessage = 'Failed to approve article';
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.data?.errors) {
+          errorMessage = error.response.data.errors.map(err => err.msg).join(', ');
+        }
+        
+        alert(`Error approving article: ${errorMessage}`);
+      }
     } finally {
+      setApproveLoading(false);
       setShowApproveModal(false);
       setArticleToApprove(null);
     }
@@ -342,17 +435,36 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       console.log('Requesting revision for article:', articleToRevise);
       console.log('Feedback:', feedback);
       
-      await reviewQueueService.updateArticleStatus(articleToRevise.id, 'request-revision', feedback);
+      // Add timeout handling for slow operations
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout - operation is taking longer than expected')), 20000)
+      );
+      
+      const revisionPromise = reviewQueueService.updateArticleStatus(articleToRevise.id, 'request-revision', feedback);
+      
+      await Promise.race([revisionPromise, timeoutPromise]);
       console.log(`Article ${articleToRevise.id} sent for revision`);
       
+      // Track article rejection/revision request
+      trackArticleRejection(
+        articleToRevise.id,
+        articleToRevise.title,
+        articleToRevise.category?.name || 'Uncategorized',
+        'revision_requested'
+      );
+      
       // Add notification for revision request
-      addNotification({
-        type: 'rejection',
-        title: 'Revision Required',
-        message: `Your article "${articleToRevise.title}" needs revision. ${feedback ? `Feedback: ${feedback}` : 'Please check the feedback section for details.'}`,
-        articleTitle: articleToRevise.title,
-        articleId: articleToRevise.id
-      });
+      try {
+        addNotification({
+          type: 'rejection',
+          title: 'Revision Required',
+          message: `Your article "${articleToRevise.title}" needs revision. ${feedback ? `Feedback: ${feedback}` : 'Please check the feedback section for details.'}`,
+          articleTitle: articleToRevise.title,
+          articleId: articleToRevise.id
+        });
+      } catch (notificationError) {
+        console.warn('Failed to add notification:', notificationError);
+      }
       
       // Show success message
       setSuccessMessage(`Successfully sent "${articleToRevise.title}" back for revision`);
@@ -372,14 +484,36 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       
-      let errorMessage = 'Failed to request revision';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.errors) {
-        errorMessage = error.response.data.errors.map(err => err.msg).join(', ');
+      if (error.message.includes('timeout')) {
+        // Show processing message instead of error
+        setSuccessMessage(`Processing revision request for "${articleToRevise.title}"... This may take a moment. The page will refresh automatically to show the result.`);
+        setShowSuccessModal(true);
+        
+        // Auto-refresh after 3 seconds
+        setTimeout(async () => {
+          try {
+            const response = await reviewQueueService.getReviewQueue(queueType, {
+              status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
+              search: searchTerm || undefined,
+              category: selectedCategory !== 'all' ? selectedCategory : undefined
+            });
+            setArticles(response.data.articles);
+            setFilteredArticles(response.data.articles);
+            setShowSuccessModal(false);
+          } catch (refreshError) {
+            console.error('Error refreshing articles:', refreshError);
+          }
+        }, 3000);
+      } else {
+        let errorMessage = 'Failed to request revision';
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.data?.errors) {
+          errorMessage = error.response.data.errors.map(err => err.msg).join(', ');
+        }
+        
+        alert(`Error requesting revision: ${errorMessage}`);
       }
-      
-      alert(`Error requesting revision: ${errorMessage}`);
     } finally {
       setRevisionLoading(false);
       setShowRevisionModal(false);
@@ -409,21 +543,33 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
     }
 
     try {
+      setPublishLoading(true);
       console.log('Publishing article:', articleToPublish);
       console.log('Article ID:', articleToPublish.id);
       console.log('Article status:', articleToPublish.status);
       
-      await reviewQueueService.updateArticleStatus(articleToPublish.id, 'publish');
+      // Add timeout handling for slow operations
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout - operation is taking longer than expected')), 20000)
+      );
+      
+      const publishPromise = reviewQueueService.updateArticleStatus(articleToPublish.id, 'publish');
+      
+      await Promise.race([publishPromise, timeoutPromise]);
       console.log(`Article ${articleToPublish.id} published`);
       
       // Add notification for article publication
-      addNotification({
-        type: 'approval',
-        title: 'Article Published',
-        message: `Congratulations! Your article "${articleToPublish.title}" has been published and is now live.`,
-        articleTitle: articleToPublish.title,
-        articleId: articleToPublish.id
-      });
+      try {
+        addNotification({
+          type: 'approval',
+          title: 'Article Published',
+          message: `Congratulations! Your article "${articleToPublish.title}" has been published and is now live.`,
+          articleTitle: articleToPublish.title,
+          articleId: articleToPublish.id
+        });
+      } catch (notificationError) {
+        console.warn('Failed to add notification:', notificationError);
+      }
       
       // Show success message
       setSuccessMessage(`Successfully published "${articleToPublish.title}"`);
@@ -443,15 +589,38 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       
-      let errorMessage = 'Failed to publish article';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.errors) {
-        errorMessage = error.response.data.errors.map(err => err.msg).join(', ');
+      if (error.message.includes('timeout')) {
+        // Show processing message instead of error
+        setSuccessMessage(`Processing publication for "${articleToPublish.title}"... This may take a moment. The page will refresh automatically to show the result.`);
+        setShowSuccessModal(true);
+        
+        // Auto-refresh after 3 seconds
+        setTimeout(async () => {
+          try {
+            const response = await reviewQueueService.getReviewQueue(queueType, {
+              status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
+              search: searchTerm || undefined,
+              category: selectedCategory !== 'all' ? selectedCategory : undefined
+            });
+            setArticles(response.data.articles);
+            setFilteredArticles(response.data.articles);
+            setShowSuccessModal(false);
+          } catch (refreshError) {
+            console.error('Error refreshing articles:', refreshError);
+          }
+        }, 3000);
+      } else {
+        let errorMessage = 'Failed to publish article';
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.data?.errors) {
+          errorMessage = error.response.data.errors.map(err => err.msg).join(', ');
+        }
+        
+        alert(`Error publishing article: ${errorMessage}`);
       }
-      
-      alert(`Error publishing article: ${errorMessage}`);
     } finally {
+      setPublishLoading(false);
       setShowPublishModal(false);
       setArticleToPublish(null);
     }
@@ -479,13 +648,17 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       console.log(`Article ${articleToReturn.id} returned to section head`);
       
       // Add notification for article return
-      addNotification({
-        type: 'return',
-        title: 'Article Returned',
-        message: `Your article "${articleToReturn.title}" has been returned to Section Head for further review. ${feedback ? `Feedback: ${feedback}` : ''}`,
-        articleTitle: articleToReturn.title,
-        articleId: articleToReturn.id
-      });
+      try {
+        addNotification({
+          type: 'return',
+          title: 'Article Returned',
+          message: `Your article "${articleToReturn.title}" has been returned to Section Head for further review. ${feedback ? `Feedback: ${feedback}` : ''}`,
+          articleTitle: articleToReturn.title,
+          articleId: articleToReturn.id
+        });
+      } catch (notificationError) {
+        console.warn('Failed to add notification:', notificationError);
+      }
       
       // Show success message
       setSuccessMessage(`Successfully returned "${articleToReturn.title}" to section head`);
@@ -537,7 +710,14 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       setResubmitLoading(true);
       console.log('Resubmitting article:', articleToResubmit);
       
-      await reviewQueueService.updateArticleStatusDirect(articleToResubmit.id, 'IN_REVIEW');
+      // Add timeout handling for slow operations
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout - operation is taking longer than expected')), 20000)
+      );
+      
+      const resubmitPromise = reviewQueueService.updateArticleStatusDirect(articleToResubmit.id, 'IN_REVIEW');
+      
+      await Promise.race([resubmitPromise, timeoutPromise]);
       console.log(`Article ${articleToResubmit.id} resubmitted for review`);
       
       // Show success message
@@ -558,14 +738,36 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       
-      let errorMessage = 'Failed to resubmit article';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.errors) {
-        errorMessage = error.response.data.errors.map(err => err.msg).join(', ');
+      if (error.message.includes('timeout')) {
+        // Show processing message instead of error
+        setSuccessMessage(`Processing resubmission for "${articleToResubmit.title}"... This may take a moment. The page will refresh automatically to show the result.`);
+        setShowSuccessModal(true);
+        
+        // Auto-refresh after 3 seconds
+        setTimeout(async () => {
+          try {
+            const response = await reviewQueueService.getReviewQueue(queueType, {
+              status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
+              search: searchTerm || undefined,
+              category: selectedCategory !== 'all' ? selectedCategory : undefined
+            });
+            setArticles(response.data.articles);
+            setFilteredArticles(response.data.articles);
+            setShowSuccessModal(false);
+          } catch (refreshError) {
+            console.error('Error refreshing articles:', refreshError);
+          }
+        }, 3000);
+      } else {
+        let errorMessage = 'Failed to resubmit article';
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.data?.errors) {
+          errorMessage = error.response.data.errors.map(err => err.msg).join(', ');
+        }
+        
+        alert(`Error resubmitting article: ${errorMessage}`);
       }
-      
-      alert(`Error resubmitting article: ${errorMessage}`);
     } finally {
       setResubmitLoading(false);
       setShowResubmitModal(false);
@@ -709,16 +911,21 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
     <div className="review-queue-container">
       {/* Header */}
       <div className="review-queue-header">
-        <div className="review-queue-title-section">
-          <h1 className="review-queue-title">
-            {queueType === 'section-head' ? 'Section Review Queue' : 'Editor-in-Chief Review Queue'}
-          </h1>
-          <p className="review-queue-subtitle">
-            {queueType === 'section-head' 
-              ? 'Review and approve articles submitted by staff' 
-              : 'Review approved articles and manage publication'
-            }
-          </p>
+        <div className="flex items-center space-x-4">
+          <div>
+            <ClipboardDocumentCheckIconSolid className="h-8 w-8 text-black" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-black">
+              {queueType === 'section-head' ? 'Section Review Queue' : 'Editor-in-Chief Review Queue'}
+            </h1>
+            <p className="text-gray-600">
+              {queueType === 'section-head' 
+                ? 'Review and approve articles submitted by staff' 
+                : 'Review approved articles and manage publication'
+              }
+            </p>
+          </div>
         </div>
         <div className="review-queue-stats">
           <div className="review-queue-stat">
@@ -1074,7 +1281,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                 onChange={(e) => setSortOrder(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Newest First</span>
+              <span className="filter-modal-radio-label">Descending</span>
             </label>
             <label className={`filter-modal-radio-item ${sortOrder === 'asc' ? 'selected' : ''}`}>
               <input
@@ -1085,7 +1292,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                 onChange={(e) => setSortOrder(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Oldest First</span>
+              <span className="filter-modal-radio-label">Ascending</span>
             </label>
           </div>
         </div>
@@ -1413,8 +1620,16 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
               <button
                 onClick={confirmApprove}
                 className="simple-approve-modal-button approve"
+                disabled={approveLoading}
               >
-                Approve for EIC
+                {approveLoading ? (
+                  <>
+                    <div className="simple-approve-spinner"></div>
+                    Approving...
+                  </>
+                ) : (
+                  'Approve for EIC'
+                )}
               </button>
             </div>
           </div>
@@ -1501,8 +1716,16 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
               <button
                 onClick={confirmPublish}
                 className="simple-publish-modal-button publish"
+                disabled={publishLoading}
               >
-                Publish Content
+                {publishLoading ? (
+                  <>
+                    <div className="simple-publish-spinner"></div>
+                    Publishing...
+                  </>
+                ) : (
+                  'Publish Content'
+                )}
               </button>
             </div>
           </div>

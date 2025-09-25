@@ -7,6 +7,18 @@
   --gray-dark: #656362;
 }
 
+/* Fade in animation for login prompt */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .public-footer {
   background-color: var(--gray-dark);
   color: #ffffff;
@@ -16,7 +28,7 @@
 .public-footer-container {
   max-width: 80rem; /* 1280px */
   margin: 0 auto;
-  padding: 3rem 1rem;
+  padding: 2rem 1rem;
 }
 
 @media (min-width: 640px) {
@@ -39,7 +51,7 @@
 
 @media (min-width: 768px) {
   .public-footer-content {
-    grid-template-columns: 2fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr;
     gap: 3rem;
   }
 }
@@ -48,18 +60,38 @@
 .public-footer-brand {
   display: flex;
   flex-direction: column;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .public-footer-brand {
+    text-align: left;
+  }
 }
 
 .public-footer-logo {
   display: flex;
   align-items: center;
+  justify-content: center;
   margin-bottom: 1rem;
 }
 
+@media (min-width: 768px) {
+  .public-footer-logo {
+    justify-content: flex-start;
+  }
+}
+
 .public-footer-wordmark {
-  height: 5rem; /* 64px - increased from 40px */
+  height: 4rem; /* 64px on desktop, 48px on mobile */
   width: auto;
   object-fit: contain;
+}
+
+@media (min-width: 768px) {
+  .public-footer-wordmark {
+    height: 5rem; /* 80px on desktop */
+  }
 }
 
 .public-footer-logo-icon {
@@ -103,12 +135,42 @@
   font-size: 0.875rem; /* 14px */
   line-height: 1.6;
   max-width: 28rem; /* 448px */
+  text-align: center;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .public-footer-description {
+    text-align: left;
+    margin: 0;
+  }
 }
 
 /* Links Section */
 .public-footer-links {
   display: flex;
   flex-direction: column;
+  text-align: center;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .public-footer-links {
+    text-align: left;
+  }
+}
+
+/* Line separator above Quick Links on mobile */
+@media (max-width: 767px) {
+  .public-footer-links::before {
+    content: '';
+    position: absolute;
+    top: -0.75rem;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.2);
+  }
 }
 
 .public-footer-section-title {
@@ -122,9 +184,17 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 0.5rem;
+  justify-items: center;
+}
+
+@media (min-width: 480px) {
+  .public-footer-links-list {
+    grid-template-columns: 1fr 1fr;
+    justify-items: start;
+  }
 }
 
 .public-footer-links-list li {
@@ -141,7 +211,7 @@
 }
 
 .public-footer-link:hover {
-  color: var(--cyan-primary);
+  color: var(--gray-light);
   transform: translateX(4px);
 }
 
@@ -149,6 +219,7 @@
 .public-footer-contact {
   display: flex;
   flex-direction: column;
+  text-align: left;
 }
 
 .public-footer-contact-info {
@@ -171,28 +242,61 @@
   color: var(--cyan-primary);
 }
 
-/* Login Logo */
-.public-footer-login-logo {
-  margin-top: 2rem;
+
+/* Social Media Links */
+.public-footer-social {
+  margin-top: 1.5rem;
+}
+
+.public-footer-social-title {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.public-footer-social-links {
   display: flex;
-  justify-content: center;
+  gap: 1rem;
   align-items: center;
+  justify-content: flex-start;
 }
 
-.public-footer-login-link {
-  display: inline-block;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+.public-footer-social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
-.public-footer-login-link:hover {
-  transform: scale(1.05);
-  opacity: 0.8;
+.public-footer-social-link:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
-.public-footer-login-img {
-  height: 8rem; /* 80px - increased from 48px */
-  width: auto;
-  object-fit: contain;
+.public-footer-social-link svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* About Us Section */
+.public-footer-about {
+  flex: 1;
+  min-width: 0;
+}
+
+.public-footer-about-text {
+  color: #ffffff;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin: 0;
+  text-align: left;
 }
 
 /* Bottom Bar */
@@ -240,7 +344,7 @@
 }
 
 .public-footer-legal-link:hover {
-  color: var(--cyan-primary);
+  color: var(--gray-light);
 }
 
 /* Responsive adjustments */
@@ -261,10 +365,6 @@
     height: 3rem; /* 48px - increased from 32px for mobile */
   }
   
-  .public-footer-login-img {
-    height: 4rem; /* 64px for mobile - increased from 40px */
-  }
-  
   .public-footer-description {
     font-size: 0.8125rem;
   }
@@ -282,6 +382,18 @@
   
   .public-footer-legal {
     gap: 1rem;
+  }
+
+  /* Mobile: Two-column layout for Quick Links */
+  .public-footer-links-list {
+    grid-template-columns: 1fr 1fr;
+    justify-items: start;
+    gap: 0.5rem;
+  }
+
+  /* Mobile: Left-align Quick Links section */
+  .public-footer-links {
+    text-align: left;
   }
 }
 

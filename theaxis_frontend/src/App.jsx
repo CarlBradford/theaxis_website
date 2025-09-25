@@ -1,9 +1,14 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ColorPaletteProvider } from './contexts/ColorPaletteContext';
 import { NotificationProvider } from './components/NotificationBell';
 import Layout from './components/Layout';
-import Home from './pages/Home';
+import { useGAInit, useAnalytics } from './hooks/useAnalytics';
+import Home from './pages/public/Home';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Articles from './pages/Articles';
 import ArticleDetail from './pages/ArticleDetail';
@@ -20,19 +25,42 @@ import PublishedContent from './pages/PublishedContent';
 import CommentManagement from './pages/CommentManagement';
 import LoginDebug from './pages/LoginDebug';
 import HealthCheck from './pages/HealthCheck';
+import FeaturedArticlesPage from './pages/FeaturedArticlesPage';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
+import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 import './styles/uniform-loading.css';
+import './styles/color-palette.css';
+import siteSettingsService from './services/siteSettingsService';
 
-function App() {
+// Analytics component that runs inside Router context
+function AnalyticsTracker() {
+  useAnalytics(); // Track page views
+  return null; // This component doesn't render anything
+}
+
+// Main app component
+function AppWithAnalytics() {
+  useGAInit(); // Initialize GA outside Router context
+  
+  // Initialize site settings on app load
+  React.useEffect(() => {
+    siteSettingsService.initialize();
+  }, []);
+  
   return (
     <AuthProvider>
-      <NotificationProvider>
-        <Router>
-          <div className="min-h-screen bg-gray-50">
+      <ColorPaletteProvider>
+        <NotificationProvider>
+          <Router>
+            <AnalyticsTracker />
+            <div className="min-h-screen bg-gray-50">
             <Routes>
               <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
-              <Route path="login" element={<Login />} />
+              <Route path="admin-portal" element={<Login />} />
+              <Route path="forgot-password" element={<ForgotPassword />} />
+              <Route path="reset-password" element={<ResetPassword />} />
               <Route path="login-debug" element={<LoginDebug />} />
               <Route path="health-check" element={<HealthCheck />} />
               
@@ -105,7 +133,19 @@ function App() {
               
               <Route path="analytics" element={
                 <ProtectedRoute requiredRole="EDITOR_IN_CHIEF">
-                  <div>Analytics Dashboard</div>
+                  <AnalyticsDashboard />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="featured-articles" element={
+                <ProtectedRoute requiredRole="EDITOR_IN_CHIEF" excludeRoles={[]}>
+                  <FeaturedArticlesPage />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="settings" element={
+                <ProtectedRoute requiredRole="EDITOR_IN_CHIEF">
+                  <Settings />
                 </ProtectedRoute>
               } />
               
@@ -125,8 +165,14 @@ function App() {
           </div>
         </Router>
       </NotificationProvider>
+      </ColorPaletteProvider>
     </AuthProvider>
   );
+}
+
+// Main App component
+function App() {
+  return <AppWithAnalytics />;
 }
 
 export default App;

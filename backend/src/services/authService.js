@@ -304,8 +304,15 @@ class AuthService {
         },
       });
 
-      // TODO: Send email with reset link
-      logger.info('Password reset requested', { userId: user.id, email: user.email });
+      // Send email with reset link
+      const emailService = require('./emailService');
+      const emailSent = await emailService.sendPasswordResetEmail(user.email, resetToken, user.firstName);
+      
+      if (emailSent) {
+        logger.info('Password reset email sent successfully', { userId: user.id, email: user.email });
+      } else {
+        logger.warn('Password reset email failed to send', { userId: user.id, email: user.email });
+      }
 
       return { message: 'If the email exists, a password reset link has been sent' };
     } catch (error) {

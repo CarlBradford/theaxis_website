@@ -12,12 +12,18 @@ import {
   PencilIcon,
   XMarkIcon,
   CheckIcon,
-  ArrowUpTrayIcon
+  ArrowUpTrayIcon,
+  SwatchIcon
 } from '@heroicons/react/24/outline';
+import { 
+  UserCircleIcon as UserCircleIconSolid,
+} from '@heroicons/react/24/solid';
 import '../styles/profile.css';
+import { useThemeManagement, useColorPalette } from '../contexts/ColorPaletteContext';
+import { hasPermission } from '../config/permissions';
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const fileInputRef = useRef(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -52,9 +58,74 @@ const Profile = () => {
     confirm: false,
   });
 
+  // Color customization states
+  const [showColorCustomization, setShowColorCustomization] = useState(false);
+  const [customTheme, setCustomTheme] = useState({
+    colors: {}
+  });
+  const [colorErrors, setColorErrors] = useState({});
+  const [colorSuccess, setColorSuccess] = useState(false);
+
+  // Logo and wordmark customization states
+  const [showLogoCustomization, setShowLogoCustomization] = useState(false);
+  const [logoFiles, setLogoFiles] = useState({
+    logo: null,
+    wordmark: null
+  });
+  const [logoPreviews, setLogoPreviews] = useState({
+    logo: null,
+    wordmark: null
+  });
+  const [logoErrors, setLogoErrors] = useState({});
+  const [logoSuccess, setLogoSuccess] = useState(false);
+  const [logoLoading, setLogoLoading] = useState(false);
+
+  // Color palette context
+  const { applyCustomTheme } = useThemeManagement();
+  const { currentTheme, isLoading: colorLoading } = useColorPalette();
+
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  // Load colors from database on component mount
+  useEffect(() => {
+    const loadColorsFromDatabase = async () => {
+      try {
+        const response = await api.get('/admin/settings/colors');
+        if (response.data.success) {
+          const dbColors = response.data.data;
+          setCustomTheme({
+            colors: { ...dbColors }
+          });
+          // Also update the current theme context
+          applyCustomTheme({ colors: dbColors });
+        }
+      } catch (error) {
+        console.error('Failed to load colors from database:', error);
+        // Fallback to current theme
+        if (currentTheme) {
+          setCustomTheme({
+            colors: { ...currentTheme.colors }
+          });
+        }
+      }
+    };
+
+    // Only load for EIC and higher roles
+    if (user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'SYSTEM_ADMIN') {
+      loadColorsFromDatabase();
+    }
+  }, [user?.role, applyCustomTheme]);
+
+  // Update custom theme when current theme changes
+  useEffect(() => {
+    if (currentTheme) {
+      setCustomTheme({
+        colors: { ...currentTheme.colors }
+      });
+    }
+  }, [currentTheme]);
 
   const fetchProfile = async () => {
     try {
@@ -139,6 +210,9 @@ const Profile = () => {
       setProfile(prev => ({ ...prev, profileImage: imageUrl }));
       setImagePreview(imageUrl);
       
+      // Refresh auth context to update user data globally
+      await refreshUser();
+      
       // Clean up the preview URL
       URL.revokeObjectURL(tempImagePreview);
       setTempImagePreview(null);
@@ -180,6 +254,10 @@ const Profile = () => {
       await api.delete('/users/profile-image');
       setProfile(prev => ({ ...prev, profileImage: null }));
       setImagePreview(null);
+      
+      // Refresh auth context to update user data globally
+      await refreshUser();
+      
       setPasswordSuccess(true);
       setTimeout(() => setPasswordSuccess(false), 3000);
     } catch (error) {
@@ -252,6 +330,7 @@ const Profile = () => {
     try {
       await api.put('/users/profile', formData);
       await fetchProfile();
+      await refreshUser(); // Refresh auth context with updated user data
       setEditing(false);
     } catch (error) {
       console.error('Failed to update profile:', error);
@@ -389,6 +468,193 @@ const Profile = () => {
       [field]: !showPasswords[field],
     });
   };
+
+  // Color customization handlers
+  const handleColorChange = (colorKey, value) => {
+    setCustomTheme(prev => ({
+      ...prev,
+      colors: {
+        ...prev.colors,
+        [colorKey]: value
+      }
+    }));
+  };
+
+  const handleColorSubmit = async (e) => {
+    e.preventDefault();
+    setColorErrors({});
+    
+    try {
+      // Save colors to database via API
+      const response = await api.put('/admin/settings/colors', {
+        colors: customTheme.colors
+      });
+      
+      if (response.data.success) {
+        // Apply colors locally
+        applyCustomTheme(customTheme);
+        setColorSuccess(true);
+        
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          setColorSuccess(false);
+          setShowColorCustomization(false);
+        }, 3000);
+      } else {
+        setColorErrors({ general: response.data.message || 'Failed to save colors' });
+      }
+      
+    } catch (error) {
+      console.error('Failed to save colors:', error);
+      if (error.response?.data?.message) {
+        setColorErrors({ general: error.response.data.message });
+      } else {
+        setColorErrors({ general: 'Failed to save colors. Please try again.' });
+      }
+    }
+  };
+
+  // Logo and wordmark customization handlers
+  const handleLogoFileChange = (type, file) => {
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setLogoErrors({ [type]: 'Please select a valid image file' });
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setLogoErrors({ [type]: 'File size must be less than 10MB' });
+        return;
+      }
+      
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      
+      setLogoFiles(prev => ({
+        ...prev,
+        [type]: file
+      }));
+      
+      setLogoPreviews(prev => ({
+        ...prev,
+        [type]: previewUrl
+      }));
+      
+      setLogoErrors(prev => ({
+        ...prev,
+        [type]: null
+      }));
+    }
+  };
+
+  const removeLogoFile = (type) => {
+    // Clean up preview URL
+    if (logoPreviews[type]) {
+      URL.revokeObjectURL(logoPreviews[type]);
+    }
+    
+    setLogoFiles(prev => ({
+      ...prev,
+      [type]: null
+    }));
+    
+    setLogoPreviews(prev => ({
+      ...prev,
+      [type]: null
+    }));
+    
+    setLogoErrors(prev => ({
+      ...prev,
+      [type]: null
+    }));
+  };
+
+  const handleLogoSubmit = async (e) => {
+    e.preventDefault();
+    setLogoErrors({});
+    
+    try {
+      setLogoLoading(true);
+      
+      // Upload logo if selected
+      if (logoFiles.logo) {
+        const logoFormData = new FormData();
+        logoFormData.append('logo', logoFiles.logo);
+        
+        const logoResponse = await api.post('/admin/assets/logo', logoFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        if (!logoResponse.data.success) {
+          throw new Error(logoResponse.data.message || 'Failed to upload logo');
+        }
+      }
+      
+      // Upload wordmark if selected
+      if (logoFiles.wordmark) {
+        const wordmarkFormData = new FormData();
+        wordmarkFormData.append('wordmark', logoFiles.wordmark);
+        
+        const wordmarkResponse = await api.post('/admin/assets/wordmark', wordmarkFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        if (!wordmarkResponse.data.success) {
+          throw new Error(wordmarkResponse.data.message || 'Failed to upload wordmark');
+        }
+      }
+      
+      setLogoSuccess(true);
+      
+      // Clean up preview URLs
+      if (logoPreviews.logo) URL.revokeObjectURL(logoPreviews.logo);
+      if (logoPreviews.wordmark) URL.revokeObjectURL(logoPreviews.wordmark);
+      
+      setLogoFiles({ logo: null, wordmark: null });
+      setLogoPreviews({ logo: null, wordmark: null });
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setLogoSuccess(false);
+        setShowLogoCustomization(false);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Failed to upload logos:', error);
+      if (error.response?.data?.message) {
+        setLogoErrors({ general: error.response.data.message });
+      } else {
+        setLogoErrors({ general: 'Failed to upload logos. Please try again.' });
+      }
+    } finally {
+      setLogoLoading(false);
+    }
+  };
+
+  const colorGroups = [
+    {
+      title: 'Primary Color',
+      colors: ['primary', 'header'],
+      description: 'Main brand color for buttons, links, and header'
+    },
+    {
+      title: 'Secondary Color',
+      colors: ['secondary', 'footer'],
+      description: 'Accent color for secondary elements and footer'
+    },
+    {
+      title: 'Background Color',
+      colors: ['background'],
+      description: 'Main background color for the website'
+    },
+    {
+      title: 'Text Color',
+      colors: ['textPrimary'],
+      description: 'Main text color for content and headings'
+    }
+  ];
 
   if (loading) {
     return (
@@ -797,6 +1063,272 @@ const Profile = () => {
             )}
           </div>
         </div>
+
+      {/* Color Customization Section - Only for EIC and higher roles */}
+      {(user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'SYSTEM_ADMIN') && (
+          <div className="profile-color-section">
+            <div className="profile-section">
+              <div className="profile-section-header">
+                <h2 className="profile-section-title">Color Customization</h2>
+                <p className="profile-section-description">Customize the appearance of the reader-side of your website</p>
+              </div>
+
+              {showColorCustomization ? (
+                <form onSubmit={handleColorSubmit} className="profile-color-form">
+                  {colorErrors.general && (
+                    <div className="profile-error-message">
+                      <ExclamationTriangleIcon className="profile-error-icon" />
+                      <span>{colorErrors.general}</span>
+                    </div>
+                  )}
+
+                  {colorSuccess && (
+                    <div className="profile-success-message">
+                      <CheckCircleIcon className="profile-success-icon" />
+                      <span>Colors saved successfully!</span>
+                    </div>
+                  )}
+
+                  <div className="profile-color-groups">
+                    {colorGroups.map((group, index) => (
+                      <div key={index} className="profile-color-group">
+                        <div className="profile-color-group-header">
+                          <h4 className="profile-color-group-title">{group.title}</h4>
+                          <p className="profile-color-group-description">{group.description}</p>
+                        </div>
+                        <div className="profile-color-inputs">
+                          {group.colors.map((colorKey) => (
+                            <div key={colorKey} className="profile-form-group">
+                              <label className="profile-form-label">{colorKey}</label>
+                              <div className="profile-color-picker-wrapper">
+                                <input
+                                  type="color"
+                                  value={customTheme.colors[colorKey] || '#000000'}
+                                  onChange={(e) => handleColorChange(colorKey, e.target.value)}
+                                  className="profile-color-picker"
+                                />
+                                <input
+                                  type="text"
+                                  value={customTheme.colors[colorKey] || ''}
+                                  onChange={(e) => handleColorChange(colorKey, e.target.value)}
+                                  className="profile-form-input"
+                                  placeholder="#000000"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="profile-form-actions">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowColorCustomization(false);
+                        setCustomTheme({
+                          colors: { ...currentTheme.colors }
+                        });
+                        setColorErrors({});
+                      }}
+                      className="profile-btn profile-btn-secondary"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={colorLoading}
+                      className="profile-btn profile-btn-primary"
+                    >
+                      {colorLoading ? 'Saving Colors...' : 'Save Colors'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="profile-color-display">
+                  <div className="profile-color-info">
+                    <p>Customize the appearance of your website's reader-side.</p>
+                    <p>Changes will be applied to all public pages.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowColorCustomization(true)}
+                    className="profile-btn profile-btn-primary"
+                  >
+                    Customize Colors
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+      {/* Logo and Wordmark Customization Section - Only for EIC and higher roles */}
+      {(user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'SYSTEM_ADMIN') && (
+          <div className="profile-logo-section">
+            <div className="profile-section">
+              <div className="profile-section-header">
+                <h2 className="profile-section-title">Logo & Wordmark Customization</h2>
+                <p className="profile-section-description">Upload custom logo and wordmark for the reader-side of your website</p>
+              </div>
+
+              {showLogoCustomization ? (
+                <form onSubmit={handleLogoSubmit} className="profile-logo-form">
+                  {logoErrors.general && (
+                    <div className="profile-error-message">
+                      <ExclamationTriangleIcon className="profile-error-icon" />
+                      <span>{logoErrors.general}</span>
+                    </div>
+                  )}
+
+                  {logoSuccess && (
+                    <div className="profile-success-message">
+                      <CheckCircleIcon className="profile-success-icon" />
+                      <span>Logos uploaded successfully!</span>
+                    </div>
+                  )}
+
+                  <div className="profile-logo-uploads">
+                    <div className="profile-logo-upload-group">
+                      <div className="profile-form-group">
+                        <label className="profile-form-label">Logo Upload</label>
+                        <p className="profile-form-description">Upload your main logo (recommended: PNG with transparent background, max 10MB)</p>
+                        
+                        {!logoPreviews.logo ? (
+                          <div className="profile-file-upload-area">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleLogoFileChange('logo', e.target.files[0])}
+                              className="profile-file-input"
+                              id="logo-upload"
+                            />
+                            <label htmlFor="logo-upload" className="profile-file-upload-label">
+                              <CameraIcon className="profile-upload-icon" />
+                              <span>Click to upload logo</span>
+                            </label>
+                          </div>
+                        ) : (
+                          <div className="profile-image-preview-container">
+                            <div className="profile-image-preview">
+                              <img 
+                                src={logoPreviews.logo} 
+                                alt="Logo preview" 
+                                className="profile-preview-image"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeLogoFile('logo')}
+                                className="profile-remove-image-btn"
+                              >
+                                <XMarkIcon className="profile-remove-icon" />
+                              </button>
+                            </div>
+                            <div className="profile-file-info">
+                              <p className="profile-file-name">{logoFiles.logo.name}</p>
+                              <p className="profile-file-size">{(logoFiles.logo.size / 1024 / 1024).toFixed(2)} MB</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {logoErrors.logo && (
+                          <p className="profile-form-error">{logoErrors.logo}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="profile-logo-upload-group">
+                      <div className="profile-form-group">
+                        <label className="profile-form-label">Wordmark Upload</label>
+                        <p className="profile-form-description">Upload your wordmark/logo text (recommended: PNG with transparent background, max 10MB)</p>
+                        
+                        {!logoPreviews.wordmark ? (
+                          <div className="profile-file-upload-area">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleLogoFileChange('wordmark', e.target.files[0])}
+                              className="profile-file-input"
+                              id="wordmark-upload"
+                            />
+                            <label htmlFor="wordmark-upload" className="profile-file-upload-label">
+                              <CameraIcon className="profile-upload-icon" />
+                              <span>Click to upload wordmark</span>
+                            </label>
+                          </div>
+                        ) : (
+                          <div className="profile-image-preview-container">
+                            <div className="profile-image-preview">
+                              <img 
+                                src={logoPreviews.wordmark} 
+                                alt="Wordmark preview" 
+                                className="profile-preview-image"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeLogoFile('wordmark')}
+                                className="profile-remove-image-btn"
+                              >
+                                <XMarkIcon className="profile-remove-icon" />
+                              </button>
+                            </div>
+                            <div className="profile-file-info">
+                              <p className="profile-file-name">{logoFiles.wordmark.name}</p>
+                              <p className="profile-file-size">{(logoFiles.wordmark.size / 1024 / 1024).toFixed(2)} MB</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {logoErrors.wordmark && (
+                          <p className="profile-form-error">{logoErrors.wordmark}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="profile-form-actions">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowLogoCustomization(false);
+                        // Clean up preview URLs
+                        if (logoPreviews.logo) URL.revokeObjectURL(logoPreviews.logo);
+                        if (logoPreviews.wordmark) URL.revokeObjectURL(logoPreviews.wordmark);
+                        setLogoFiles({ logo: null, wordmark: null });
+                        setLogoPreviews({ logo: null, wordmark: null });
+                        setLogoErrors({});
+                      }}
+                      className="profile-btn profile-btn-secondary"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={logoLoading || (!logoFiles.logo && !logoFiles.wordmark)}
+                      className="profile-btn profile-btn-primary"
+                    >
+                      {logoLoading ? 'Uploading...' : 'Upload Logos'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="profile-logo-display">
+                  <div className="profile-logo-info">
+                    <p>Upload custom logo and wordmark for your website's reader-side.</p>
+                    <p>Changes will be applied to all public pages and branding elements.</p>
+                  </div>
+                  <button
+                    onClick={() => setShowLogoCustomization(true)}
+                    className="profile-btn profile-btn-primary"
+                  >
+                    <CameraIcon className="profile-btn-icon" />
+                    Upload Logos
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     
     {/* Image Upload Modal */}

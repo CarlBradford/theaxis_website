@@ -141,7 +141,7 @@ body:has(.login-container) {
 /* Main login card */
 .login-card {
   width: 100%;
-  max-width: 28rem;
+  max-width: 25rem; /* 400px - standard login card width */
   background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -151,7 +151,7 @@ body:has(.login-container) {
     0 8px 32px 0 rgba(60, 60, 60, 0.37),
     0 4px 16px 0 rgba(0, 0, 0, 0.1),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
-  padding: 1.5rem 1.5rem;
+  padding: 1.5rem 1.5rem; /* Standard card padding: 24px */
   position: relative;
   margin: 0 auto;
   animation: slideInUp 1s ease-out 0.5s both;
@@ -179,46 +179,12 @@ body:has(.login-container) {
   margin-bottom: 1.5rem;
 }
 
-.login-icon {
-  width: 3rem;
-  height: 3rem;
-  background: linear-gradient(135deg, #215d55, #2a6b63);
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem;
-  box-shadow: 0 4px 6px -1px rgba(33, 93, 85, 0.3);
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
-.login-icon svg {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: white;
-}
-
 .login-title {
-  font-size: 1.5rem;
+  font-size: 2rem; /* 32px - standard h2 size */
   font-weight: 600;
   color: #0f172a;
-  margin-bottom: 0.25rem;
+  margin-bottom: 1.5rem; /* Increased spacing */
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
-}
-
-.login-subtitle {
-  color: #374151;
-  font-size: 0.875rem;
-  font-weight: 400;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
 }
 
 /* Form styles */
@@ -238,21 +204,20 @@ body:has(.login-container) {
   font-size: 0.75rem;
   font-weight: 500;
   color: #1f2937;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
 }
 
 .login-input {
   width: 100%;
-  padding: 0.875rem 1rem;
+  padding: 0.75rem 1rem; /* Standard input padding: 12px 16px */
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 0.5rem;
   font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
+  font-size: 1rem; /* 16px - accessibility standard minimum */
   font-weight: 400;
   color: #111827;
   box-shadow: 
@@ -263,10 +228,8 @@ body:has(.login-container) {
   /* Mobile-specific improvements */
   -webkit-appearance: none;
   appearance: none;
-  /* Prevent zoom on iOS */
-  font-size: max(16px, 0.875rem);
-  /* Better touch targets */
-  min-height: 44px;
+  /* Standard touch target size */
+  min-height: 44px; /* WCAG accessibility standard */
   /* Remove default mobile styling */
   border-radius: 0.5rem;
   outline: none;
@@ -292,6 +255,24 @@ body:has(.login-container) {
     0 4px 12px 0 rgba(33, 93, 85, 0.15),
     inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
   transform: translateY(-2px);
+}
+
+.login-input-error {
+  border: 1px solid #dc2626 !important;
+  background: rgba(254, 242, 242, 0.95) !important;
+  box-shadow: 
+    0 0 0 2px rgba(220, 38, 38, 0.2),
+    0 2px 8px 0 rgba(220, 38, 38, 0.1),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+.login-input-error:focus {
+  border: 1px solid #dc2626 !important;
+  background: rgba(254, 242, 242, 0.98) !important;
+  box-shadow: 
+    0 0 0 2px rgba(220, 38, 38, 0.3),
+    0 4px 12px 0 rgba(220, 38, 38, 0.15),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.7) !important;
 }
 
 .login-input::placeholder {
@@ -326,13 +307,13 @@ body:has(.login-container) {
 /* Login button */
 .login-button {
   width: 100%;
-  padding: 0.875rem 1rem;
+  padding: 0.75rem 1rem; /* Standard button padding: 12px 16px */
   background: linear-gradient(135deg, #215d55, #2a6b63);
   color: white;
   border: none;
   border-radius: 0.5rem;
   font-family: 'Poppins', sans-serif;
-  font-size: 0.875rem;
+  font-size: 1rem; /* 16px - standard button font size */
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
@@ -341,16 +322,14 @@ body:has(.login-container) {
   /* Mobile-specific improvements */
   -webkit-appearance: none;
   appearance: none;
-  /* Better touch targets */
-  min-height: 44px;
+  /* Standard touch target size */
+  min-height: 44px; /* WCAG accessibility standard */
   /* Prevent text selection on tap */
   -webkit-user-select: none;
   user-select: none;
   /* Remove default mobile styling */
   border-radius: 0.5rem;
   outline: none;
-  /* Prevent zoom on iOS */
-  font-size: max(16px, 0.875rem);
 }
 
 .login-button:hover:not(:disabled) {
@@ -406,40 +385,6 @@ body:has(.login-container) {
     transform: scale(1.1);
     opacity: 0;
   }
-}
-
-@keyframes fadeOutUp {
-  0% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-}
-
-@keyframes slideOutUp {
-  0% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-30px) scale(0.95);
-  }
-}
-
-.login-success-animation {
-  animation: loginSuccess 0.6s ease-out forwards;
-}
-
-.login-card-success {
-  animation: slideOutUp 0.8s ease-out forwards;
-}
-
-.login-container-success {
-  animation: fadeOutUp 0.8s ease-out forwards;
 }
 
 /* Error message */
@@ -509,10 +454,10 @@ body:has(.login-container) {
   box-sizing: border-box;
 }
 
-/* Responsive design */
+/* Responsive design - Mobile First Approach */
 @media (max-width: 768px) {
   .login-container {
-    padding: 1rem;
+    padding: 1rem 0.75rem; /* Standard mobile padding */
     align-items: center;
     justify-content: center;
     padding-top: 1rem;
@@ -545,45 +490,45 @@ body:has(.login-container) {
   }
   
   .login-card {
-    padding: 1.5rem 1.25rem;
+    padding: 1.25rem 1rem; /* Optimized mobile padding */
     margin: 0 auto;
-    margin-top: 0.25rem;
-    max-width: calc(100% - 1rem);
+    margin-top: 0.5rem;
+    max-width: calc(100vw - 2rem); /* Better viewport utilization */
     width: 100%;
     border-radius: 0.75rem;
+    min-height: auto; /* Remove fixed height constraints */
   }
   
   .login-title {
-    font-size: 1.25rem;
-    margin-bottom: 0.25rem;
-  }
-  
-  .login-subtitle {
-    font-size: 0.8rem;
+    font-size: 1.75rem; /* Maintain readable size on mobile */
+    margin-bottom: 1.25rem;
   }
   
   .login-input {
-    padding: 0.625rem 0.875rem;
-    font-size: 0.8rem;
-    min-height: 36px;
+    padding: 0.75rem 1rem; /* Standard mobile input padding */
+    font-size: 1rem; /* Maintain 16px for accessibility */
+    min-height: 48px; /* Slightly larger for better mobile touch */
+    border-radius: 0.75rem; /* Slightly more rounded for mobile */
   }
   
   .login-input::placeholder {
-    font-size: 0.8rem;
+    font-size: 1rem; /* Match input font size */
   }
   
   .login-button {
-    padding: 0.625rem 0.875rem;
-    font-size: 0.8rem;
-    min-height: 36px;
+    padding: 0.75rem 1rem; /* Match input padding */
+    font-size: 1rem; /* Maintain 16px for accessibility */
+    min-height: 48px; /* Match input height */
+    border-radius: 0.75rem; /* Match input border radius */
   }
   
   /* Password toggle styles removed */
 }
 
+/* Small Mobile Devices */
 @media (max-width: 480px) {
   .login-container {
-    padding: 0.75rem;
+    padding: 0.75rem 0.5rem; /* Reduced padding for small screens */
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
   }
@@ -614,34 +559,19 @@ body:has(.login-container) {
   }
   
   .login-card {
-    padding: 1.25rem 1rem;
+    padding: 1rem 0.875rem; /* Compact padding for small screens */
     border-radius: 0.75rem;
-    max-width: calc(100% - 0.75rem);
-    margin-top: 0.25rem;
+    max-width: calc(100vw - 1rem); /* Better viewport utilization */
+    margin-top: 0.5rem;
   }
   
   .login-header {
     margin-bottom: 0.5rem;
   }
   
-  .login-icon {
-    width: 2rem;
-    height: 2rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .login-icon svg {
-    width: 1rem;
-    height: 1rem;
-  }
-  
   .login-title {
-    font-size: 1.125rem;
-    margin-bottom: 0.25rem;
-  }
-  
-  .login-subtitle {
-    font-size: 0.75rem;
+    font-size: 1.5rem; /* Maintain readable size */
+    margin-bottom: 1rem;
   }
   
   .login-form {
@@ -657,19 +587,21 @@ body:has(.login-container) {
   }
   
   .login-input {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
-    min-height: 32px;
+    padding: 0.625rem 0.875rem; /* Optimized small mobile padding */
+    font-size: 1rem; /* Maintain accessibility */
+    min-height: 48px; /* Consistent touch target */
+    border-radius: 0.75rem;
   }
   
   .login-input::placeholder {
-    font-size: 0.75rem;
+    font-size: 1rem; /* Match input font size */
   }
   
   .login-button {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
-    min-height: 32px;
+    padding: 0.625rem 0.875rem; /* Match input padding */
+    font-size: 1rem; /* Maintain accessibility */
+    min-height: 48px; /* Consistent touch target */
+    border-radius: 0.75rem;
   }
   
   /* Password toggle styles removed */
@@ -690,10 +622,10 @@ body:has(.login-container) {
   }
 }
 
-/* Extra small devices (portrait phones) */
+/* Extra Small Mobile Devices */
 @media (max-width: 360px) {
   .login-container {
-    padding: 0.5rem;
+    padding: 0.5rem 0.375rem; /* Minimal padding for extra small screens */
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
   }
@@ -724,34 +656,32 @@ body:has(.login-container) {
   }
   
   .login-card {
-    padding: 1rem 0.875rem;
-    max-width: calc(100% - 0.5rem);
-    margin-top: 0.25rem;
+    padding: 0.875rem 0.75rem; /* Minimal padding for extra small screens */
+    max-width: calc(100vw - 0.75rem); /* Better viewport utilization */
+    margin-top: 0.5rem;
   }
   
   .login-title {
-    font-size: 1rem;
-    margin-bottom: 0.25rem;
-  }
-  
-  .login-subtitle {
-    font-size: 0.7rem;
+    font-size: 1.25rem; /* Minimum readable size */
+    margin-bottom: 0.75rem;
   }
   
   .login-input {
-    padding: 0.375rem 0.625rem;
-    font-size: 0.7rem;
-    min-height: 28px;
+    padding: 0.5rem 0.75rem; /* Minimal padding for extra small screens */
+    font-size: 1rem; /* Maintain accessibility */
+    min-height: 48px; /* Consistent touch target */
+    border-radius: 0.75rem;
   }
   
   .login-input::placeholder {
-    font-size: 0.7rem;
+    font-size: 1rem; /* Match input font size */
   }
   
   .login-button {
-    padding: 0.375rem 0.625rem;
-    font-size: 0.7rem;
-    min-height: 28px;
+    padding: 0.5rem 0.75rem; /* Match input padding */
+    font-size: 1rem; /* Maintain accessibility */
+    min-height: 48px; /* Consistent touch target */
+    border-radius: 0.75rem;
   }
   
   .login-back-link {
@@ -766,15 +696,14 @@ body:has(.login-container) {
   }
 }
 
-/* Landscape orientation for mobile devices */
+/* Landscape Mobile Devices */
 @media (max-height: 500px) and (orientation: landscape) {
   .login-container {
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+    padding: 0.5rem 1rem; /* Optimized for landscape */
     align-items: center;
     justify-content: center;
     flex-direction: row;
-    gap: 0.75rem;
+    gap: 1rem;
   }
   
   .login-logo {
@@ -791,33 +720,18 @@ body:has(.login-container) {
   }
   
   .login-card {
-    padding: 1rem 0.75rem;
-    max-width: calc(100% - 1rem);
+    padding: 1rem 1rem; /* Optimized landscape padding */
+    max-width: calc(100vw - 2rem);
     flex: 1;
-    max-width: 20rem;
+    max-width: 22rem; /* Slightly wider for landscape */
   }
   
   .login-header {
     margin-bottom: 0.75rem;
   }
   
-  .login-icon {
-    width: 2rem;
-    height: 2rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .login-icon svg {
-    width: 1rem;
-    height: 1rem;
-  }
-  
   .login-title {
     font-size: 1rem;
-  }
-  
-  .login-subtitle {
-    font-size: 0.7rem;
   }
   
   .login-form {
@@ -835,10 +749,10 @@ body:has(.login-container) {
   }
 }
 
-/* Very small screens (iPhone SE, etc.) */
+/* Very Small Mobile Devices */
 @media (max-width: 320px) {
   .login-container {
-    padding: 0.375rem;
+    padding: 0.375rem 0.25rem; /* Ultra-minimal padding for very small screens */
     padding-top: 0.375rem;
     padding-bottom: 0.375rem;
   }
@@ -869,34 +783,31 @@ body:has(.login-container) {
   }
   
   .login-card {
-    padding: 0.875rem 0.75rem;
-    max-width: calc(100% - 0.25rem);
-    margin-top: 0.25rem;
+    padding: 0.75rem 0.625rem; /* Ultra-minimal padding for very small screens */
+    max-width: calc(100vw - 0.5rem); /* Better viewport utilization */
+    margin-top: 0.5rem;
   }
   
   .login-title {
-    font-size: 0.9rem;
-    margin-bottom: 0.25rem;
-  }
-  
-  .login-subtitle {
-    font-size: 0.65rem;
+    font-size: 1.125rem; /* Minimum readable size */
+    margin-bottom: 0.5rem;
   }
   
   .login-input {
-    padding: 0.375rem 0.625rem;
-    font-size: 0.65rem;
-    min-height: 28px;
+    padding: 0.5rem 0.625rem; /* Ultra-minimal padding for very small screens */
+    font-size: 1rem; /* Maintain accessibility */
+    min-height: 48px; /* Consistent touch target */
+    border-radius: 0.75rem;
   }
   
   .login-input::placeholder {
-    font-size: 0.65rem;
+    font-size: 1rem; /* Match input font size */
   }
   
   .login-button {
-    padding: 0.375rem 0.625rem;
-    font-size: 0.65rem;
-    min-height: 28px;
+    padding: 0.5rem 0.625rem; /* Match input padding */
+    font-size: 1rem; /* Keep 16px minimum */
+    min-height: 44px; /* WCAG standard */
   }
   
   .login-back-link {
@@ -914,7 +825,7 @@ body:has(.login-container) {
 /* Additional centering for larger screens */
 @media (min-width: 1024px) {
   .login-card {
-    max-width: 32rem;
+    max-width: 25rem; /* Keep standard 400px width */
   }
 }
 
@@ -934,4 +845,14 @@ body:has(.login-container) {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Remove scrollbar from login container */
+.login-container::-webkit-scrollbar {
+  display: none;
+}
+
+.login-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

@@ -15,4 +15,3 @@ VALUES
   ('cat_education', 'Education', 'education', 'Educational content and academic discussions', NOW(), NOW()),
   ('cat_journalism', 'Journalism', 'journalism', 'Journalism techniques, ethics, and industry news', NOW(), NOW())
 ON CONFLICT (slug) DO NOTHING;
-cdcd

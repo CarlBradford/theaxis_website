@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { PhotoIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { 
+  PhotoIcon as PhotoIconSolid,
+} from '@heroicons/react/24/solid';
 
 const Media = () => {
   const [media, setMedia] = useState([]);

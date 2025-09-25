@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { trackLogin, trackError } from '../config/analytics';
 import '../styles/login.css';
 import theaxisLogo from '../assets/theaxis_wordmark.png';
 
@@ -32,6 +33,8 @@ const Login = () => {
       
       if (result.success) {
         setIsSuccess(true);
+        // Track successful login
+        trackLogin('email');
         // Add a small delay to show the success animation before navigating
         setTimeout(() => {
           navigate('/dashboard');
@@ -43,10 +46,14 @@ const Login = () => {
         } else {
           setError(result.error);
         }
+        // Track login error
+        trackError(result.error, 'LOGIN_ERROR', 'login');
         setLoading(false);
       }
     } catch (error) {
       console.error('Login error:', error);
+      // Track login error
+      trackError(error.message || 'Login failed', 'LOGIN_EXCEPTION', 'login');
       if (error.message?.includes('Rate limit')) {
         setError('Too many requests. Please wait a moment and try again.');
       } else {
@@ -56,10 +63,14 @@ const Login = () => {
     }
   };
 
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+
   return (
     <div className={`login-container ${isSuccess ? 'login-container-success' : ''}`}>
       {/* AXIS Logo in top-left */}
-      <div className="login-logo">
+      <div className="login-logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
         <img 
           src={theaxisLogo} 
           alt="The AXIS Group of Publications" 
@@ -71,13 +82,7 @@ const Login = () => {
       <div className={`login-card ${isSuccess ? 'login-card-success' : ''}`}>
         {/* Sign-in icon and title */}
         <div className="login-header">
-          <div className={`login-icon ${isSuccess ? 'login-success-animation' : ''}`}>
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
           <h2 className="login-title">Login</h2>
-          <p className="login-subtitle">Welcome back! Please login to your account.</p>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
@@ -92,7 +97,7 @@ const Login = () => {
           
           <div className="login-form-group">
             <label htmlFor="usernameOrEmail" className="login-label">
-              USERNAME OR EMAIL
+              Username or Email
             </label>
             <input
               id="usernameOrEmail"
@@ -110,7 +115,7 @@ const Login = () => {
           
           <div className="login-form-group">
             <label htmlFor="password" className="login-label">
-              PASSWORD
+              Password
             </label>
             <input
               id="password"
@@ -154,7 +159,7 @@ const Login = () => {
         
         <div className="login-footer">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
             className="login-back-link"
             disabled={isSuccess}
           >

@@ -8,12 +8,112 @@
 }
 
 .public-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Logo Section - Separate from header, shows by default */
+.public-header-logo-section {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  max-height: 80px;
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Hide logo section on mobile */
+@media (max-width: 768px) {
+  .public-header-logo-section {
+    display: none;
+  }
+}
+
+/* When scrolled, hide the logo section */
+.public-header-logo-section.hidden {
+  max-height: 0 !important;
+  padding: 0 !important;
+  border-bottom: none !important;
+  transform: translateY(-100%) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Category Tabs Section - Always visible and sticky */
+.public-header-categories-section {
   background-color: var(--cyan-dark);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   border-bottom: 1px solid var(--cyan-primary);
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 1001;
+}
+
+/* Category Navigation */
+.public-header-categories {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  gap: 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Hide desktop navigation on mobile */
+@media (max-width: 768px) {
+  .public-header-categories {
+    display: none;
+  }
+}
+
+.public-header-categories::-webkit-scrollbar {
+  display: none;
+}
+
+.public-header-category-link {
+  color: #ffffff;
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.public-header-category-link:hover {
+  text-decoration: underline;
+}
+
+.public-header-category-link.active {
+  color: var(--gray-light);
+}
+
+/* Search Icon */
+.public-header-search {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  color: #ffffff;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 1rem;
+}
+
+.public-header-search:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .public-header-container {
@@ -45,12 +145,14 @@
 .public-header-logo {
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .public-header-logo-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
   text-decoration: none;
   transition: opacity 0.2s ease;
 }
@@ -59,40 +161,11 @@
   opacity: 0.8;
 }
 
-.public-header-logo-icon {
-  width: 2.5rem; /* 40px */
-  height: 2.5rem; /* 40px */
-  background: linear-gradient(135deg, var(--cyan-primary), var(--cyan-primary));
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.public-header-logo-icon-text {
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 1.125rem; /* 18px */
-}
-
-.public-header-logo-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.public-header-logo-title {
-  font-size: 1.25rem; /* 20px */
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1;
-}
-
-.public-header-logo-subtitle {
-  font-size: 0.75rem; /* 12px */
-  color: var(--gray-light);
-  line-height: 1;
+.public-header-logo-image {
+  height: 80px; /* Slightly larger */
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
 }
 
 /* Navigation */
@@ -161,9 +234,29 @@
   transform: translateY(0);
 }
 
-/* Mobile Menu Button (for future mobile menu) */
+/* Mobile Logo */
+.public-header-mobile-logo {
+  display: none;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .public-header-mobile-logo {
+    display: flex;
+  }
+}
+
+.public-header-mobile-logo-image {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Mobile Menu Button */
 .public-header-mobile-menu-button {
-  display: block;
+  display: none;
   background: none;
   border: none;
   padding: 0.5rem;
@@ -173,51 +266,208 @@
   transition: background-color 0.2s ease;
 }
 
-@media (min-width: 768px) {
+@media (max-width: 768px) {
   .public-header-mobile-menu-button {
-    display: none;
+    display: block;
   }
+}
+
+/* Mobile Search Button */
+.public-header-mobile-search-button {
+  display: none;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #ffffff;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s ease;
+}
+
+@media (max-width: 768px) {
+  .public-header-mobile-search-button {
+    display: block;
+  }
+}
+
+.public-header-mobile-search-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .public-header-mobile-menu-button:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.public-header-mobile-menu-icon {
-  width: 1.5rem;
-  height: 1.5rem;
+/* Mobile Menu Sidebar */
+.public-header-mobile-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh;
+  background-color: var(--cyan-dark);
+  border-right: 1px solid var(--cyan-primary);
+  transform: translateX(-100%);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.public-header-mobile-menu.open {
+  transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Mobile Menu Overlay */
+.public-header-mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 999;
+}
+
+.public-header-mobile-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.public-header-mobile-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.5rem 2rem 1.5rem;
+  gap: 0;
+}
+
+.public-header-mobile-link {
+  color: #ffffff;
+  text-decoration: none;
+  padding: 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.public-header-mobile-link:hover {
+  color: var(--gray-light);
+  padding-left: 0.5rem;
+}
+
+.public-header-mobile-link:active {
+  color: var(--gray-light);
+}
+
+.public-header-mobile-search {
+  display: none;
+}
+
+/* Mobile Menu Wordmark */
+.public-header-mobile-wordmark {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+}
+
+.public-header-mobile-wordmark-image {
+  height: 3rem;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Mobile Search Card */
+.public-header-mobile-search-card {
+  padding: 0.5rem 1.5rem;
+}
+
+.public-header-mobile-search-input-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.public-header-mobile-search-input-container:focus-within {
+  background-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.public-header-mobile-search-input-container svg {
+  color: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.public-header-mobile-search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 400;
+  width: 100%;
+}
+
+.public-header-mobile-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Mobile Menu Separators */
+.public-header-mobile-separator {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 0;
 }
 
 /* Responsive adjustments */
 @media (max-width: 767px) {
-  .public-header-content {
-    padding: 0 0.5rem;
+  .public-header-logo-section {
+    padding: 0.75rem 0;
   }
   
-  .public-header-logo-link {
-    gap: 0.5rem;
+  .public-header-logo-image {
+    height: 65px; /* Slightly larger on mobile */
   }
   
-  .public-header-logo-icon {
-    width: 2rem;
-    height: 2rem;
+  .public-header-categories-section {
+    position: relative;
   }
   
-  .public-header-logo-icon-text {
-    font-size: 1rem;
+  .public-header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .public-header-categories {
+    justify-content: flex-start;
+    padding: 0.5rem 0;
   }
   
-  .public-header-logo-title {
-    font-size: 1.125rem;
+  .public-header-category-link {
+    padding: 0.25rem 0.375rem;
+    font-size: 0.75rem;
   }
   
-  .public-header-logo-subtitle {
-    font-size: 0.625rem;
-  }
-  
-  .public-header-auth-button {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.8125rem;
+  .public-header-search {
+    margin-left: auto;
   }
 }
 

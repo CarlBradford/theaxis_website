@@ -929,3 +929,18 @@
 .published-content-status-badge-inactive svg {
   color: #ef4444;
 }
+
+/* Loading Spinner for Update Content Button */
+.published-content-update-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: publishedContentUpdateSpin 1s linear infinite;
+}
+
+@keyframes publishedContentUpdateSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

@@ -11,7 +11,9 @@ const Layout = () => {
   // Define public/reader routes where navbar and sidebar should be hidden
   const publicRoutes = [
     '/',
-    '/login',
+    '/admin-portal',
+    '/forgot-password',
+    '/reset-password',
     '/login-debug', 
     '/health-check'
   ];

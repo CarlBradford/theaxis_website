@@ -21,6 +21,9 @@ import {
   ChevronUpIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import { 
+  ChatBubbleLeftRightIcon as ChatBubbleLeftRightIconSolid,
+} from '@heroicons/react/24/solid';
 import '../styles/comment-management.css';
 
 const CommentManagement = () => {
@@ -355,14 +358,15 @@ const CommentManagement = () => {
       <div className="comment-management-content">
         {/* Header */}
         <div className="comment-management-header">
-        <div className="comment-management-title-section">
-          <h1 className="comment-management-title">
-            Comment Management
-          </h1>
-          <p className="comment-management-subtitle">
-            Monitor and manage comments posted on articles
-          </p>
-        </div>
+          <div className="flex items-center space-x-4">
+            <div>
+              <ChatBubbleLeftRightIconSolid className="h-8 w-8 text-black" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-black">Comment Management</h1>
+              <p className="text-gray-600">Monitor and manage comments posted on articles</p>
+            </div>
+          </div>
         
         <div className="comment-management-stats">
           <div className="comment-management-stat">
@@ -488,7 +492,7 @@ const CommentManagement = () => {
                 onChange={(e) => setSortOrder(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Newest First</span>
+              <span className="filter-modal-radio-label">Descending</span>
             </label>
             <label className={`filter-modal-radio-item ${sortOrder === 'asc' ? 'selected' : ''}`}>
               <input
@@ -499,7 +503,7 @@ const CommentManagement = () => {
                 onChange={(e) => setSortOrder(e.target.value)}
                 className="filter-modal-radio-input"
               />
-              <span className="filter-modal-radio-label">Oldest First</span>
+              <span className="filter-modal-radio-label">Ascending</span>
             </label>
           </div>
         </div>
@@ -659,31 +663,6 @@ const CommentManagement = () => {
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="comment-pagination">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className="comment-pagination-btn"
-            >
-              Previous
-            </button>
-            
-            <span className="comment-pagination-info">
-              Page {currentPage} of {totalPages}
-            </span>
-            
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-              className="comment-pagination-btn"
-            >
-              Next
-            </button>
           </div>
         )}
       </div>

@@ -57,14 +57,17 @@ const ConfirmationModal = ({
   };
 
   return createPortal(
-    <div className="confirmation-modal-backdrop" onClick={handleBackdropClick} style={{ backgroundColor: 'rgba(0,0,0,0.5)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="confirmation-modal" style={{ background: '#ffffff', borderRadius: '12px', padding: '24px', maxWidth: '400px', width: '100%', position: 'relative' }}>
+    <div className="confirmation-modal-backdrop" onClick={handleBackdropClick}>
+      <div className="confirmation-modal">
         <div className="confirmation-modal-header">
-          <div className="confirmation-modal-icon">
-            <ExclamationTriangleIcon 
-              style={{ color: getIconColor() }}
-              className="confirmation-modal-icon-svg"
-            />
+          <div className="confirmation-modal-header-left">
+            <div className="confirmation-modal-icon">
+              <ExclamationTriangleIcon 
+                style={{ color: getIconColor() }}
+                className="confirmation-modal-icon-svg"
+              />
+            </div>
+            <h3 className="confirmation-modal-title">{title}</h3>
           </div>
           <button
             className="confirmation-modal-close"
@@ -75,17 +78,15 @@ const ConfirmationModal = ({
           </button>
         </div>
 
-        <div className="confirmation-modal-content" style={{ padding: '0 0 24px 0' }}>
-          <h3 className="confirmation-modal-title" style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 12px 0' }}>{title}</h3>
-          <p className="confirmation-modal-message" style={{ fontSize: '14px', color: '#6b7280', margin: '0' }}>{message}</p>
+        <div className="confirmation-modal-content">
+          <p className="confirmation-modal-message">{message}</p>
         </div>
 
-        <div className="confirmation-modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
+        <div className="confirmation-modal-actions">
           <button
             className="confirmation-modal-btn-cancel"
             onClick={onClose}
             disabled={isLoading}
-            style={{ padding: '10px 20px', backgroundColor: '#f3f4f6', color: '#6b7280', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}
           >
             {cancelText}
           </button>
@@ -93,7 +94,6 @@ const ConfirmationModal = ({
             className={`confirmation-modal-btn-confirm ${getConfirmButtonClass()}`}
             onClick={handleConfirm}
             disabled={isLoading}
-            style={{ padding: '10px 20px', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: 'pointer', backgroundColor: '#ef4444', color: '#ffffff' }}
           >
             {isLoading ? (
               <div className="confirmation-modal-spinner">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../hooks/useAuth';
 import { categoriesAPI, usersAPI, articlesAPI } from '../services/apiService';
+import { trackArticleCreate, trackError } from '../config/analytics';
 import { 
   ChevronDownIcon,
   PaperClipIcon,
@@ -11,8 +12,12 @@ import {
   BoldIcon,
   ItalicIcon,
   ListBulletIcon,
-  LinkIcon
+  LinkIcon,
+  PlusIcon
 } from '@heroicons/react/24/outline';
+import { 
+  PlusIcon as PlusIconSolid,
+} from '@heroicons/react/24/solid';
 import ArticlePreviewModal from '../components/ArticlePreviewModal';
 import NotificationModal from '../components/NotificationModal';
 import '../styles/createarticle.css';
@@ -52,6 +57,10 @@ const CreateArticle = () => {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationData, setNotificationData] = useState({ title: '', message: '', type: 'success' });
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showSendToEICModal, setShowSendToEICModal] = useState(false);
+  const [sendToEICLoading, setSendToEICLoading] = useState(false);
+  const [showSubmitToSectionHeadModal, setShowSubmitToSectionHeadModal] = useState(false);
+  const [submitToSectionHeadLoading, setSubmitToSectionHeadLoading] = useState(false);
   const contentRef = useRef(null);
 
   // Notification modal helper functions
@@ -539,6 +548,10 @@ const CreateArticle = () => {
       const response = await articlesAPI.createArticle(articleData);
       console.log('Article created successfully:', response);
       
+      // Track article creation
+      const categoryName = categories.find(cat => cat.name === formData.category)?.name || 'Uncategorized';
+      trackArticleCreate(response.data?.id || 'unknown', formData.title, categoryName);
+      
       // Show success message based on status
       let successMessage = '';
       switch (articleStatus) {
@@ -565,6 +578,9 @@ const CreateArticle = () => {
       
     } catch (error) {
       console.error('Failed to create article:', error);
+      
+      // Track article creation error
+      trackError(error.response?.data?.message || 'Article creation failed', 'ARTICLE_CREATE_ERROR', 'create-article');
       
       // Handle different types of errors
       let errorMessage = 'Failed to create article. Please try again.';
@@ -859,11 +875,141 @@ const CreateArticle = () => {
   };
 
   const handleSubmitToSectionHead = () => {
-    handleSave('IN_REVIEW');
+    console.log('Showing Submit to Section Head confirmation modal');
+    setShowSubmitToSectionHeadModal(true);
+  };
+
+  const confirmSubmitToSectionHead = async () => {
+    setSubmitToSectionHeadLoading(true);
+    try {
+      console.log('Submitting to Section Head confirmed');
+      
+      // Validate form before submission
+      if (!validateForm()) {
+        return;
+      }
+      
+      // Prepare data for submission
+      const articleData = {
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        featuredImage: formData.featuredImage || '',
+        mediaCaption: formData.mediaCaption.trim() || '',
+        publicationDate: formData.publicationDate && formData.publicationDate.trim() ? 
+          (() => {
+            const date = new Date(formData.publicationDate);
+            return !isNaN(date.getTime()) ? date.toISOString() : undefined;
+          })() : undefined,
+        categories: formData.category ? [categories.find(cat => cat.name === formData.category)?.slug].filter(Boolean) : [],
+        tags: formData.tags.length > 0 ? formData.tags.map(tag => 
+          tag.toLowerCase()
+             .trim()
+             .replace(/[^a-z0-9\s-]/g, '')
+             .replace(/\s+/g, '-')
+             .replace(/-+/g, '-')
+        ).filter(Boolean) : [],
+        authors: formData.authors.length > 0 ? formData.authors.filter(author => author.id).map(author => author.id) : []
+      };
+
+      // Send to API with IN_REVIEW status
+      const response = await articlesAPI.createArticle({
+        ...articleData,
+        status: 'IN_REVIEW'
+      });
+
+      if (response.status === 'success') {
+        showNotification('Success', 'Article submitted to Section Head successfully!', 'success');
+        // Navigate to dashboard after a short delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
+      } else {
+        showNotification('Error', response.message || 'Failed to submit article to Section Head', 'error');
+      }
+    } catch (error) {
+      console.error('Error submitting to Section Head:', error);
+      let errorMessage = 'Failed to submit article to Section Head';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      showNotification('Error', errorMessage, 'error');
+    } finally {
+      setSubmitToSectionHeadLoading(false);
+      setShowSubmitToSectionHeadModal(false);
+    }
+  };
+
+  const cancelSubmitToSectionHead = () => {
+    setShowSubmitToSectionHeadModal(false);
   };
 
   const handleSendToEIC = () => {
-    handleSave('IN_REVIEW');
+    console.log('Showing Submit to EIC confirmation modal');
+    setShowSendToEICModal(true);
+  };
+
+  const confirmSendToEIC = async () => {
+    setSendToEICLoading(true);
+    try {
+      console.log('Sending to EIC confirmed');
+      
+      // Validate form before submission
+      if (!validateForm()) {
+        return;
+      }
+      
+      // Prepare data for submission
+      const articleData = {
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        featuredImage: formData.featuredImage || '',
+        mediaCaption: formData.mediaCaption.trim() || '',
+        publicationDate: formData.publicationDate && formData.publicationDate.trim() ? 
+          (() => {
+            const date = new Date(formData.publicationDate);
+            return !isNaN(date.getTime()) ? date.toISOString() : undefined;
+          })() : undefined,
+        categories: formData.category ? [categories.find(cat => cat.name === formData.category)?.slug].filter(Boolean) : [],
+        tags: formData.tags.length > 0 ? formData.tags.map(tag => 
+          tag.toLowerCase()
+             .trim()
+             .replace(/[^a-z0-9\s-]/g, '')
+             .replace(/\s+/g, '-')
+             .replace(/-+/g, '-')
+        ).filter(Boolean) : [],
+        authors: formData.authors.length > 0 ? formData.authors.filter(author => author.id).map(author => author.id) : []
+      };
+
+      // Send to API with APPROVED status
+      const response = await articlesAPI.createArticle({
+        ...articleData,
+        status: 'APPROVED'
+      });
+
+      if (response.status === 'success') {
+        showNotification('Success', 'Article sent to EIC successfully!', 'success');
+        // Navigate to dashboard after a short delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
+      } else {
+        showNotification('Error', response.message || 'Failed to send article to EIC', 'error');
+      }
+    } catch (error) {
+      console.error('Error sending to EIC:', error);
+      let errorMessage = 'Failed to send article to EIC';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      showNotification('Error', errorMessage, 'error');
+    } finally {
+      setSendToEICLoading(false);
+      setShowSendToEICModal(false);
+    }
+  };
+
+  const cancelSendToEIC = () => {
+    setShowSendToEICModal(false);
   };
 
   const handlePublish = () => {
@@ -898,7 +1044,15 @@ const CreateArticle = () => {
       <div className="create-article-content">
         {/* Header */}
         <div className="create-article-header">
-          <h1 className="create-article-title">Create Content</h1>
+          <div className="flex items-center space-x-4">
+            <div>
+              <PlusIconSolid className="h-8 w-8 text-black" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-black">Create Content</h1>
+              <p className="text-gray-600">Write and publish your articles</p>
+            </div>
+          </div>
           <div className="create-article-header-buttons">
             <button
               type="button"
@@ -922,10 +1076,9 @@ const CreateArticle = () => {
                 <button
                   type="button"
                   onClick={handleSubmitToSectionHead}
-                  disabled={isSubmitting}
                   className="create-article-submit-btn"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit to Section Head'}
+                  Submit to Section Head
                 </button>
               </>
             )}
@@ -943,10 +1096,9 @@ const CreateArticle = () => {
                 <button
                   type="button"
                   onClick={handleSendToEIC}
-                  disabled={isSubmitting}
                   className="create-article-submit-btn"
                 >
-                  {isSubmitting ? 'Sending...' : 'Send to EIC'}
+                  Submit to EIC
                 </button>
               </>
             )}
@@ -1414,6 +1566,116 @@ const CreateArticle = () => {
                 className="simple-publish-modal-button publish"
               >
                 Publish Article
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send to EIC Confirmation Modal */}
+      {showSendToEICModal && (
+        <div className="simple-publish-modal-overlay">
+          <div className="simple-publish-modal">
+            <div className="simple-publish-modal-header">
+              <h3 className="simple-publish-modal-title">Submit to EIC</h3>
+              <button
+                onClick={cancelSendToEIC}
+                className="simple-publish-modal-close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="simple-publish-modal-content">
+              <p className="simple-publish-warning-text">
+                Are you sure you want to send "{formData.title}" to the Editor-in-Chief for review?
+              </p>
+              <p className="simple-publish-details">
+                Category: {formData.category || 'Uncategorized'}
+              </p>
+              <p className="simple-publish-note">
+                This will send the article to the EIC for final review and potential publication.
+              </p>
+            </div>
+            
+            <div className="simple-publish-modal-buttons">
+              <button
+                onClick={cancelSendToEIC}
+                disabled={sendToEICLoading}
+                className="simple-publish-modal-button cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSendToEIC}
+                disabled={sendToEICLoading}
+                className="simple-publish-modal-button publish"
+              >
+                {sendToEICLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="simple-publish-spinner"></div>
+                    Sending...
+                  </div>
+                ) : (
+                  'Submit to EIC'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Submit to Section Head Confirmation Modal */}
+      {showSubmitToSectionHeadModal && (
+        <div className="simple-publish-modal-overlay">
+          <div className="simple-publish-modal">
+            <div className="simple-publish-modal-header">
+              <h3 className="simple-publish-modal-title">Submit to Section Head</h3>
+              <button
+                onClick={cancelSubmitToSectionHead}
+                className="simple-publish-modal-close"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="simple-publish-modal-content">
+              <p className="simple-publish-warning-text">
+                Are you sure you want to submit "{formData.title}" to your Section Head for review?
+              </p>
+              <p className="simple-publish-details">
+                Category: {formData.category || 'Uncategorized'}
+              </p>
+              <p className="simple-publish-note">
+                This will send the article to your Section Head for review and feedback.
+              </p>
+            </div>
+            
+            <div className="simple-publish-modal-buttons">
+              <button
+                onClick={cancelSubmitToSectionHead}
+                disabled={submitToSectionHeadLoading}
+                className="simple-publish-modal-button cancel"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSubmitToSectionHead}
+                disabled={submitToSectionHeadLoading}
+                className="simple-publish-modal-button publish"
+              >
+                {submitToSectionHeadLoading ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="simple-publish-spinner"></div>
+                    Submitting...
+                  </div>
+                ) : (
+                  'Submit to Section Head'
+                )}
               </button>
             </div>
           </div>

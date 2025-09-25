@@ -8,7 +8,6 @@ import {
   PhotoIcon,
   UserGroupIcon,
   ChartBarIcon,
-  Cog6ToothIcon,
   ShieldCheckIcon,
   BellIcon,
   ClipboardDocumentListIcon,
@@ -32,10 +31,8 @@ const Sidebar = () => {
   const handleLogout = () => {
     // Clear auth state first
     logout();
-    // Use setTimeout to ensure the logout completes before navigation
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 100);
+    // Navigate to login page using React Router
+    navigate('/admin-portal', { replace: true });
   };
 
   // Define navigation items with permissions
@@ -93,12 +90,6 @@ const Sidebar = () => {
       href: '/analytics',
       icon: ChartBarIcon,
       permission: 'analytics:read',
-    },
-    {
-      name: 'Site Settings',
-      href: '/settings',
-      icon: Cog6ToothIcon,
-      permission: 'system:config', // Only visible to EIC and higher roles
     },
   ];
 

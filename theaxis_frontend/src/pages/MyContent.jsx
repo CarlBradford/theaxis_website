@@ -20,8 +20,10 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   ArrowUturnLeftIcon,
-  UserGroupIcon
 } from '@heroicons/react/24/outline';
+import { 
+  DocumentTextIcon as DocumentTextIconSolid,
+} from '@heroicons/react/24/solid';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/mycontent.css';
 import '../styles/filter-modal.css';
@@ -87,10 +89,12 @@ const MyContent = () => {
         status: activeFilter,
         category: selectedCategories.length === 1 ? selectedCategories[0] : 'all',
         sortBy: sortBy,
-        sortOrder: sortOrder
+        sortOrder: sortOrder,
+        publicationDateStart: dateRange.start,
+        publicationDateEnd: dateRange.end
       }, false); // Don't show loading on filter changes
     }
-  }, [user?.id, searchTerm, activeFilter, selectedCategories, sortBy, sortOrder]);
+  }, [user?.id, searchTerm, activeFilter, selectedCategories, sortBy, sortOrder, dateRange]);
 
   const fetchCategories = async () => {
     try {
@@ -118,7 +122,16 @@ const MyContent = () => {
         params.search = filters.search.trim();
       }
       if (filters.status && filters.status !== 'all') {
-        params.status = filters.status.toUpperCase();
+        // Map frontend status values to backend database values
+        const statusMap = {
+          'pending': 'IN_REVIEW',
+          'needs_revision': 'NEEDS_REVISION',
+          'approved': 'APPROVED',
+          'draft': 'DRAFT',
+          'published': 'PUBLISHED',
+          'archived': 'ARCHIVED'
+        };
+        params.status = statusMap[filters.status.toLowerCase()] || filters.status.toUpperCase();
       }
       if (filters.category && filters.category !== 'all') {
         params.category = filters.category;
@@ -128,6 +141,14 @@ const MyContent = () => {
       }
       if (filters.sortOrder) {
         params.sortOrder = filters.sortOrder;
+      }
+      
+      // Add date range parameters
+      if (filters.publicationDateStart) {
+        params.publicationDateStart = filters.publicationDateStart;
+      }
+      if (filters.publicationDateEnd) {
+        params.publicationDateEnd = filters.publicationDateEnd;
       }
       
       console.log('MyContent API params:', params);
@@ -149,7 +170,7 @@ const MyContent = () => {
         createdAt: article.createdAt,
         publishedAt: article.publishedAt,
         publicationDate: article.publicationDate,
-        excerpt: article.excerpt || article.title, // Use title as excerpt if no excerpt
+        excerpt: article.title, // Use title as excerpt
         categories: article.categories || [], // Use categories from backend
         tags: article.tags || [], // Use tags from backend
         featuredImage: article.featuredImage || null // Add featured image
@@ -531,9 +552,14 @@ const MyContent = () => {
       <div className="mycontent-content">
         {/* Header */}
         <div className="mycontent-header">
-          <div>
-            <h1 className="mycontent-title">Content Management</h1>
-            <p className="mycontent-subtitle">Create, edit, and manage your content</p>
+          <div className="flex items-center space-x-4">
+            <div>
+              <DocumentTextIconSolid className="h-8 w-8 text-black" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-black">Content Management</h1>
+              <p className="text-gray-600">Create, edit, and manage your content</p>
+            </div>
           </div>
           <div className="mycontent-header-controls">
             <div className="mycontent-search-container">
@@ -836,12 +862,12 @@ const MyContent = () => {
                       }
                     })()}
                     <div className="mycontent-article-icon" style={{ display: 'none' }}>
-                      <UserGroupIcon className="mycontent-group-icon" />
+                      <DocumentTextIcon className="mycontent-group-icon" />
                     </div>
                   </div>
                 ) : (
                   <div className="mycontent-article-icon">
-                    <UserGroupIcon className="mycontent-group-icon" />
+                    <DocumentTextIcon className="mycontent-group-icon" />
                   </div>
                 )}
                 
