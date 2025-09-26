@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { StarIcon, CalendarIcon, EyeIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+// Removed unused icons: StarIcon, CalendarIcon, EyeIcon, ArrowRightIcon
 import { articlesAPI } from '../../services/apiService';
 import MediaDisplay from '../../components/MediaDisplay';
 import './featured-articles-hero.css';
@@ -130,22 +130,21 @@ const FeaturedArticlesHero = () => {
     return (
       <section className="featured-articles-hero">
         <div className="featured-articles-hero-container">
-          <div className="featured-articles-hero-content">
-            <div className="featured-articles-hero-text">
-              <div className="featured-articles-hero-badge">
-                <StarIcon className="w-5 h-5" />
-                <span>Featured Stories</span>
-              </div>
-              <div className="featured-articles-hero-title">
-                <div className="skeleton-text skeleton-title"></div>
-              </div>
-              <div className="featured-articles-hero-description">
-                <div className="skeleton-text skeleton-description"></div>
-              </div>
-              <div className="featured-articles-hero-meta">
-                <div className="skeleton-text skeleton-meta"></div>
-              </div>
+        <div className="featured-articles-hero-content">
+          {/* Background Image */}
+          <div className="featured-articles-hero-bg-image skeleton-bg"></div>
+          
+          <div className="featured-articles-hero-text">
+            <div className="featured-articles-hero-category">
+              <div className="skeleton-text skeleton-category"></div>
             </div>
+            <div className="featured-articles-hero-title">
+              <div className="skeleton-text skeleton-title"></div>
+            </div>
+            <div className="featured-articles-hero-author">
+              <div className="skeleton-text skeleton-author"></div>
+            </div>
+          </div>
             <div className="featured-articles-hero-image">
               <div className="skeleton-image"></div>
             </div>
@@ -165,11 +164,20 @@ const FeaturedArticlesHero = () => {
     <section className="featured-articles-hero">
       <div className="featured-articles-hero-container">
         <div className="featured-articles-hero-content">
+          {/* Background Image */}
+          <div 
+            className="featured-articles-hero-bg-image"
+            style={{
+              backgroundImage: `url(${currentArticle.featuredImage})`
+            }}
+          ></div>
+          
           <div className="featured-articles-hero-text">
-            <div className="featured-articles-hero-badge">
-              <StarIcon className="w-5 h-5" />
-              <span>Featured Stories</span>
-            </div>
+            {currentArticle.categories.length > 0 && (
+              <div className="featured-articles-hero-category">
+                {currentArticle.categories[0].name}
+              </div>
+            )}
             
             <Link to={`/content/${currentArticle.slug || currentArticle.id}`} className="featured-articles-hero-link">
               <h1 className="featured-articles-hero-title">
@@ -191,6 +199,8 @@ const FeaturedArticlesHero = () => {
                         )}
                       </span>
                     )) || 'Unknown Author'}
+                    <span className="featured-articles-hero-author-date-separator"> • </span>
+                    <span className="featured-articles-hero-date">{formatDate(currentArticle.publicationDate)}</span>
                   </div>
                   {currentArticle.authors?.length > 0 && currentArticle.authors.some(author => author.roleDisplay) && (
                     <div className="featured-articles-hero-author-roles">
@@ -208,29 +218,21 @@ const FeaturedArticlesHero = () => {
               </div>
             </div>
             
-            <div className="featured-articles-hero-meta">
-              <div className="featured-articles-hero-meta-item">
-                <CalendarIcon className="w-4 h-4" />
-                <span>{formatDate(currentArticle.publicationDate)}</span>
-              </div>
-              <div className="featured-articles-hero-meta-item">
-                <EyeIcon className="w-4 h-4" />
-                <span>{currentArticle.viewCount} views</span>
-              </div>
-              {currentArticle.categories.length > 0 && (
-                <div className="featured-articles-hero-category">
-                  {currentArticle.categories[0].name}
+            {/* Carousel Controls */}
+            {featuredArticles.length > 1 && (
+              <div className="featured-articles-hero-controls">
+                <div className="featured-articles-hero-dots">
+                  {featuredArticles.map((_, index) => (
+                    <button
+                      key={index}
+                      className={`featured-articles-hero-dot ${index === currentSlide ? 'active' : ''}`}
+                      onClick={() => goToSlide(index)}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
                 </div>
-              )}
-            </div>
-            
-            <Link 
-              to={`/content/${currentArticle.slug || currentArticle.id}`}
-              className="featured-articles-hero-cta"
-            >
-              Read Full Story
-              <ArrowRightIcon className="w-4 h-4" />
-            </Link>
+              </div>
+            )}
           </div>
           
           <div className="featured-articles-hero-image">
@@ -247,22 +249,6 @@ const FeaturedArticlesHero = () => {
             </Link>
           </div>
         </div>
-        
-        {/* Carousel Controls */}
-        {featuredArticles.length > 1 && (
-          <div className="featured-articles-hero-controls">
-            <div className="featured-articles-hero-dots">
-              {featuredArticles.map((_, index) => (
-                <button
-                  key={index}
-                  className={`featured-articles-hero-dot ${index === currentSlide ? 'active' : ''}`}
-                  onClick={() => goToSlide(index)}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
       
       {/* Line Separator */}

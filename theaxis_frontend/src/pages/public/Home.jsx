@@ -3,6 +3,8 @@ import PublicHeader from '../../components/PublicHeader';
 import PublicFooter from '../../components/PublicFooter';
 import FeaturedArticlesHero from './FeaturedArticlesHero';
 import RecentStories from './RecentStories';
+import MostRead from './MostRead';
+import LatestByCategory from './LatestByCategory';
 import { colorPaletteUtils } from '../../config/colorPalette';
 import { useEffect } from 'react';
 import '../../styles/homepage-theme.css';
@@ -27,6 +29,12 @@ const Home = () => {
         
         {/* Recent Stories Section */}
         <RecentStories />
+        
+        {/* Most Read Section */}
+        <MostRead />
+        
+        {/* Latest by Category Section */}
+        <LatestByCategory />
         
         <div className="max-w-6xl mx-auto px-6 lg:px-8 w-full">
           {/* Additional homepage content can go here */}

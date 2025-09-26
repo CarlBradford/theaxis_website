@@ -1,63 +1,36 @@
 const { PrismaClient } = require('@prisma/client');
-
 const prisma = new PrismaClient();
 
 async function checkDatabase() {
   try {
-    console.log('Checking database connection...');
+    // Get all categories
+    const categories = await prisma.category.findMany();
+    console.log('Categories:', categories.length);
+    categories.forEach(cat => console.log('-', cat.name));
     
-    // Check if we can connect to the database
-    await prisma.$connect();
-    console.log('✅ Database connected successfully');
-    
-    // Check total articles
-    const totalArticles = await prisma.article.count();
-    console.log(`📊 Total articles in database: ${totalArticles}`);
-    
-    // Check published articles
-    const publishedArticles = await prisma.article.count({
-      where: { status: 'PUBLISHED' }
+    // Get all published articles
+    const articles = await prisma.article.findMany({
+      where: { status: 'published' },
+      include: { categories: true }
     });
-    console.log(`📰 Published articles: ${publishedArticles}`);
+    console.log('\nPublished articles:', articles.length);
     
-    // Check all article statuses
-    const statusCounts = await prisma.article.groupBy({
-      by: ['status'],
-      _count: {
-        status: true
-      }
-    });
-    
-    console.log('📈 Article status breakdown:');
-    statusCounts.forEach(status => {
-      console.log(`  ${status.status}: ${status._count.status}`);
-    });
-    
-    // Get a sample published article
-    if (publishedArticles > 0) {
-      const sampleArticle = await prisma.article.findFirst({
-        where: { status: 'PUBLISHED' },
-        select: {
-          id: true,
-          title: true,
-          status: true,
-          publishedAt: true,
-          author: {
-            select: {
-              firstName: true,
-              lastName: true
-            }
-          }
-        }
+    // Group articles by category
+    const categoryCounts = {};
+    articles.forEach(article => {
+      article.categories.forEach(cat => {
+        categoryCounts[cat.name] = (categoryCounts[cat.name] || 0) + 1;
       });
-      console.log('📄 Sample published article:', sampleArticle);
-    } else {
-      console.log('⚠️  No published articles found');
-    }
+    });
     
+    console.log('\nArticles per category:');
+    Object.entries(categoryCounts).forEach(([cat, count]) => {
+      console.log('-', cat + ':', count);
+    });
+    
+    await prisma.$disconnect();
   } catch (error) {
-    console.error('❌ Database error:', error);
-  } finally {
+    console.error('Error:', error);
     await prisma.$disconnect();
   }
 }

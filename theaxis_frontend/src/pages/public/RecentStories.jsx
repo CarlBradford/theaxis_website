@@ -216,6 +216,9 @@ const RecentStories = () => {
                    </div>
                  </div>
                 </Link>
+                
+                {/* Mobile Separator */}
+                <div className="recent-story-featured-mobile-separator"></div>
               </React.Fragment>
             )}
           </div>
@@ -281,6 +284,9 @@ const RecentStories = () => {
                 )}
                 {index > 0 && index < recentArticles.slice(1, 5).length - 1 && (
                   <div className="recent-story-card-separator"></div>
+                )}
+                {index === recentArticles.slice(1, 5).length - 1 && (
+                  <div className="recent-story-fifth-article-separator"></div>
                 )}
               </React.Fragment>
             ))}
