@@ -2102,7 +2102,7 @@ router.get(
   '/:id/like-status',
   [
     authenticateToken,
-    validateObjectId('id')
+    param('id').isString()
   ],
   asyncHandler(async (req, res) => {
     const { id } = req.params;
