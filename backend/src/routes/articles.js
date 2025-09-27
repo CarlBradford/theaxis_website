@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
 const { PrismaClient } = require('@prisma/client');
+const rateLimit = require('express-rate-limit');
 const {
   authenticateToken,
   optionalAuth,
@@ -23,6 +24,22 @@ const notificationService = NotificationService;
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// Rate limiter specifically for like/dislike actions
+const likeDislikeLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 10, // Maximum 10 like/dislike actions per minute per IP
+  message: {
+    error: 'Too many like/dislike requests. Please wait before trying again.',
+    retryAfter: 60,
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting in development if explicitly disabled
+    return process.env.NODE_ENV === 'development' && process.env.DISABLE_RATE_LIMIT === 'true';
+  },
+});
 
 const allowedStatuses = ['DRAFT', 'IN_REVIEW', 'NEEDS_REVISION', 'APPROVED', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'];
 
@@ -521,7 +538,7 @@ router.get(
           },
           skip,
           take: limit,
-        orderBy,
+          orderBy,
         }),
         prisma.article.count({ where }),
       ]);
@@ -1328,7 +1345,6 @@ router.get(
         title: true,
         slug: true,
         content: true,
-        excerpt: true,
         featuredImage: true,
         mediaCaption: true,
         publicationDate: true,
@@ -1991,6 +2007,7 @@ router.post(
 router.post(
   '/:id/like',
   [
+    likeDislikeLimiter, // Apply rate limiting
     optionalAuth,
     param('id').isString(),
     body('isLike').isBoolean().withMessage('isLike must be a boolean')
@@ -2016,7 +2033,22 @@ router.post(
     // For anonymous users, we'll use a simple approach - just update the counts
     // For authenticated users, we'll track their individual preferences
     if (!req.user) {
-      // Anonymous user - just update the article counts
+      // Anonymous user - check for recent activity from same IP
+      const recentActivity = await prisma.articleLikeHistory.findFirst({
+        where: {
+          articleId: id,
+          ipAddress: req.ip,
+          createdAt: {
+            gte: new Date(Date.now() - 5 * 60 * 1000) // 5 minutes ago
+          }
+        }
+      });
+
+      if (recentActivity) {
+        return sendErrorResponse(res, 429, 'Please wait before liking/disliking again');
+      }
+
+      // Anonymous user - just update the article counts and log IP
       await prisma.article.update({
         where: { id },
         data: {
@@ -2024,8 +2056,34 @@ router.post(
           dislikeCount: !isLike ? { increment: 1 } : undefined
         }
       });
+
+      // Log anonymous activity for spam prevention
+      await prisma.articleLikeHistory.create({
+        data: {
+          articleId: id,
+          userId: null,
+          isLike,
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent')
+        }
+      });
       
       return sendSuccessResponse(res, { isLike }, 'Like/dislike recorded');
+    }
+
+    // Check for recent activity (cooldown period) for authenticated users
+    const recentActivity = await prisma.articleLikeHistory.findFirst({
+      where: {
+        articleId: id,
+        userId: req.user.id,
+        likedAt: {
+          gte: new Date(Date.now() - 30 * 1000) // 30 seconds cooldown
+        }
+      }
+    });
+
+    if (recentActivity) {
+      return sendErrorResponse(res, 429, 'Please wait before liking/disliking again');
     }
 
     // Check if authenticated user already liked/disliked

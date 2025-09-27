@@ -17,6 +17,7 @@ const ArticleDetail = () => {
   const [isLiking, setIsLiking] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [dislikeCount, setDislikeCount] = useState(0);
+  const [lastLikeTime, setLastLikeTime] = useState(0);
 
   useEffect(() => {
     fetchArticle();
@@ -80,8 +81,16 @@ const ArticleDetail = () => {
   const handleLike = async (isLike) => {
     if (!article || isLiking) return;
     
+    // Frontend cooldown check (30 seconds)
+    const now = Date.now();
+    if (now - lastLikeTime < 30000) {
+      alert('Please wait before liking/disliking again');
+      return;
+    }
+    
     try {
       setIsLiking(true);
+      setLastLikeTime(now);
       await engagementAPI.likeArticle(article.id, isLike);
       
       // Update counts based on previous state
@@ -121,8 +130,17 @@ const ArticleDetail = () => {
       
     } catch (err) {
       console.error('Error liking article:', err);
-      // For anonymous users, we'll still allow liking/disliking
-      // The backend will handle anonymous users by just updating counts
+      
+      // Handle rate limiting and cooldown errors
+      if (err.response?.status === 429) {
+        alert(err.response.data?.message || 'Please wait before liking/disliking again');
+        return;
+      }
+      
+      // For other errors, show generic message
+      if (err.response?.status >= 400) {
+        alert('Unable to process your request. Please try again later.');
+      }
     } finally {
       setIsLiking(false);
     }
