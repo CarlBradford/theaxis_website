@@ -2074,6 +2074,56 @@ router.post(
 
 /**
  * @swagger
+ * /articles/{id}/like-status:
+ *   get:
+ *     summary: Get user's like status for article
+ *     tags: [Articles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: User's like status retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 isLike:
+ *                   type: boolean
+ *                   description: true for like, false for dislike, null if no interaction
+ */
+// Get user's like status for article
+router.get(
+  '/:id/like-status',
+  [
+    authenticateToken,
+    validateObjectId('id')
+  ],
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Check if user has liked/disliked this article
+    const likeHistory = await prisma.articleLikeHistory.findFirst({
+      where: {
+        articleId: id,
+        userId: userId
+      }
+    });
+
+    const isLike = likeHistory ? likeHistory.isLike : null;
+
+    sendSuccessResponse(res, { isLike }, 'Like status retrieved');
+  })
+);
+
+/**
+ * @swagger
  * /articles/{id}/analytics:
  *   get:
  *     summary: Get article analytics

@@ -69,9 +69,10 @@ const ArticleDetail = () => {
   const fetchUserLikeStatus = async () => {
     try {
       const response = await engagementAPI.getUserLikeStatus(article.id);
-      setUserLikeStatus(response.data.isLike);
+      setUserLikeStatus(response.data?.isLike || null);
     } catch (err) {
       console.error('Error fetching like status:', err);
+      // If user is not authenticated, set to null (no like/dislike)
       setUserLikeStatus(null);
     }
   };
@@ -120,6 +121,10 @@ const ArticleDetail = () => {
       
     } catch (err) {
       console.error('Error liking article:', err);
+      // If user is not authenticated, show a message or redirect to login
+      if (err.response?.status === 401) {
+        alert('Please log in to like/dislike articles');
+      }
     } finally {
       setIsLiking(false);
     }
