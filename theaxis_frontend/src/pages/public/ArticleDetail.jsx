@@ -72,7 +72,7 @@ const ArticleDetail = () => {
       setUserLikeStatus(response.data?.isLike || null);
     } catch (err) {
       console.error('Error fetching like status:', err);
-      // If user is not authenticated, set to null (no like/dislike)
+      // For anonymous users, set to null (no individual tracking)
       setUserLikeStatus(null);
     }
   };
@@ -121,10 +121,8 @@ const ArticleDetail = () => {
       
     } catch (err) {
       console.error('Error liking article:', err);
-      // If user is not authenticated, show a message or redirect to login
-      if (err.response?.status === 401) {
-        alert('Please log in to like/dislike articles');
-      }
+      // For anonymous users, we'll still allow liking/disliking
+      // The backend will handle anonymous users by just updating counts
     } finally {
       setIsLiking(false);
     }

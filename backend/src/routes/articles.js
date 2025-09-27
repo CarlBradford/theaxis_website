@@ -1987,7 +1987,7 @@ router.post(
 router.post(
   '/:id/like',
   [
-    authenticateToken,
+    optionalAuth,
     param('id').isString(),
     body('isLike').isBoolean().withMessage('isLike must be a boolean')
   ],
@@ -2009,7 +2009,22 @@ router.post(
       throw createNotFoundError('Article', id);
     }
 
-    // Check if user already liked/disliked
+    // For anonymous users, we'll use a simple approach - just update the counts
+    // For authenticated users, we'll track their individual preferences
+    if (!req.user) {
+      // Anonymous user - just update the article counts
+      await prisma.article.update({
+        where: { id },
+        data: {
+          likeCount: isLike ? { increment: 1 } : undefined,
+          dislikeCount: !isLike ? { increment: 1 } : undefined
+        }
+      });
+      
+      return sendSuccessResponse(res, { isLike }, 'Like/dislike recorded');
+    }
+
+    // Check if authenticated user already liked/disliked
     const existingLike = await prisma.articleLikeHistory.findUnique({
       where: {
         articleId_userId: {
@@ -2101,14 +2116,20 @@ router.post(
 router.get(
   '/:id/like-status',
   [
-    authenticateToken,
+    optionalAuth,
     param('id').isString()
   ],
   asyncHandler(async (req, res) => {
     const { id } = req.params;
+
+    // For anonymous users, we can't track individual preferences
+    if (!req.user) {
+      return sendSuccessResponse(res, { isLike: null }, 'Like status retrieved');
+    }
+
     const userId = req.user.id;
 
-    // Check if user has liked/disliked this article
+    // Check if authenticated user has liked/disliked this article
     const likeHistory = await prisma.articleLikeHistory.findFirst({
       where: {
         articleId: id,
