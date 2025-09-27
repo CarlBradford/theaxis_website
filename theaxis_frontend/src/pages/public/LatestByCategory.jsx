@@ -249,7 +249,6 @@ const LatestByCategory = () => {
           ))}
         </div>
       </div>
-      <div className="latest-by-category-main-separator"></div>
     </section>
   );
 };

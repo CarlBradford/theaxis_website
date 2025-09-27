@@ -248,6 +248,21 @@ export const commentsAPI = {
   }
 };
 
+// Engagement API (Likes/Dislikes)
+export const engagementAPI = {
+  // Like or dislike an article
+  likeArticle: async (articleId, isLike) => {
+    const response = await api.post(`/articles/${articleId}/like`, { isLike });
+    return response.data;
+  },
+
+  // Get user's like status for an article
+  getUserLikeStatus: async (articleId) => {
+    const response = await api.get(`/articles/${articleId}/like-status`);
+    return response.data;
+  }
+};
+
 // Tags API
 export const tagsAPI = {
   // Get all tags
@@ -458,6 +473,7 @@ export default {
   auth: authAPI,
   articles: articlesAPI,
   comments: commentsAPI,
+  engagement: engagementAPI,
   tags: tagsAPI,
   categories: categoriesAPI,
   editorialNotes: editorialNotesAPI,

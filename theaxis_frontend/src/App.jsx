@@ -6,12 +6,13 @@ import { NotificationProvider } from './components/NotificationBell';
 import Layout from './components/Layout';
 import { useGAInit, useAnalytics } from './hooks/useAnalytics';
 import Home from './pages/public/Home';
+import ArticleDetail from './pages/public/ArticleDetail';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Articles from './pages/Articles';
-import ArticleDetail from './pages/ArticleDetail';
+import AdminArticleDetail from './pages/ArticleDetail';
 import MyContent from './pages/MyContent';
 import CreateArticle from './pages/CreateArticle';
 import EditContent from './pages/EditContent';
@@ -56,6 +57,9 @@ function AppWithAnalytics() {
             <AnalyticsTracker />
             <div className="min-h-screen bg-gray-50">
             <Routes>
+              {/* Public Article Detail - Outside Layout */}
+              <Route path="content/:slug" element={<ArticleDetail />} />
+              
               <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="admin-portal" element={<Login />} />
@@ -72,7 +76,7 @@ function AppWithAnalytics() {
               } />
               
               <Route path="content" element={<Articles />} />
-              <Route path="content/:id" element={<ArticleDetail />} />
+              <Route path="content/:id" element={<AdminArticleDetail />} />
               
               {/* Article Management Routes */}
               <Route path="content/mycontent" element={
