@@ -198,6 +198,20 @@ export const articlesAPI = {
   updateFeaturedArticles: async (articleIds) => {
     const response = await api.put('/articles/featured', { articleIds });
     return response.data;
+  },
+
+  // Search articles across all columns
+  searchArticles: async (query, params = {}) => {
+    const response = await api.get('/articles/search', { 
+      params: { q: query, ...params } 
+    });
+    return response.data;
+  },
+
+  // Get suggested topics based on most common tags
+  getSuggestedTopics: async () => {
+    const response = await api.get('/articles/suggested-topics');
+    return response.data;
   }
 };
 
@@ -220,6 +234,12 @@ export const commentsAPI = {
   // Create new comment
   createComment: async (commentData) => {
     const response = await api.post('/comments', commentData);
+    return response.data;
+  },
+
+  // Create public comment (no auth required)
+  createPublicComment: async (commentData) => {
+    const response = await api.post('/comments/public', commentData);
     return response.data;
   },
 

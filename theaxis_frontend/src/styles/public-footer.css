@@ -82,6 +82,16 @@
   }
 }
 
+.public-footer-logo-link {
+  display: inline-block;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.public-footer-logo-link:hover {
+  transform: scale(1.05);
+}
+
 .public-footer-wordmark {
   height: 4rem; /* 64px on desktop, 48px on mobile */
   width: auto;

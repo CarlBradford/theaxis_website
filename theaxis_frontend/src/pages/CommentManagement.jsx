@@ -535,11 +535,13 @@ const CommentManagement = () => {
                     <div className="comment-author">
                       <UserIcon className="w-4 h-4" />
                       <span className="comment-author-name">
-                        {comment.guestName || `${comment.author.firstName} ${comment.author.lastName}`.trim() || comment.author.username}
+                        {comment.guestName || (comment.author ? `${comment.author.firstName} ${comment.author.lastName}`.trim() : 'Anonymous') || (comment.author?.username || 'Anonymous')}
                       </span>
-                      <span className="comment-author-username">@{comment.author.username}</span>
+                      {comment.author && (
+                        <span className="comment-author-username">@{comment.author.username}</span>
+                      )}
                       <span className="comment-author-email">
-                        {comment.guestEmail || comment.author.email}
+                        {comment.guestEmail || comment.author?.email || 'No email provided'}
                       </span>
                     </div>
                     <div className="comment-article">
@@ -591,7 +593,11 @@ const CommentManagement = () => {
                   <div className="comment-parent">
                     <div className="comment-parent-header">
                       <span>Reply to:</span>
-                      <span className="comment-parent-author">{comment.parentComment.author.name}</span>
+                      <span className="comment-parent-author">
+                        {comment.parentComment.guestName || 
+                         (comment.parentComment.author ? `${comment.parentComment.author.firstName} ${comment.parentComment.author.lastName}`.trim() : 'Anonymous') || 
+                         (comment.parentComment.author?.username || 'Anonymous')}
+                      </span>
                     </div>
                     <p className="comment-parent-content">{truncateText(comment.parentComment.content, 100)}</p>
                   </div>
@@ -608,8 +614,12 @@ const CommentManagement = () => {
                           <div key={reply.id} className="comment-reply">
                             <div className="comment-reply-author">
                               <UserIcon className="w-3 h-3" />
-                              <span>{reply.author.name}</span>
-                              <span className="comment-reply-email">{reply.author.email}</span>
+                              <span>
+                                {reply.guestName || (reply.author ? `${reply.author.firstName} ${reply.author.lastName}`.trim() : 'Anonymous') || (reply.author?.username || 'Anonymous')}
+                              </span>
+                              <span className="comment-reply-email">
+                                {reply.guestEmail || reply.author?.email || 'No email'}
+                              </span>
                               <span className="comment-reply-date">{formatDate(reply.createdAt)}</span>
                             </div>
                             <p>{reply.content}</p>

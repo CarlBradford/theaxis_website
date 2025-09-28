@@ -53,6 +53,111 @@ const profanityFilter = new ProfanityFilter();
 
 /**
  * @swagger
+ * /comments/public:
+ *   post:
+ *     summary: Create a public comment (no auth required)
+ *     tags: [Comments]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [articleId, content, name, email]
+ *             properties:
+ *               articleId:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       201:
+ *         description: Comment submitted
+ */
+router.post(
+  '/public',
+  [
+    body('articleId').isString().withMessage('articleId required'),
+    body('content').isLength({ min: 1 }).withMessage('content required'),
+    body('name').isString().withMessage('name is required'),
+    body('email').isEmail().withMessage('valid email is required'),
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return sendErrorResponse(res, 400, 'Validation failed', errors.array());
+
+    const { articleId, content, name, email } = req.body;
+
+    const article = await prisma.article.findUnique({ where: { id: articleId }, select: { id: true } });
+    if (!article) throw createNotFoundError('Article', articleId);
+
+    // Check for profanity and inappropriate content
+    let isApproved = true; // Most comments are approved immediately
+    let moderationReason = null;
+    
+    // Check for obvious spam patterns (still block these)
+    const spamPatterns = [
+      /(http|https|www\.)/gi, // URLs
+      /(click here|buy now|free money|make money|viagra|cialis)/gi, // Common spam phrases
+      /(bit\.ly|tinyurl|short\.link)/gi, // URL shorteners
+    ];
+    
+    const isObviousSpam = spamPatterns.some(pattern => pattern.test(content));
+    
+    if (isObviousSpam) {
+      return sendErrorResponse(res, 400, 'Comment blocked due to spam content', {
+        reason: 'Spam patterns detected',
+        flaggedWords: []
+      });
+    }
+    
+    // Check for profanity and inappropriate content
+    const profanityResult = profanityFilter.moderateComment(content);
+    
+    if (profanityResult.shouldBlock) {
+      isApproved = false; // Send to pending for moderation
+      moderationReason = profanityResult.moderationReason;
+    }
+
+    // Create comment data for anonymous user
+    const commentData = {
+      articleId,
+      content: content, // Store original content, let moderators decide
+      isPublic: true,
+      isApproved,
+      authorId: null, // No authenticated user
+      guestName: name,
+      guestEmail: email,
+      moderationReason: moderationReason,
+    };
+
+    const created = await prisma.comment.create({
+      data: commentData,
+      select: { id: true, isApproved: true, content: true, createdAt: true, moderationReason: true },
+    });
+
+    // Send notification to article author when comment is posted
+    try {
+      await notificationService.notifyArticleAuthorNewComment(articleId, created.id);
+    } catch (notificationError) {
+      // Log notification error but don't fail the request
+      console.error('Notification error during comment creation:', notificationError);
+    }
+
+    const message = isApproved 
+      ? 'Comment posted successfully and is now visible to the public'
+      : 'Comment submitted successfully and is pending approval due to flagged content';
+      
+    sendSuccessResponse(res, created, message, 201);
+  })
+);
+
+/**
+ * @swagger
  * /comments:
  *   post:
  *     summary: Create a comment (awaits approval)
@@ -171,10 +276,17 @@ router.post(
  */
 router.get(
   '/',
-  [optionalAuth, query('articleId').optional().isString(), query('includePending').optional().isBoolean()],
+  [
+    optionalAuth, 
+    query('articleId').optional().isString(), 
+    query('includePending').optional().isBoolean(),
+    query('page').optional().isInt({ min: 1 }).toInt(),
+    query('limit').optional().isInt({ min: 1, max: 50 }).toInt()
+  ],
   asyncHandler(async (req, res) => {
-    const { articleId } = req.query;
+    const { articleId, page = 1, limit = 3 } = req.query;
     const includePending = req.query.includePending === 'true' || req.query.includePending === true;
+    const skip = (page - 1) * limit;
 
     const where = {};
     if (articleId) where.articleId = articleId;
@@ -185,13 +297,47 @@ router.get(
       where.isPublic = true;
     }
 
+    // Get total count for pagination
+    const totalCount = await prisma.comment.count({ where });
+    const totalPages = Math.ceil(totalCount / limit);
+
     const items = await prisma.comment.findMany({
       where,
-      select: { id: true, content: true, isPublic: true, isApproved: true, authorId: true, articleId: true, createdAt: true },
-      orderBy: { createdAt: 'asc' },
+      select: { 
+        id: true, 
+        content: true, 
+        isPublic: true, 
+        isApproved: true, 
+        authorId: true, 
+        articleId: true, 
+        createdAt: true,
+        guestName: true,
+        guestEmail: true,
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            username: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
     });
 
-    sendSuccessResponse(res, { items }, 'Comments retrieved');
+    sendSuccessResponse(res, { 
+      items, 
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
+    }, 'Comments retrieved');
   })
 );
 
@@ -451,6 +597,8 @@ router.get(
     if (search) {
       where.OR = [
         { content: { contains: search, mode: 'insensitive' } },
+        { guestName: { contains: search, mode: 'insensitive' } },
+        { guestEmail: { contains: search, mode: 'insensitive' } },
         { author: { 
           OR: [
             { firstName: { contains: search, mode: 'insensitive' } },
@@ -522,6 +670,7 @@ router.get(
             select: {
               id: true,
               content: true,
+              guestName: true,
               author: {
                 select: {
                   firstName: true,
@@ -537,11 +686,14 @@ router.get(
               content: true,
               isApproved: true,
               createdAt: true,
+              guestName: true,
+              guestEmail: true,
               author: {
                 select: {
                   firstName: true,
                   lastName: true,
-                  username: true
+                  username: true,
+                  email: true
                 }
               }
             },
@@ -567,7 +719,7 @@ router.get(
       guestEmail: comment.guestEmail,
       createdAt: comment.createdAt,
       updatedAt: comment.updatedAt,
-      author: {
+      author: comment.author ? {
         id: comment.author.id,
         firstName: comment.author.firstName,
         lastName: comment.author.lastName,
@@ -575,7 +727,7 @@ router.get(
         username: comment.author.username,
         email: comment.author.email,
         role: comment.author.role
-      },
+      } : null,
       article: {
         id: comment.article.id,
         title: comment.article.title,
@@ -586,14 +738,32 @@ router.get(
       parentComment: comment.parentComment ? {
         id: comment.parentComment.id,
         content: comment.parentComment.content,
-        author: comment.parentComment.author
+        author: comment.parentComment.author ? {
+          firstName: comment.parentComment.author.firstName,
+          lastName: comment.parentComment.author.lastName,
+          username: comment.parentComment.author.username,
+          name: `${comment.parentComment.author.firstName} ${comment.parentComment.author.lastName}`
+        } : {
+          name: comment.parentComment.guestName || 'Anonymous'
+        }
       } : null,
       replies: comment.replies.map(reply => ({
         id: reply.id,
         content: reply.content,
         isApproved: reply.isApproved,
         createdAt: reply.createdAt,
-        author: reply.author
+        guestName: reply.guestName,
+        guestEmail: reply.guestEmail,
+        author: reply.author ? {
+          firstName: reply.author.firstName,
+          lastName: reply.author.lastName,
+          username: reply.author.username,
+          email: reply.author.email,
+          name: `${reply.author.firstName} ${reply.author.lastName}`
+        } : {
+          name: reply.guestName || 'Anonymous',
+          email: reply.guestEmail || 'No email'
+        }
       })),
       replyCount: comment.replies.length
     }));

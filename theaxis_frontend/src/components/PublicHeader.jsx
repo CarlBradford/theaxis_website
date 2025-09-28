@@ -1,12 +1,13 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useState, useEffect } from 'react';
 import theaxisLogo from '../assets/theaxis_wordmark.png';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import '../styles/public-header.css';
 
 const PublicHeader = () => {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -72,7 +73,10 @@ const PublicHeader = () => {
             </div>
 
             {/* Mobile Search Button */}
-            <button className="public-header-mobile-search-button">
+            <button 
+              className="public-header-mobile-search-button"
+              onClick={() => navigate('/search')}
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -110,11 +114,15 @@ const PublicHeader = () => {
               <Link to="/annual-editions" className="public-header-category-link" onClick={closeMobileMenu}>
                 Annual Editions
               </Link>
-              <div className="public-header-search">
+              <button 
+                className="public-header-search"
+                onClick={() => navigate('/search')}
+                title="Search"
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-              </div>
+              </button>
             </nav>
           </div>
 
@@ -128,26 +136,16 @@ const PublicHeader = () => {
           <div className={`public-header-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
             {/* AXIS Wordmark */}
             <div className="public-header-mobile-wordmark">
-              <img 
-                src={theaxisLogo} 
-                alt="The AXIS" 
-                className="public-header-mobile-wordmark-image"
-              />
-            </div>
-
-            {/* Search Card */}
-            <div className="public-header-mobile-search-card">
-              <div className="public-header-mobile-search-input-container">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input 
-                  type="text" 
-                  placeholder="Search articles..." 
-                  className="public-header-mobile-search-input"
+              <Link to="/" onClick={closeMobileMenu}>
+                <img 
+                  src={theaxisLogo} 
+                  alt="The AXIS" 
+                  className="public-header-mobile-wordmark-image"
                 />
-              </div>
+              </Link>
             </div>
+            <div className="public-header-mobile-separator"></div>
+
 
             {/* Navigation Categories */}
             <nav className="public-header-mobile-nav">

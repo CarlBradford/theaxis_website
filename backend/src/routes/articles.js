@@ -1,7 +1,6 @@
 const express = require('express');
 const { body, param, query, validationResult } = require('express-validator');
 const { PrismaClient } = require('@prisma/client');
-const rateLimit = require('express-rate-limit');
 const {
   authenticateToken,
   optionalAuth,
@@ -24,22 +23,6 @@ const notificationService = NotificationService;
 
 const router = express.Router();
 const prisma = new PrismaClient();
-
-// Rate limiter specifically for like/dislike actions
-const likeDislikeLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 10, // Maximum 10 like/dislike actions per minute per IP
-  message: {
-    error: 'Too many like/dislike requests. Please wait before trying again.',
-    retryAfter: 60,
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => {
-    // Skip rate limiting in development if explicitly disabled
-    return process.env.NODE_ENV === 'development' && process.env.DISABLE_RATE_LIMIT === 'true';
-  },
-});
 
 const allowedStatuses = ['DRAFT', 'IN_REVIEW', 'NEEDS_REVISION', 'APPROVED', 'SCHEDULED', 'PUBLISHED', 'ARCHIVED'];
 
@@ -345,9 +328,21 @@ router.post(
  *         schema: { type: string }
  *         description: Filter by author ID
  *       - in: query
+ *         name: authorIds
+ *         schema: { type: string }
+ *         description: Filter by multiple author IDs (comma-separated)
+ *       - in: query
  *         name: category
  *         schema: { type: string }
  *         description: Filter by category name or slug
+ *       - in: query
+ *         name: tags
+ *         schema: { type: string }
+ *         description: Filter by tag names (comma-separated)
+ *       - in: query
+ *         name: excludeId
+ *         schema: { type: string }
+ *         description: Exclude article with this ID from results
  *       - in: query
  *         name: sortBy
  *         schema: { type: string, enum: [createdAt, updatedAt, publishedAt, title, viewCount, author], default: createdAt }
@@ -378,7 +373,10 @@ router.get(
     query('status').optional().isIn(allowedStatuses),
     query('search').optional().isString(),
     query('authorId').optional().isString(),
+    query('authorIds').optional().isString(),
     query('category').optional().isString(),
+    query('tags').optional().isString(),
+    query('excludeId').optional().isString(),
     query('sortBy').optional().isIn(['createdAt', 'updatedAt', 'publishedAt', 'publicationDate', 'title', 'viewCount', 'author']),
     query('sortOrder').optional().isIn(['asc', 'desc']),
     query('publicationDateStart').optional().isISO8601(),
@@ -388,7 +386,7 @@ router.get(
       const page = req.query.page || 1;
       const limit = req.query.limit || 20;
       const skip = (page - 1) * limit;
-    const { status, search, authorId, category, sortBy = 'createdAt', sortOrder = 'desc', publicationDateStart, publicationDateEnd } = req.query;
+    const { status, search, authorId, authorIds, category, tags, excludeId, sortBy = 'createdAt', sortOrder = 'desc', publicationDateStart, publicationDateEnd } = req.query;
 
       const where = {};
     
@@ -396,15 +394,32 @@ router.get(
       if (search) {
         where.OR = [
           { title: { contains: search, mode: 'insensitive' } },
-        { author: { 
-          OR: [
-            { firstName: { contains: search, mode: 'insensitive' } },
-            { lastName: { contains: search, mode: 'insensitive' } },
-            { username: { contains: search, mode: 'insensitive' } }
-          ]
-        }}
-      ];
-    }
+          { content: { contains: search, mode: 'insensitive' } },
+          { author: { 
+            OR: [
+              { firstName: { contains: search, mode: 'insensitive' } },
+              { lastName: { contains: search, mode: 'insensitive' } },
+              { username: { contains: search, mode: 'insensitive' } }
+            ]
+          }},
+          { categories: {
+            some: {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { slug: { contains: search, mode: 'insensitive' } }
+              ]
+            }
+          }},
+          { tags: {
+            some: {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { slug: { contains: search, mode: 'insensitive' } }
+              ]
+            }
+          }}
+        ];
+      }
     
     // Status filter
       if (status) {
@@ -422,18 +437,101 @@ router.get(
       }
     
     // Author filter
-      if (authorId) where.authorId = authorId;
+      if (authorId) {
+        where.authorId = authorId;
+      } else if (authorIds) {
+        // Handle multiple author IDs (comma-separated)
+        const authorIdList = authorIds.split(',').map(id => id.trim()).filter(id => id);
+        if (authorIdList.length > 0) {
+          const authorFilter = {
+            OR: [
+              { authorId: { in: authorIdList } },
+              { 
+                articleAuthors: {
+                  some: {
+                    userId: { in: authorIdList }
+                  }
+                }
+              }
+            ]
+          };
+          
+          // If there's already an OR condition from search, combine them with AND
+          if (where.OR) {
+            where.AND = [
+              { OR: where.OR },
+              authorFilter
+            ];
+            delete where.OR;
+          } else {
+            where.OR = authorFilter.OR;
+          }
+        }
+      }
     
     // Category filter
     if (category && category !== 'all') {
-      where.categories = {
-        some: {
-          OR: [
-            { name: { contains: category, mode: 'insensitive' } },
-            { slug: { contains: category, mode: 'insensitive' } }
-          ]
-        }
-      };
+      // Support both single category and multiple categories (comma-separated)
+      const categoryFilters = category.split(',').map(cat => cat.trim()).filter(cat => cat);
+      
+      if (categoryFilters.length === 1) {
+        // Single category filter
+        where.categories = {
+          some: {
+            OR: [
+              { name: { contains: categoryFilters[0], mode: 'insensitive' } },
+              { slug: { contains: categoryFilters[0], mode: 'insensitive' } }
+            ]
+          }
+        };
+      } else if (categoryFilters.length > 1) {
+        // Multiple categories filter - article must belong to at least one of the specified categories
+        where.categories = {
+          some: {
+            OR: categoryFilters.map(cat => ({
+              OR: [
+                { name: { contains: cat, mode: 'insensitive' } },
+                { slug: { contains: cat, mode: 'insensitive' } }
+              ]
+            }))
+          }
+        };
+      }
+    }
+    
+    // Tags filter
+    if (tags && tags !== 'all') {
+      // Support both single tag and multiple tags (comma-separated)
+      const tagFilters = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      
+      if (tagFilters.length === 1) {
+        // Single tag filter
+        where.tags = {
+          some: {
+            OR: [
+              { name: { contains: tagFilters[0], mode: 'insensitive' } },
+              { slug: { contains: tagFilters[0], mode: 'insensitive' } }
+            ]
+          }
+        };
+      } else if (tagFilters.length > 1) {
+        // Multiple tags filter - article must have at least one of the specified tags
+        where.tags = {
+          some: {
+            OR: tagFilters.map(tag => ({
+              OR: [
+                { name: { contains: tag, mode: 'insensitive' } },
+                { slug: { contains: tag, mode: 'insensitive' } }
+              ]
+            }))
+          }
+        };
+      }
+    }
+    
+    // Exclude ID filter
+    if (excludeId) {
+      where.id = { not: excludeId };
     }
     
     // Publication date range filter
@@ -823,12 +921,29 @@ router.get(
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
         { author: { 
           OR: [
             { firstName: { contains: search, mode: 'insensitive' } },
             { lastName: { contains: search, mode: 'insensitive' } },
             { username: { contains: search, mode: 'insensitive' } }
           ]
+        }},
+        { categories: {
+          some: {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { slug: { contains: search, mode: 'insensitive' } }
+            ]
+          }
+        }},
+        { tags: {
+          some: {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { slug: { contains: search, mode: 'insensitive' } }
+            ]
+          }
         }}
       ];
     }
@@ -1314,6 +1429,296 @@ router.put(
 
 /**
  * @swagger
+ * /articles/search:
+ *   get:
+ *     summary: Search articles across all columns
+ *     tags: [Articles]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema: { type: string }
+ *         description: Search query
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *     responses:
+ *       200:
+ *         description: Search results retrieved
+ */
+// Search articles across all columns
+router.get(
+  '/search',
+  [
+    query('q').isString().notEmpty().withMessage('Search query is required'),
+    query('page').optional().isInt({ min: 1 }).toInt(),
+    query('limit').optional().isInt({ min: 1, max: 100 }).toInt()
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw createValidationError(errors.array());
+    }
+
+    const { q: searchQuery, page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Split search query into individual words for better multi-word search
+    const searchWords = searchQuery.trim().split(/\s+/).filter(word => word.length > 0);
+    
+    // Build comprehensive search query
+    const where = {
+      AND: [
+        { status: 'PUBLISHED' }, // Only search published articles
+        {
+          OR: [
+            // Search in article fields - exact phrase match
+            { title: { contains: searchQuery, mode: 'insensitive' } },
+            { content: { contains: searchQuery, mode: 'insensitive' } },
+            { slug: { contains: searchQuery, mode: 'insensitive' } },
+            { mediaCaption: { contains: searchQuery, mode: 'insensitive' } },
+            
+            // Search in article fields - individual word matches
+            ...searchWords.map(word => ({ title: { contains: word, mode: 'insensitive' } })),
+            ...searchWords.map(word => ({ content: { contains: word, mode: 'insensitive' } })),
+            ...searchWords.map(word => ({ slug: { contains: word, mode: 'insensitive' } })),
+            ...searchWords.map(word => ({ mediaCaption: { contains: word, mode: 'insensitive' } })),
+            
+            // Search in author fields - exact phrase match
+            {
+              author: {
+                OR: [
+                  { firstName: { contains: searchQuery, mode: 'insensitive' } },
+                  { lastName: { contains: searchQuery, mode: 'insensitive' } },
+                  { username: { contains: searchQuery, mode: 'insensitive' } },
+                  { email: { contains: searchQuery, mode: 'insensitive' } }
+                ]
+              }
+            },
+            
+            // Search in author fields - individual word matches
+            ...searchWords.map(word => ({
+              author: {
+                OR: [
+                  { firstName: { contains: word, mode: 'insensitive' } },
+                  { lastName: { contains: word, mode: 'insensitive' } },
+                  { username: { contains: word, mode: 'insensitive' } },
+                  { email: { contains: word, mode: 'insensitive' } }
+                ]
+              }
+            })),
+            
+            // Search in co-authors - exact phrase match
+            {
+              articleAuthors: {
+                some: {
+                  user: {
+                    OR: [
+                      { firstName: { contains: searchQuery, mode: 'insensitive' } },
+                      { lastName: { contains: searchQuery, mode: 'insensitive' } },
+                      { username: { contains: searchQuery, mode: 'insensitive' } },
+                      { email: { contains: searchQuery, mode: 'insensitive' } }
+                    ]
+                  }
+                }
+              }
+            },
+            
+            // Search in co-authors - individual word matches
+            ...searchWords.map(word => ({
+              articleAuthors: {
+                some: {
+                  user: {
+                    OR: [
+                      { firstName: { contains: word, mode: 'insensitive' } },
+                      { lastName: { contains: word, mode: 'insensitive' } },
+                      { username: { contains: word, mode: 'insensitive' } },
+                      { email: { contains: word, mode: 'insensitive' } }
+                    ]
+                  }
+                }
+              }
+            })),
+            
+            // Search in categories - exact phrase match
+            {
+              categories: {
+                some: {
+                  OR: [
+                    { name: { contains: searchQuery, mode: 'insensitive' } },
+                    { slug: { contains: searchQuery, mode: 'insensitive' } },
+                    { description: { contains: searchQuery, mode: 'insensitive' } }
+                  ]
+                }
+              }
+            },
+            
+            // Search in categories - individual word matches
+            ...searchWords.map(word => ({
+              categories: {
+                some: {
+                  OR: [
+                    { name: { contains: word, mode: 'insensitive' } },
+                    { slug: { contains: word, mode: 'insensitive' } },
+                    { description: { contains: word, mode: 'insensitive' } }
+                  ]
+                }
+              }
+            })),
+            
+            // Search in tags - exact phrase match
+            {
+              tags: {
+                some: {
+                  OR: [
+                    { name: { contains: searchQuery, mode: 'insensitive' } },
+                    { slug: { contains: searchQuery, mode: 'insensitive' } },
+                    { description: { contains: searchQuery, mode: 'insensitive' } }
+                  ]
+                }
+              }
+            },
+            
+            // Search in tags - individual word matches
+            ...searchWords.map(word => ({
+              tags: {
+                some: {
+                  OR: [
+                    { name: { contains: word, mode: 'insensitive' } },
+                    { slug: { contains: word, mode: 'insensitive' } },
+                    { description: { contains: word, mode: 'insensitive' } }
+                  ]
+                }
+              }
+            }))
+          ]
+        }
+      ]
+    };
+
+    const [articles, totalCount] = await Promise.all([
+      prisma.article.findMany({
+        where,
+        include: {
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true,
+              profileImage: true
+            }
+          },
+          articleAuthors: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  username: true,
+                  profileImage: true
+                }
+              }
+            }
+          },
+          categories: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              description: true
+            }
+          },
+          tags: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              color: true
+            }
+          }
+        },
+        orderBy: [
+          { publicationDate: 'desc' },
+          { createdAt: 'desc' }
+        ],
+        skip,
+        take: limit
+      }),
+      prisma.article.count({ where })
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    sendSuccessResponse(res, {
+      items: articles,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1
+      }
+    }, 'Search results retrieved');
+  })
+);
+
+/**
+ * @swagger
+ * /articles/suggested-topics:
+ *   get:
+ *     summary: Get suggested topics based on most common tags
+ *     tags: [Articles]
+ *     responses:
+ *       200:
+ *         description: Suggested topics retrieved
+ */
+// Get suggested topics based on most common tags
+router.get(
+  '/suggested-topics',
+  asyncHandler(async (req, res) => {
+    // Get the most common tags from published articles
+    const tagCounts = await prisma.tag.findMany({
+      where: {
+        articles: {
+          some: {
+            status: 'PUBLISHED'
+          }
+        }
+      },
+      include: {
+        _count: {
+          select: {
+            articles: {
+              where: {
+                status: 'PUBLISHED'
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        articles: {
+          _count: 'desc'
+        }
+      },
+      take: 10 // Get top 10 most common tags
+    });
+
+    // Extract tag names
+    const topics = tagCounts.map(tag => tag.name);
+
+    sendSuccessResponse(res, { topics }, 'Suggested topics retrieved');
+  })
+);
+
+/**
+ * @swagger
  * /articles/{idOrSlug}:
  *   get:
  *     summary: Get article by id or slug
@@ -1379,7 +1784,9 @@ router.get(
                 lastName: true,
                 username: true
               }
-            }
+            },
+            role: true,
+            order: true
           }
         },
         author: {
@@ -1477,7 +1884,16 @@ router.put(
     }
 
     const { id } = req.params;
-    const existing = await prisma.article.findUnique({ where: { id }, select: { id: true, title: true, status: true } });
+    const existing = await prisma.article.findUnique({ 
+      where: { id }, 
+      select: { 
+        id: true, 
+        title: true, 
+        status: true, 
+        publicationDate: true,
+        publishedAt: true
+      } 
+    });
     if (!existing) throw createNotFoundError('Article', id);
 
     const { 
@@ -1496,9 +1912,17 @@ router.put(
       content, 
       featuredImage, 
       mediaCaption,
-      publicationDate: publicationDate ? new Date(publicationDate) : undefined,
       readingTime: content ? calculateReadTime(content) : undefined, // Calculate read time if content is updated
     };
+
+    // Only update publicationDate if the article is not published
+    // For published articles, preserve the original publication date
+    if (publicationDate && existing.status !== 'PUBLISHED') {
+      updateData.publicationDate = new Date(publicationDate);
+      console.log(`Updating publication date for article ${id} (status: ${existing.status})`);
+    } else if (publicationDate && existing.status === 'PUBLISHED') {
+      console.log(`Preserving original publication date for published article ${id} (original: ${existing.publicationDate})`);
+    }
 
     // Handle slug update if title changed
     if (title) {
@@ -2007,7 +2431,6 @@ router.post(
 router.post(
   '/:id/like',
   [
-    likeDislikeLimiter, // Apply rate limiting
     optionalAuth,
     param('id').isString(),
     body('isLike').isBoolean().withMessage('isLike must be a boolean')
@@ -2033,22 +2456,7 @@ router.post(
     // For anonymous users, we'll use a simple approach - just update the counts
     // For authenticated users, we'll track their individual preferences
     if (!req.user) {
-      // Anonymous user - check for recent activity from same IP
-      const recentActivity = await prisma.articleLikeHistory.findFirst({
-        where: {
-          articleId: id,
-          ipAddress: req.ip,
-          createdAt: {
-            gte: new Date(Date.now() - 5 * 60 * 1000) // 5 minutes ago
-          }
-        }
-      });
-
-      if (recentActivity) {
-        return sendErrorResponse(res, 429, 'Please wait before liking/disliking again');
-      }
-
-      // Anonymous user - just update the article counts and log IP
+      // Anonymous user - just update the article counts
       await prisma.article.update({
         where: { id },
         data: {
@@ -2056,34 +2464,8 @@ router.post(
           dislikeCount: !isLike ? { increment: 1 } : undefined
         }
       });
-
-      // Log anonymous activity for spam prevention
-      await prisma.articleLikeHistory.create({
-        data: {
-          articleId: id,
-          userId: null,
-          isLike,
-          ipAddress: req.ip,
-          userAgent: req.get('User-Agent')
-        }
-      });
       
       return sendSuccessResponse(res, { isLike }, 'Like/dislike recorded');
-    }
-
-    // Check for recent activity (cooldown period) for authenticated users
-    const recentActivity = await prisma.articleLikeHistory.findFirst({
-      where: {
-        articleId: id,
-        userId: req.user.id,
-        likedAt: {
-          gte: new Date(Date.now() - 30 * 1000) // 30 seconds cooldown
-        }
-      }
-    });
-
-    if (recentActivity) {
-      return sendErrorResponse(res, 429, 'Please wait before liking/disliking again');
     }
 
     // Check if authenticated user already liked/disliked
@@ -2261,6 +2643,5 @@ router.get(
     sendSuccessResponse(res, analytics, 'Article analytics retrieved');
   })
 );
-
 
 module.exports = router;

@@ -53,6 +53,8 @@ const MyContent = () => {
   const [articleToDelete, setArticleToDelete] = useState(null);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [articleToRestore, setArticleToRestore] = useState(null);
+  const [stats, setStats] = useState({});
+  const [statsLoading, setStatsLoading] = useState(true);
   const { user } = useAuth();
 
   // Notification modal helper functions
@@ -73,28 +75,42 @@ const MyContent = () => {
   console.log('Loading:', loading);
   console.log('Error:', error);
 
-  // Fetch user's articles and categories when component mounts
+  // Fetch user's articles, categories, and stats when component mounts
   useEffect(() => {
     if (user?.id) {
       fetchMyContent({}, true); // Show loading on initial load
       fetchCategories();
+      fetchStats();
     }
   }, [user?.id]);
 
   // Apply filters and reload articles
   useEffect(() => {
     if (user?.id) {
+      // Convert category IDs to category slugs for backend filtering
+      let categoryParam = 'all';
+      if (selectedCategories.length === 1) {
+        const categorySlug = categories.find(cat => cat.id === selectedCategories[0])?.slug;
+        categoryParam = categorySlug || 'all';
+      } else if (selectedCategories.length > 1) {
+        // Multiple categories - send comma-separated slugs
+        const categorySlugs = selectedCategories
+          .map(catId => categories.find(cat => cat.id === catId)?.slug)
+          .filter(slug => slug);
+        categoryParam = categorySlugs.join(',');
+      }
+      
       fetchMyContent({
         search: searchTerm,
         status: activeFilter,
-        category: selectedCategories.length === 1 ? selectedCategories[0] : 'all',
+        category: categoryParam,
         sortBy: sortBy,
         sortOrder: sortOrder,
         publicationDateStart: dateRange.start,
         publicationDateEnd: dateRange.end
       }, false); // Don't show loading on filter changes
     }
-  }, [user?.id, searchTerm, activeFilter, selectedCategories, sortBy, sortOrder, dateRange]);
+  }, [user?.id, searchTerm, activeFilter, selectedCategories, sortBy, sortOrder, dateRange, categories]);
 
   const fetchCategories = async () => {
     try {
@@ -102,6 +118,22 @@ const MyContent = () => {
       setCategories(response.data?.items || []);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      setStatsLoading(true);
+      const response = await articlesAPI.getArticleStats({
+        authorId: user?.id
+      });
+      console.log('Fetched stats:', response);
+      setStats(response.data || {});
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+      setStats({});
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -152,6 +184,9 @@ const MyContent = () => {
       }
       
       console.log('MyContent API params:', params);
+      console.log('Selected categories:', selectedCategories);
+      console.log('Available categories:', categories);
+      console.log('Category param being sent:', params.category);
       const response = await articlesAPI.getMyContent(params);
       console.log('Fetched articles response:', response);
       console.log('Sample article with categories:', response.data?.items?.[0]);
@@ -427,29 +462,29 @@ const MyContent = () => {
   };
 
   const getFilterCount = (status) => {
-    // For now, return count from filteredArticles since we're using database filtering
-    // In the future, we could add a separate API call for filter counts
-    if (status === 'all') {
-      return filteredArticles.length;
+    // Use stats data for consistent counts that don't change with filters
+    if (statsLoading) {
+      return '...';
     }
     
-    return filteredArticles.filter(article => {
-      const articleStatus = article.status.toLowerCase();
-      const filterStatus = status.toLowerCase();
-      
-      // Map frontend filter names to backend status values
-      const statusMap = {
-        'published': 'published',
-        'draft': 'draft', 
-        'pending': 'in_review',
-        'approved': 'approved',
-        'needs_revision': 'needs_revision',
-        'rejected': 'needs_revision',
-        'archived': 'archived'
-      };
-      
-      return articleStatus === (statusMap[filterStatus] || filterStatus);
-    }).length;
+    switch (status) {
+      case 'all':
+        return stats.totalContent || 0;
+      case 'published':
+        return stats.published || 0;
+      case 'draft':
+        return stats.drafts || 0;
+      case 'pending':
+        return stats.inReview || 0;
+      case 'approved':
+        return stats.approved || 0;
+      case 'needs_revision':
+        return stats.needsRevision || 0;
+      case 'archived':
+        return stats.archived || 0;
+      default:
+        return 0;
+    }
   };
 
   const getStatusIcon = (status) => {
@@ -566,7 +601,7 @@ const MyContent = () => {
               <MagnifyingGlassIcon className="mycontent-search-icon" />
               <input 
                 type="text" 
-                placeholder="Search content, titles, or categories..." 
+                placeholder="Search titles, content, authors, categories, or tags..." 
                 className="mycontent-search-input"
                 value={searchTerm}
                 onChange={handleSearchChange}

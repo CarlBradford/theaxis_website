@@ -47,12 +47,22 @@ const ArticlePreviewModal = ({ isOpen, onClose, articleData }) => {
               <div className="article-preview-meta-item">
                 <UserIcon className="article-preview-meta-icon" />
                 <span className="article-preview-meta-text">
-                  {articleData.articleAuthors && articleData.articleAuthors.length > 0 
-                    ? articleData.articleAuthors.map(authorData => `${authorData.user.firstName || ''} ${authorData.user.lastName || ''}`.trim() || authorData.user.username || 'Unknown Author').join(', ')
-                    : articleData.author 
-                      ? `${articleData.author.firstName || ''} ${articleData.author.lastName || ''}`.trim() || articleData.author.username || 'Unknown Author'
-                      : 'No authors'
-                  }
+                  {(() => {
+                    // Handle both data structures: authors array (from MyContent) and articleAuthors (from direct API)
+                    if (articleData.authors && articleData.authors.length > 0) {
+                      return articleData.authors.map(author => author.name || 'Unknown Author').join(', ');
+                    } else if (articleData.articleAuthors && articleData.articleAuthors.length > 0) {
+                      return articleData.articleAuthors.map(authorData => 
+                        `${authorData.user.firstName || ''} ${authorData.user.lastName || ''}`.trim() || 
+                        authorData.user.username || 'Unknown Author'
+                      ).join(', ');
+                    } else if (articleData.author) {
+                      return `${articleData.author.firstName || ''} ${articleData.author.lastName || ''}`.trim() || 
+                             articleData.author.username || 'Unknown Author';
+                    } else {
+                      return 'No authors';
+                    }
+                  })()}
                 </span>
               </div>
               

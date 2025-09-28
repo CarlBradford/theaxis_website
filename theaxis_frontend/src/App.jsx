@@ -7,6 +7,9 @@ import Layout from './components/Layout';
 import { useGAInit, useAnalytics } from './hooks/useAnalytics';
 import Home from './pages/public/Home';
 import ArticleDetail from './pages/public/ArticleDetail';
+import SearchPage from './pages/public/SearchPage';
+import PrivacyPolicy from './pages/public/PrivacyPolicy';
+import TermsOfService from './pages/public/TermsOfService';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -59,6 +62,13 @@ function AppWithAnalytics() {
             <Routes>
               {/* Public Article Detail - Outside Layout */}
               <Route path="content/:slug" element={<ArticleDetail />} />
+              
+              {/* Public Search Page - Outside Layout */}
+              <Route path="search" element={<SearchPage />} />
+              
+              {/* Public Legal Pages - Outside Layout */}
+              <Route path="privacy" element={<PrivacyPolicy />} />
+              <Route path="terms" element={<TermsOfService />} />
               
               <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />

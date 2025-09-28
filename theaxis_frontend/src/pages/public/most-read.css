@@ -313,7 +313,6 @@
   width: 3px;
   height: 1rem;
   background: var(--color-primary, #215d55);
-  border-radius: 2px;
 }
 
 .most-read-simple-card {

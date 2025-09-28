@@ -12,11 +12,13 @@ const PublicFooter = () => {
           {/* Logo and Description */}
           <div className="public-footer-brand">
             <div className="public-footer-logo">
-              <img 
-                src={theaxisWordmark} 
-                alt="The AXIS Wordmark" 
-                className="public-footer-wordmark"
-              />
+              <Link to="/" className="public-footer-logo-link">
+                <img 
+                  src={theaxisWordmark} 
+                  alt="The AXIS Wordmark" 
+                  className="public-footer-wordmark"
+                />
+              </Link>
             </div>
             <p className="public-footer-description">
               The AXIS, the Official Student Publication of the Batangas State University–The National Engineering University Alangilan Campus, is a student-funded, student-run, written and produced group of publications that attempts to bring comprehensive coverage of the news and events affecting the campus.
