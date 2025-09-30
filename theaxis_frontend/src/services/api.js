@@ -12,6 +12,8 @@ const RATE_LIMIT_CONFIG = {
 let requestCount = 0;
 let windowStart = Date.now();
 let isRateLimited = false;
+let retryCount = 0;
+const MAX_RETRIES = 3;
 
 // Reset rate limit window
 const resetRateLimitWindow = () => {
@@ -80,22 +82,29 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
-    // Handle 429 (Too Many Requests) with automatic retry
+    // Handle 429 (Too Many Requests) with limited retry
     if (error.response?.status === 429) {
-      console.warn('Rate limited by server. Waiting before retry...');
-      
-      // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_CONFIG.retryAfterMs));
-      
-      // Reset our local rate limit to allow retry
-      isRateLimited = false;
-      requestCount = Math.max(0, requestCount - 1);
-      
-      // Retry the original request
-      try {
-        return await api.request(error.config);
-      } catch (retryError) {
-        return Promise.reject(retryError);
+      if (retryCount < MAX_RETRIES) {
+        retryCount++;
+        console.warn(`Rate limited by server. Retry ${retryCount}/${MAX_RETRIES}...`);
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_CONFIG.retryAfterMs));
+        
+        // Reset our local rate limit to allow retry
+        isRateLimited = false;
+        requestCount = Math.max(0, requestCount - 1);
+        
+        // Retry the original request
+        try {
+          return await api.request(error.config);
+        } catch (retryError) {
+          return Promise.reject(retryError);
+        }
+      } else {
+        console.error('Max retries exceeded for rate limited request');
+        retryCount = 0; // Reset for future requests
+        return Promise.reject(error);
       }
     }
 

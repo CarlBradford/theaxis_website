@@ -4,8 +4,8 @@ import { articlesAPI, commentsAPI, engagementAPI } from '../../services/apiServi
 import MediaDisplay from '../../components/MediaDisplay';
 import FrontendProfanityFilter from '../../utils/profanityFilter';
 import PublicFooter from '../../components/PublicFooter';
-import { Bars3Icon, MagnifyingGlassIcon, XMarkIcon, LinkIcon, ShareIcon, BookmarkIcon, HandThumbUpIcon, HandThumbDownIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
-import theaxisWordmark from '../../assets/theaxis_wordmark.png';
+import PublicPageHeader from '../../components/PublicPageHeader';
+import { LinkIcon, ShareIcon, BookmarkIcon, HandThumbUpIcon, HandThumbDownIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import './article-detail.css';
 
 const ArticleDetail = () => {
@@ -14,7 +14,6 @@ const ArticleDetail = () => {
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [comments, setComments] = useState([]);
   const [userLikeStatus, setUserLikeStatus] = useState(null); // null, true (like), false (dislike)
   const [isLiking, setIsLiking] = useState(false);
@@ -47,10 +46,130 @@ const ArticleDetail = () => {
   const [profanityWarning, setProfanityWarning] = useState(null);
   const [flaggedWords, setFlaggedWords] = useState([]);
   const [showCopiedMessage, setShowCopiedMessage] = useState(false);
+  const [showOfflineMessage, setShowOfflineMessage] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [savedOffline, setSavedOffline] = useState(false);
+
+  // Helper function to calculate word count
+  const calculateWordCount = (content) => {
+    if (!content) return 0;
+    
+    // Remove HTML tags and get plain text
+    const plainText = content.replace(/<[^>]*>/g, '');
+    
+    // Split by whitespace and filter out empty strings
+    const words = plainText.trim().split(/\s+/).filter(word => word.length > 0);
+    
+    return words.length;
+  };
+
+  // Helper function to calculate read time (average 200 words per minute)
+  const calculateReadTime = (content) => {
+    const wordCount = calculateWordCount(content);
+    const wordsPerMinute = 200;
+    const minutes = Math.ceil(wordCount / wordsPerMinute);
+    
+    if (minutes === 1) {
+      return '1 min read';
+    } else if (minutes < 60) {
+      return `${minutes} min read`;
+    } else {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      if (remainingMinutes === 0) {
+        return `${hours} hr read`;
+      } else {
+        return `${hours} hr ${remainingMinutes} min read`;
+      }
+    }
+  };
 
   useEffect(() => {
     fetchArticle();
+    checkOfflineStatus();
+    checkSavedOffline();
   }, [slug]);
+
+  // Check if article is saved offline
+  const checkSavedOffline = () => {
+    if ('caches' in window) {
+      caches.open('offline-articles').then(cache => {
+        cache.match(`/content/${slug}`).then(response => {
+          setSavedOffline(!!response);
+        });
+      });
+    }
+  };
+
+  // Check online/offline status
+  const checkOfflineStatus = () => {
+    setIsOffline(!navigator.onLine);
+    
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  };
+
+  // Save article for offline reading
+  const saveOffline = async () => {
+    if (!('caches' in window) || !article) return;
+    
+    try {
+      const cache = await caches.open('offline-articles');
+      const articleUrl = `/content/${slug}`;
+      
+      // Create a response with the article data
+      const articleData = {
+        title: article.title,
+        content: article.content,
+        excerpt: article.excerpt,
+        author: article.author,
+        articleAuthors: article.articleAuthors,
+        publicationDate: article.publicationDate,
+        updatedAt: article.updatedAt,
+        categories: article.categories,
+        tags: article.tags,
+        featuredImage: article.featuredImage,
+        mediaCaption: article.mediaCaption,
+        readingTime: article.readingTime
+      };
+      
+      const response = new Response(JSON.stringify(articleData), {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      await cache.put(articleUrl, response);
+      setSavedOffline(true);
+      
+      // Show success message
+      setShowOfflineMessage(true);
+      setTimeout(() => setShowOfflineMessage(false), 2000);
+    } catch (error) {
+      console.error('Failed to save article offline:', error);
+    }
+  };
+
+  // Remove article from offline cache
+  const removeOffline = async () => {
+    if (!('caches' in window)) return;
+    
+    try {
+      const cache = await caches.open('offline-articles');
+      await cache.delete(`/content/${slug}`);
+      setSavedOffline(false);
+    } catch (error) {
+      console.error('Failed to remove article from offline cache:', error);
+    }
+  };
 
   useEffect(() => {
     if (article) {
@@ -407,13 +526,6 @@ const ArticleDetail = () => {
     }
   };
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
 
   // Copy link functionality
   const handleCopyLink = async () => {
@@ -457,347 +569,13 @@ const ArticleDetail = () => {
     }
   };
 
-  // Save offline functionality (using browser's print/save as PDF)
-  const handleSaveOffline = () => {
-    // Create a new window with the article content for printing
-    const printWindow = window.open('', '_blank');
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${article?.title || 'The AXIS Article'}</title>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              max-width: 800px;
-              margin: 0 auto;
-              padding: 20px;
-            }
-            .print-header {
-              text-align: center;
-              margin-bottom: 30px;
-              border-bottom: 2px solid #215d55;
-              padding-bottom: 20px;
-            }
-            .print-logo-image {
-              height: 50px;
-              width: auto;
-              margin-bottom: 20px;
-              display: block;
-            }
-            .print-category {
-              display: inline-block;
-              background: #215d55;
-              color: white;
-              padding: 6px 16px;
-              font-size: 11px;
-              font-weight: 600;
-              text-transform: uppercase;
-              margin-bottom: 20px;
-            }
-            .print-title {
-              font-size: 28px;
-              font-weight: 800;
-              color: #1c4643;
-              line-height: 1.2;
-              margin: 0 0 15px 0;
-            }
-            .print-meta {
-              font-size: 14px;
-              color: #656362;
-              margin-bottom: 20px;
-            }
-            .print-authors {
-              font-weight: 500;
-              margin-bottom: 5px;
-            }
-            .print-date {
-              font-weight: 400;
-            }
-            .print-image {
-              width: 100%;
-              max-width: 600px;
-              height: auto;
-              margin: 20px auto 0 auto;
-              display: block;
-              border-radius: 0;
-            }
-            .print-caption {
-              font-size: 12px;
-              color: #6b7280;
-              text-align: center;
-              margin-top: 4px;
-              margin-bottom: 30px;
-              font-style: italic;
-            }
-            .print-excerpt {
-              font-size: 18px;
-              line-height: 1.6;
-              color: #656362;
-              margin: 20px 0;
-              font-style: italic;
-            }
-            .print-content {
-              font-size: 16px;
-              line-height: 1.8;
-              color: #1c4643;
-            }
-            .print-content h1, .print-content h2, .print-content h3, .print-content h4, .print-content h5, .print-content h6 {
-              color: #1c4643;
-              font-weight: 700;
-              margin: 24px 0 12px 0;
-              line-height: 1.3;
-            }
-            .print-content h1 { font-size: 24px; }
-            .print-content h2 { font-size: 22px; }
-            .print-content h3 { font-size: 20px; }
-            .print-content h4 { font-size: 18px; }
-            .print-content p {
-              margin: 0 0 16px 0;
-            }
-            .print-content ul, .print-content ol {
-              margin: 0 0 16px 0;
-              padding-left: 24px;
-            }
-            .print-content li {
-              margin: 0 0 8px 0;
-            }
-            .print-content blockquote {
-              border-left: 4px solid #215d55;
-              padding-left: 20px;
-              margin: 24px 0;
-              font-style: italic;
-              color: #656362;
-              background: rgba(33, 93, 85, 0.05);
-              padding: 20px;
-            }
-            .print-content img {
-              max-width: 100%;
-              height: auto;
-              margin: 16px 0;
-            }
-            .print-content strong {
-              font-weight: 700;
-              color: #1c4643;
-            }
-            .print-content em {
-              font-style: italic;
-            }
-            .print-footer {
-              margin-top: 40px;
-              padding-top: 20px;
-              border-top: 2px solid #e5e7eb;
-            }
-            .print-url {
-              margin-top: 20px;
-              font-size: 12px;
-              color: #9ca3af;
-              text-align: center;
-            }
-            @media print {
-              body { margin: 0; padding: 15px; }
-              .print-header { page-break-after: avoid; }
-              .print-content { page-break-inside: avoid; }
-              .print-category { 
-                background: #215d55 !important; 
-                color: white !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="print-header">
-            <img src="${theaxisWordmark}" alt="The AXIS" class="print-logo-image" />
-            ${article?.categories && article.categories.length > 0 ? 
-              `<div class="print-category">${article.categories[0].name}</div>` : ''}
-            <h1 class="print-title">${article?.title || 'Article Title'}</h1>
-            <div class="print-meta">
-              <div class="print-authors">
-                ${article?.articleAuthors && article.articleAuthors.length > 0 ? 
-                  `By ${article.articleAuthors.map((articleAuthor, index) => {
-                    const author = articleAuthor.user;
-                    const authorName = `${author.firstName} ${author.lastName}`;
-                    return authorName;
-                  }).join(', ')}` : 
-                  article?.author ? 
-                    `By ${article.author.firstName} ${article.author.lastName}` : 
-                    'By Unknown Author'
-                }
-              </div>
-              <div class="print-date">
-                Published ${article?.publicationDate ? 
-                  new Date(article.publicationDate).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  }) : 'Unknown Date'
-                }
-                ${article?.updatedAt && article.updatedAt !== article.publicationDate ? 
-                  `<br />Updated ${new Date(article.updatedAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}` : ''
-                }
-              </div>
-            </div>
-          </div>
-
-          ${article?.featuredImage ? `
-            <img src="${article.featuredImage}" alt="${article.title}" class="print-image" />
-            ${article?.mediaCaption ? `<div class="print-caption">${article.mediaCaption}</div>` : ''}
-          ` : ''}
-
-          ${article?.excerpt ? `<div class="print-excerpt">${article.excerpt}</div>` : ''}
-
-          <div class="print-content">
-            ${article?.content ? article.content.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>') : 'Content not available'}
-          </div>
-
-          <div class="print-footer">
-            <div class="print-url">
-              ${window.location.href}
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-    
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    
-    // Wait for images to load, then print
-    printWindow.onload = () => {
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
-    };
-  };
 
 
-  // Custom Header Component
-  const ArticleHeader = () => (
-    <header className="article-detail-custom-header">
-      <div className="article-detail-header-container">
-        {/* Menu Button */}
-        <button 
-          className={`article-detail-menu-button ${isMobileMenuOpen ? 'menu-open' : ''}`}
-          title="Menu"
-          onClick={toggleMobileMenu}
-          aria-label="Toggle mobile menu"
-        >
-          {isMobileMenuOpen ? (
-            <XMarkIcon className="article-detail-menu-icon" />
-          ) : (
-            <Bars3Icon className="article-detail-menu-icon" />
-          )}
-        </button>
-        
-        {/* Logo/Center */}
-        <div className="article-detail-logo">
-          <Link to="/" className="article-detail-logo-link">
-            <img 
-              src={theaxisWordmark} 
-              alt="The AXIS" 
-              className="article-detail-logo-image"
-            />
-          </Link>
-        </div>
-        
-        {/* Search Button */}
-        <button 
-          className="article-detail-search-button" 
-          title="Search"
-          onClick={() => navigate('/search')}
-        >
-          <MagnifyingGlassIcon className="article-detail-search-icon" />
-        </button>
-      </div>
-
-      {/* Mobile Menu Overlay */}
-      <div 
-        className={`article-detail-mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`}
-        onClick={closeMobileMenu}
-      ></div>
-
-      {/* Mobile Menu Sidebar */}
-      <div className={`article-detail-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-        {/* AXIS Wordmark */}
-        <div className="article-detail-mobile-wordmark">
-          <Link to="/" onClick={closeMobileMenu}>
-          <img 
-            src={theaxisWordmark} 
-            alt="The AXIS" 
-            className="article-detail-mobile-wordmark-image"
-          />
-          </Link>
-        </div>
-
-
-        {/* Navigation Categories */}
-        <nav className="article-detail-mobile-nav">
-          <Link to="/news" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-            News
-          </Link>
-          <div className="article-detail-mobile-separator"></div>
-          
-          <Link to="/opinion" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-            Opinion
-          </Link>
-          <div className="article-detail-mobile-separator"></div>
-          
-          <Link to="/editorial" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-            Editorial
-          </Link>
-          <div className="article-detail-mobile-separator"></div>
-          
-          <Link to="/feature" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-            Feature
-          </Link>
-          <div className="article-detail-mobile-separator"></div>
-          
-          <Link to="/literary" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-            Literary
-          </Link>
-          <div className="article-detail-mobile-separator"></div>
-          
-          <Link to="/devcomm" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-            DevComm
-          </Link>
-          <div className="article-detail-mobile-separator"></div>
-          
-          <Link to="/sports" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-            Sports
-          </Link>
-          <div className="article-detail-mobile-separator"></div>
-          
-          <Link to="/art" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-            Art
-          </Link>
-          <div className="article-detail-mobile-separator"></div>
-          
-          <Link to="/the-axis-online" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-            The AXIS Online
-          </Link>
-          <div className="article-detail-mobile-separator"></div>
-          
-          <Link to="/annual-editions" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-            Annual Editions
-          </Link>
-        </nav>
-      </div>
-    </header>
-  );
 
   if (loading) {
     return (
       <div className="article-detail-page">
-        <ArticleHeader />
+        <PublicPageHeader />
         <div className="article-detail-loading">
           <div className="article-detail-loading-spinner"></div>
           <p>Loading article...</p>
@@ -809,7 +587,7 @@ const ArticleDetail = () => {
   if (error || !article) {
     return (
       <div className="article-detail-page">
-        <ArticleHeader />
+        <PublicPageHeader />
         <div className="article-detail-error">
           <h1>Article Not Found</h1>
           <p>The article you're looking for doesn't exist or has been removed.</p>
@@ -823,7 +601,7 @@ const ArticleDetail = () => {
 
   return (
     <div className="article-detail-page">
-      <ArticleHeader />
+      <PublicPageHeader />
       
       <main className="article-detail-main">
         <div className="article-detail-container">
@@ -851,7 +629,8 @@ const ArticleDetail = () => {
                   imageClassName="media-display-image article-detail-image-element"
                   videoClassName="media-display-video article-detail-image-element"
                   iconClassName="w-6 h-6"
-                  showVideoIcon={true}
+                  showVideoIcon={false}
+                  controls={true}
                 />
                 {/* Media Caption */}
                 {article.mediaCaption && (
@@ -900,14 +679,24 @@ const ArticleDetail = () => {
                   )}
                 </div>
                 
-                {/* Publication Date */}
+                {/* Publication Date and Read Time */}
                 <div className="article-detail-publication-date">
-                  Published {formatDate(article.publicationDate)}
-                  {article.updatedAt && article.updatedAt !== article.publicationDate && (
-                    <span className="article-detail-updated-date">
-                      <br />Updated {formatDate(article.updatedAt)}
-                    </span>
-                  )}
+                  <div className="article-detail-date-row">
+                    <span>Published {formatDate(article.publicationDate)}</span>
+                    {article.updatedAt && article.updatedAt !== article.publicationDate && (
+                      <>
+                        <span className="article-detail-date-separator">•</span>
+                        <span className="article-detail-updated-date">
+                          Updated {formatDate(article.updatedAt)}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <div className="article-detail-read-time">
+                    {article.readingTime ? `${article.readingTime} min read` : calculateReadTime(article.content)}
+                    <span className="article-detail-meta-separator"> • </span>
+                    <span className="article-detail-view-count">{article.viewCount || 0} views</span>
+                  </div>
                 </div>
               </div>
               
@@ -923,7 +712,7 @@ const ArticleDetail = () => {
                 </button>
                   {showCopiedMessage && (
                     <div className="article-detail-copied-message">
-                      Copied!
+                      Link copied!
                     </div>
                   )}
                 </div>
@@ -934,13 +723,20 @@ const ArticleDetail = () => {
                 >
                   <ShareIcon className="article-detail-action-icon" />
                 </button>
-                <button 
-                  className="article-detail-action-btn" 
-                  title="Save Offline"
-                  onClick={handleSaveOffline}
-                >
-                  <BookmarkIcon className="article-detail-action-icon" />
-                </button>
+                <div className="article-detail-offline-container">
+                  <button 
+                    className={`article-detail-action-btn ${savedOffline ? 'saved' : ''}`}
+                    title={savedOffline ? 'Remove from offline' : 'Save for offline reading'}
+                    onClick={savedOffline ? removeOffline : saveOffline}
+                  >
+                    <BookmarkIcon className="article-detail-action-icon" />
+                  </button>
+                  {showOfflineMessage && (
+                    <div className="article-detail-copied-message">
+                      Saved offline!
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </header>
@@ -967,7 +763,7 @@ const ArticleDetail = () => {
                           to={`/search?q=${encodeURIComponent(tag.name)}`}
                           className="article-detail-tag"
                         >
-                          {tag.name}
+                        {tag.name}
                         </Link>
                         {index < article.tags.length - 1 && (
                           <span className="article-detail-tag-separator"> | </span>
@@ -1171,12 +967,14 @@ const ArticleDetail = () => {
                     {authorArticles.map((authorArticle) => (
                       <div key={authorArticle.id} className="article-detail-author-article">
                         <div className="article-detail-author-article-image">
-                          <img 
-                            src={authorArticle.featuredImage || '/placeholder-article.svg'} 
+                          <MediaDisplay
+                            mediaUrl={authorArticle.featuredImage}
                             alt={authorArticle.title}
-                            onError={(e) => {
-                              e.target.src = '/placeholder-article.svg';
-                            }}
+                            className="article-detail-author-article-img"
+                            imageClassName="article-detail-author-article-img-element"
+                            videoClassName="article-detail-author-article-img-element"
+                            iconClassName="w-6 h-6"
+                            showVideoIcon={true}
                           />
                           {authorArticle.categories && authorArticle.categories.length > 0 && (
                             <div className="article-detail-author-article-category">

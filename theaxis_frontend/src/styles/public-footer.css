@@ -1,10 +1,11 @@
 /* Public Footer Styles */
-/* Custom Color Theme Variables */
+/* Using Color Palette System Variables */
 :root {
-  --cyan-primary: #215d55;
-  --cyan-dark: #1c4643;
+  /* Use existing color palette variables from color-palette.css */
+  --cyan-primary: var(--color-primary);
+  --cyan-dark: var(--color-header);
   --gray-light: #b3b0ac;
-  --gray-dark: #656362;
+  --gray-dark: var(--color-footer);
 }
 
 /* Fade in animation for login prompt */
@@ -454,12 +455,12 @@
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .public-footer {
-    background-color: #000000;
-    border-top: 2px solid #ffffff;
+    background-color: var(--color-textPrimary);
+    border-top: 2px solid var(--color-background);
   }
   
   .public-footer-bottom {
-    border-top: 2px solid #ffffff;
+    border-top: 2px solid var(--color-background);
   }
   
   .public-footer-link,
@@ -476,13 +477,13 @@
 /* Print styles */
 @media print {
   .public-footer {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border-top: 1px solid #000000;
+    background-color: var(--color-background) !important;
+    color: var(--color-textPrimary) !important;
+    border-top: 1px solid var(--color-textPrimary);
   }
   
   .public-footer-section-title {
-    color: #000000 !important;
+    color: var(--color-textPrimary) !important;
   }
   
   .public-footer-description,
@@ -490,7 +491,7 @@
   .public-footer-contact-info,
   .public-footer-copyright,
   .public-footer-legal-link {
-    color: #000000 !important;
+    color: var(--color-textPrimary) !important;
   }
   
   .public-footer-wordmark {

@@ -984,7 +984,12 @@ class NotificationService {
           notificationPromises.push(this.notifyEICOwnArticlePublished(articleId));
         } else if (authorRole === 'SECTION_HEAD') {
           notificationPromises.push(this.notifySectionHeadOwnArticlePublished(articleId));
+          // Also notify EIC when Section Head publishes their own article
+          notificationPromises.push(this.notifyEICSectionHeadPublishedArticle(articleId));
         }
+        
+        // Notify ADVISER when any article is published
+        notificationPromises.push(this.notifyAdviserArticlePublished(articleId));
       }
 
       // General author status change notifications
@@ -1552,6 +1557,229 @@ class NotificationService {
       logger.error('Failed to notify EIC of flipbook creation', {
         flipbookId,
         createdByUserId,
+        error: error.message
+      });
+    }
+  }
+
+  /**
+   * Notify ADVISER when any article is published
+   */
+  async notifyAdviserArticlePublished(articleId) {
+    try {
+      const article = await prisma.article.findUnique({
+        where: { id: articleId },
+        include: {
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true,
+              email: true,
+              role: true
+            }
+          },
+          categories: {
+            select: {
+              name: true
+            }
+          }
+        }
+      });
+
+      if (!article) {
+        logger.warn('Article not found for ADVISER publish notification', { articleId });
+        return;
+      }
+
+      // Get all ADVISER users
+      const advisers = await prisma.user.findMany({
+        where: { 
+          role: 'ADVISER',
+          isActive: true 
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          username: true
+        }
+      });
+
+      if (advisers.length === 0) {
+        logger.info('No ADVISER users found for publish notification', { articleId });
+        return;
+      }
+
+      const authorName = `${article.author.firstName} ${article.author.lastName}`;
+      const categoryNames = article.categories.map(cat => cat.name).join(', ');
+
+      // Create in-app notifications for all ADVISER users
+      const notificationPromises = advisers.map(adviser => 
+        prisma.notification.create({
+          data: {
+            userId: adviser.id,
+            type: 'ARTICLE_PUBLISHED',
+            title: 'Article Published',
+            message: `"${article.title}" by ${authorName} (${article.author.role}) has been published.`,
+            data: {
+              articleId: article.id,
+              articleTitle: article.title,
+              authorName,
+              authorRole: article.author.role,
+              categories: categoryNames,
+              publishedAt: article.publishedAt
+            },
+            isRead: false
+          }
+        })
+      );
+
+      // Send email notifications to all ADVISER users
+      const emailPromises = advisers.map(adviser => 
+        emailService.sendAdviserArticlePublishedNotification(
+          adviser.email,
+          adviser.firstName,
+          article.title,
+          authorName,
+          article.author.role,
+          categoryNames
+        )
+      );
+
+      // Execute all notifications
+      await Promise.allSettled([...notificationPromises, ...emailPromises]);
+
+      logger.info('ADVISER publish notifications sent', {
+        articleId,
+        articleTitle: article.title,
+        authorName,
+        authorRole: article.author.role,
+        adviserCount: advisers.length
+      });
+
+    } catch (error) {
+      logger.error('Error sending ADVISER publish notifications', {
+        articleId,
+        error: error.message,
+        stack: error.stack
+      });
+    }
+  }
+
+  /**
+   * Notify EIC when Section Head publishes their own article
+   */
+  async notifyEICSectionHeadPublishedArticle(articleId) {
+    try {
+      const article = await prisma.article.findUnique({
+        where: { id: articleId },
+        include: {
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true,
+              email: true
+            }
+          },
+          categories: {
+            select: {
+              name: true
+            }
+          }
+        }
+      });
+
+      if (!article) {
+        logger.warn('Article not found for EIC Section Head publish notification', { articleId });
+        return;
+      }
+
+      // Get all EIC users
+      const eicUsers = await prisma.user.findMany({
+        where: {
+          role: 'EDITOR_IN_CHIEF'
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      });
+
+      if (eicUsers.length === 0) {
+        logger.warn('No EIC users found for Section Head publish notification', { articleId });
+        return;
+      }
+
+      const authorName = `${article.author.firstName} ${article.author.lastName}`.trim() || article.author.username;
+
+      // Create in-app notifications for all EIC users
+      const notificationPromises = eicUsers.map(eicUser => 
+        prisma.notification.create({
+          data: {
+            title: 'Article Published by Section Head',
+            message: `${authorName} (Section Head) has published "${article.title}"`,
+            type: 'ARTICLE_PUBLISHED',
+            userId: eicUser.id,
+            data: {
+              articleId: article.id,
+              articleTitle: article.title,
+              authorName: authorName,
+              authorRole: 'SECTION_HEAD',
+              category: article.categories?.[0]?.name || 'Uncategorized'
+            }
+          }
+        })
+      );
+
+      // Execute all notification creations in parallel
+      await Promise.allSettled(notificationPromises);
+
+      // Send email notifications to all EIC users (non-blocking)
+      const emailPromises = eicUsers.map(eicUser => 
+        this.emailService.sendEICSectionHeadPublishedNotification(
+          eicUser.email,
+          eicUser.firstName,
+          article.title,
+          authorName
+        )
+      );
+
+      // Execute email sending in background (non-blocking)
+      Promise.allSettled(emailPromises).then(results => {
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            logger.info('EIC Section Head publish email sent successfully', { 
+              email: eicUsers[index].email, 
+              articleId, 
+              articleTitle: article.title 
+            });
+          } else {
+            logger.error('Failed to send EIC Section Head publish email', { 
+              email: eicUsers[index].email, 
+              articleId, 
+              articleTitle: article.title, 
+              error: result.reason?.message 
+            });
+          }
+        });
+      });
+
+      logger.info('EIC Section Head publish notifications initiated', { 
+        articleId, 
+        articleTitle: article.title, 
+        eicCount: eicUsers.length 
+      });
+
+    } catch (error) {
+      logger.error('Failed to notify EIC of Section Head article publication', {
+        articleId,
         error: error.message
       });
     }

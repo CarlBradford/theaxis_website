@@ -47,8 +47,17 @@ const MostRead = () => {
           imageUrl = `http://localhost:3001${imageUrl}`;
         }
         
-        // Resize image for most read section
-        if (imageUrl && imageUrl.includes('http')) {
+        // Check if it's a video before adding image parameters
+        const isVideo = imageUrl && (
+          /\.(mp4|webm|ogg|avi|mov|quicktime)$/i.test(imageUrl) || 
+          imageUrl.includes('video/') ||
+          imageUrl.includes('.mp4') ||
+          imageUrl.includes('.webm') ||
+          imageUrl.includes('.ogg')
+        );
+
+        // Resize image for most read section (only for images, not videos)
+        if (imageUrl && imageUrl.includes('http') && !isVideo) {
           if (imageUrl.includes('unsplash.com')) {
             imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=300&h=200');
           } else if (imageUrl.includes('localhost:3001')) {

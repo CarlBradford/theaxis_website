@@ -101,9 +101,9 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip rate limiting in development if explicitly disabled
+  // Skip rate limiting in development
   skip: (req) => {
-    return process.env.NODE_ENV === 'development' && process.env.DISABLE_RATE_LIMIT === 'true';
+    return process.env.NODE_ENV === 'development';
   },
   // Add debugging for development
   onLimitReached: (req, res, options) => {

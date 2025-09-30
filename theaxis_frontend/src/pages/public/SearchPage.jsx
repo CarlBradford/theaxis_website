@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { MagnifyingGlassIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { articlesAPI } from '../../services/apiService';
-import theaxisWordmark from '../../assets/theaxis_wordmark.png';
+import MediaDisplay from '../../components/MediaDisplay';
 import PublicFooter from '../../components/PublicFooter';
+import PublicPageHeader from '../../components/PublicPageHeader';
 import './search-page.css';
 import './article-detail.css';
 
@@ -12,10 +13,13 @@ const SearchPage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [searchResults, setSearchResults] = useState([]);
+  const [additionalResults, setAdditionalResults] = useState([]);
   const [suggestedTopics, setSuggestedTopics] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalResultsCount, setTotalResultsCount] = useState(0);
 
   // Fetch suggested topics (most common tags)
   useEffect(() => {
@@ -43,19 +47,39 @@ const SearchPage = () => {
   const performSearch = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
+      setAdditionalResults([]);
       setHasSearched(false);
+      setHasMore(true);
+      setTotalResultsCount(0);
       return;
     }
 
     setLoading(true);
     setHasSearched(true);
+    setAdditionalResults([]);
     
     try {
-      const response = await articlesAPI.searchArticles(query);
-      setSearchResults(response.data?.items || []);
+      const response = await articlesAPI.searchArticles(query, { limit: 10, page: 1 });
+      const results = response.data?.items || [];
+      setSearchResults(results);
+      
+      // Check if there are more results
+      const totalCount = response.data?.pagination?.totalCount || response.data?.pagination?.total || response.pagination?.total || 0;
+      console.log('Search debug:', {
+        resultsLength: results.length,
+        totalCount: totalCount,
+        hasMore: totalCount > results.length,
+        response: response,
+        pagination: response.data?.pagination,
+        data: response.data
+      });
+      setTotalResultsCount(totalCount);
+      setHasMore(totalCount > results.length);
     } catch (error) {
       console.error('Error searching articles:', error);
       setSearchResults([]);
+      setHasMore(false);
+      setTotalResultsCount(0);
     } finally {
       setLoading(false);
     }
@@ -74,13 +98,34 @@ const SearchPage = () => {
     setSearchParams({ q: topic });
   };
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
+  const loadMoreResults = async () => {
+    if (loadingMore || !hasMore) return;
+    
+    try {
+      setLoadingMore(true);
+      const currentUniqueResults = getUniqueResults();
+      const currentPage = Math.floor(currentUniqueResults.length / 10) + 1;
+      
+      const response = await articlesAPI.searchArticles(searchQuery, { 
+        limit: 10, 
+        page: currentPage 
+      });
+      
+      const newResults = response.data?.items || [];
+      setAdditionalResults(prev => [...prev, ...newResults]);
+      
+      // Check if there are more results
+      const totalCount = response.data?.pagination?.totalCount || response.data?.pagination?.total || response.pagination?.total || 0;
+      const updatedUniqueResults = getUniqueResults();
+      setHasMore(updatedUniqueResults.length < totalCount);
+      
+    } catch (error) {
+      console.error('Error loading more results:', error);
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -96,114 +141,17 @@ const SearchPage = () => {
     return stripped.length > maxLength ? stripped.substring(0, maxLength) + '...' : stripped;
   };
 
+  // Helper function to get unique results
+  const getUniqueResults = () => {
+    const allResults = [...searchResults, ...additionalResults];
+    return allResults.filter((article, index, self) => 
+      index === self.findIndex(a => a.id === article.id)
+    );
+  };
+
   return (
     <div className="search-page">
-      {/* Custom Header */}
-      <div className="article-detail-custom-header">
-        <div className="article-detail-header-container">
-          {/* Menu Button */}
-          <button 
-            className="article-detail-menu-button" 
-            onClick={toggleMobileMenu}
-            title="Menu"
-          >
-            <Bars3Icon className="article-detail-menu-icon" />
-          </button>
-          
-          {/* Logo/Center */}
-          <div className="article-detail-logo">
-            <Link to="/" className="article-detail-logo-link">
-              <img 
-                src={theaxisWordmark} 
-                alt="The AXIS" 
-                className="article-detail-logo-image"
-              />
-            </Link>
-          </div>
-          
-          {/* Search Button */}
-          <button 
-            className="article-detail-search-button" 
-            title="Search"
-            onClick={() => navigate('/search')}
-          >
-            <MagnifyingGlassIcon className="article-detail-search-icon" />
-          </button>
-        </div>
-
-        {/* Mobile Menu Overlay */}
-        <div 
-          className={`article-detail-mobile-overlay ${isMobileMenuOpen ? 'open' : ''}`}
-          onClick={closeMobileMenu}
-        ></div>
-
-        {/* Mobile Menu Sidebar */}
-        <div className={`article-detail-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-          {/* AXIS Wordmark */}
-          <div className="article-detail-mobile-wordmark">
-            <Link to="/" onClick={closeMobileMenu}>
-              <img 
-                src={theaxisWordmark} 
-                alt="The AXIS" 
-                className="article-detail-mobile-wordmark-image"
-              />
-            </Link>
-          </div>
-
-
-          {/* Mobile Navigation */}
-          <nav className="article-detail-mobile-nav">
-            <Link to="/news" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-              News
-            </Link>
-            <div className="article-detail-mobile-separator"></div>
-            
-            <Link to="/opinion" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-              Opinion
-            </Link>
-            <div className="article-detail-mobile-separator"></div>
-            
-            <Link to="/editorial" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-              Editorial
-            </Link>
-            <div className="article-detail-mobile-separator"></div>
-            
-            <Link to="/feature" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-              Feature
-            </Link>
-            <div className="article-detail-mobile-separator"></div>
-            
-            <Link to="/literary" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-              Literary
-            </Link>
-            <div className="article-detail-mobile-separator"></div>
-            
-            <Link to="/devcomm" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-              DevComm
-            </Link>
-            <div className="article-detail-mobile-separator"></div>
-            
-            <Link to="/sports" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-              Sports
-            </Link>
-            <div className="article-detail-mobile-separator"></div>
-            
-            <Link to="/art" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-              Art
-            </Link>
-            <div className="article-detail-mobile-separator"></div>
-            
-            <Link to="/the-axis-online" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-              The AXIS Online
-            </Link>
-            <div className="article-detail-mobile-separator"></div>
-            
-            <Link to="/annual-editions" className="article-detail-mobile-link" onClick={closeMobileMenu}>
-              Annual Editions
-            </Link>
-          </nav>
-        </div>
-      </div>
+      <PublicPageHeader />
 
       <div className="search-page-container">
         {/* Search Header */}
@@ -266,35 +214,33 @@ const SearchPage = () => {
                   Search Results for "{searchParams.get('q') || ''}"
                 </h2>
                 <p className="search-page-results-count">
-                  {searchResults.length} article{searchResults.length !== 1 ? 's' : ''} found
+                  {totalResultsCount} article{totalResultsCount !== 1 ? 's' : ''} found
                 </p>
               </div>
 
-              {searchResults.length === 0 ? (
+              {getUniqueResults().length === 0 ? (
                 <div className="search-page-no-results">
                   <p>No articles found matching your search.</p>
                   <p>Try different keywords or browse our suggested topics above.</p>
                 </div>
               ) : (
                 <div className="search-page-articles-list">
-                  {searchResults.map((article) => (
+                  {getUniqueResults().map((article) => (
                     <Link
                       key={article.id}
                       to={`/content/${article.slug}`}
                       className="search-page-article-item"
                     >
                       <div className="search-page-article-image">
-                        {article.featuredImage ? (
-                          <img
-                            src={article.featuredImage}
-                            alt={article.title}
-                            onError={(e) => {
-                              e.target.src = '/placeholder-article.svg';
-                            }}
-                          />
-                        ) : (
-                          <img src="/placeholder-article.svg" alt="No image" />
-                        )}
+                        <MediaDisplay
+                          mediaUrl={article.featuredImage}
+                          alt={article.title}
+                          className="search-page-article-img"
+                          imageClassName="search-page-article-img-element"
+                          videoClassName="search-page-article-img-element"
+                          iconClassName="w-6 h-6"
+                          showVideoIcon={true}
+                        />
                       </div>
                       
                       <div className="search-page-article-content">
@@ -344,6 +290,20 @@ const SearchPage = () => {
                       </div>
                     </Link>
                   ))}
+                  
+                  {/* Load More Button */}
+                  {console.log('Render debug:', { hasMore, loadingMore, uniqueResults: getUniqueResults().length })}
+                  {hasMore && (
+                    <div className="search-page-load-more-container">
+                      <button 
+                        className="search-page-load-more-button"
+                        onClick={loadMoreResults}
+                        disabled={loadingMore}
+                      >
+                        {loadingMore ? 'Loading...' : 'Load More'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </>
@@ -351,7 +311,6 @@ const SearchPage = () => {
 
           {!hasSearched && !loading && (
             <div className="search-page-welcome">
-              <h2>Welcome to The Axis Search</h2>
               <p>Search through our collection of articles, features, and stories.</p>
             </div>
           )}

@@ -1,0 +1,576 @@
+/* Annual Editions Page Styles */
+.annual-editions-page {
+  min-height: 100vh;
+  background-color: var(--color-background, #ffffff);
+  color: var(--color-textPrimary, #1f2937);
+}
+
+.annual-editions-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Header Section */
+.annual-editions-header {
+  margin-bottom: 2rem;
+}
+
+.annual-editions-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-textPrimary, #1c4643);
+  margin: 0 0 1rem 0;
+  text-align: left;
+}
+
+/* Content Section */
+.annual-editions-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Category Section */
+.category-section {
+  background: var(--color-background, #ffffff);
+  padding: 0;
+  margin-bottom: 3rem;
+}
+
+.category-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--color-primary, #215d55);
+}
+
+.category-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-textPrimary, #1f2937);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.category-separator {
+  display: none;
+}
+
+/* Flipbooks Grid */
+.flipbooks-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2rem;
+  margin-top: 2rem;
+  justify-items: start;
+}
+
+/* Flipbook Card */
+.flipbook-card {
+  position: relative;
+  background: var(--color-background, #ffffff);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  width: fit-content;
+}
+
+.flipbook-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: var(--color-primary, #215d55);
+}
+
+.flipbook-thumbnail {
+  position: relative;
+  width: auto;
+  height: 250px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+}
+
+.flipbook-image {
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 2px 8px rgba(33, 93, 85, 0.2));
+}
+
+.flipbook-card:hover .flipbook-image {
+  transform: scale(1.02);
+}
+
+/* Placeholder Thumbnail */
+.placeholder-thumbnail {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary, #215d55) 0%, rgba(33, 93, 85, 0.8) 50%);
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  color: white;
+  opacity: 0.8;
+}
+
+/* Flipbook Info - Hidden by default, shown on hover/click */
+.flipbook-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, var(--color-primary, #215d55));
+  padding: 0.75rem 0.5rem 0.5rem;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.flipbook-card:hover .flipbook-info,
+.flipbook-card:active .flipbook-info {
+  opacity: 1;
+}
+
+.flipbook-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.3;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.flipbook-date {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* Flipbook Overlay - Not used */
+.flipbook-overlay {
+  display: none;
+}
+
+.view-indicator {
+  display: none;
+}
+
+/* No Flipbooks State */
+.no-flipbooks {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-textSecondary, #6b7280);
+  font-style: italic;
+}
+
+/* Modal Styles */
+.flipbook-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.flipbook-modal {
+  background: white;
+  border-radius: 0.75rem;
+  width: 100%;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.flipbook-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-background, #ffffff);
+  position: relative;
+}
+
+.flipbook-modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-textPrimary, #1f2937);
+  margin: 0;
+}
+
+.flipbook-modal-close {
+  background: none;
+  border: none;
+  color: var(--color-textSecondary, #6b7280);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+}
+
+.flipbook-modal-close:hover {
+  background: var(--color-border, #e5e7eb);
+  color: var(--color-textPrimary, #1f2937);
+}
+
+.flipbook-modal-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: #f8f9fa;
+}
+
+.flipbook-iframe {
+  width: 100%;
+  height: 70vh;
+  border: none;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading and Error States */
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--color-border, #e5e7eb);
+  border-top: 4px solid var(--color-primary, #215d55);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  color: var(--color-error, #dc2626);
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+}
+
+.retry-button {
+  background: var(--color-primary, #215d55);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retry-button:hover {
+  background: var(--color-primary-dark, #1a4a44);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .annual-editions-container {
+    padding: 1.5rem;
+  }
+  
+  .flipbooks-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .annual-editions-container {
+    padding: 1.25rem;
+  }
+  
+  .annual-editions-title {
+    font-size: 1.75rem;
+  }
+  
+  .category-title {
+    font-size: 1.5rem;
+  }
+  
+  .flipbooks-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .annual-editions-container {
+    padding: 1rem;
+  }
+  
+  .annual-editions-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .category-section {
+    margin-bottom: 2rem;
+  }
+  
+  .category-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+  }
+  
+  .category-title {
+    font-size: 1.25rem;
+  }
+  
+  .flipbooks-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 1.5rem;
+    justify-items: center;
+  }
+  
+  .flipbook-thumbnail {
+    height: 250px;
+  }
+  
+  .flipbook-info {
+    padding: 1rem 0.75rem 0.75rem;
+  }
+  
+  .flipbook-name {
+    font-size: 0.9rem;
+  }
+  
+  .flipbook-date {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .annual-editions-container {
+    padding: 0.75rem;
+  }
+  
+  .annual-editions-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .category-section {
+    margin-bottom: 1.5rem;
+  }
+  
+  .category-header {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .category-title {
+    font-size: 1.125rem;
+  }
+  
+  .flipbooks-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-top: 1rem;
+    justify-items: center;
+  }
+  
+  .flipbook-thumbnail {
+    height: 220px;
+  }
+  
+  .flipbook-info {
+    padding: 0.75rem 0.5rem 0.5rem;
+  }
+  
+  .flipbook-name {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .flipbook-date {
+    font-size: 0.75rem;
+  }
+  
+  .flipbook-modal {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+  
+  .flipbook-modal-header {
+    padding: 1rem;
+  }
+  
+  .flipbook-modal-title {
+    font-size: 1.125rem;
+    margin-right: 3rem;
+  }
+  
+  .flipbook-modal-close {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+  
+  .flipbook-iframe {
+    height: 60vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .annual-editions-container {
+    padding: 0.5rem;
+  }
+  
+  .annual-editions-title {
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .category-section {
+    margin-bottom: 1rem;
+  }
+  
+  .category-header {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .category-title {
+    font-size: 1rem;
+  }
+  
+  .flipbooks-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    justify-items: center;
+  }
+  
+  .flipbook-thumbnail {
+    height: 200px;
+  }
+  
+  .flipbook-info {
+    padding: 0.5rem;
+  }
+  
+  .flipbook-name {
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .flipbook-date {
+    font-size: 0.7rem;
+  }
+  
+  .flipbook-modal {
+    max-width: 98vw;
+    max-height: 98vh;
+  }
+  
+  .flipbook-modal-header {
+    padding: 0.75rem;
+  }
+  
+  .flipbook-modal-title {
+    font-size: 1rem;
+    margin-right: 2.5rem;
+  }
+  
+  .flipbook-modal-close {
+    min-width: 2rem;
+    min-height: 2rem;
+    padding: 0.25rem;
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+  
+  .flipbook-iframe {
+    height: 50vh;
+  }
+}
+
+@media (max-width: 360px) {
+  .annual-editions-container {
+    padding: 0.25rem;
+  }
+  
+  .annual-editions-title {
+    font-size: 1rem;
+  }
+  
+  .category-title {
+    font-size: 0.9rem;
+  }
+  
+  .flipbook-thumbnail {
+    height: 180px;
+  }
+  
+  .flipbook-info {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  .flipbook-name {
+    font-size: 0.75rem;
+  }
+  
+  .flipbook-date {
+    font-size: 0.65rem;
+  }
+  
+  .flipbook-modal-header {
+    padding: 0.5rem;
+  }
+  
+  .flipbook-modal-title {
+    font-size: 0.9rem;
+    margin-right: 2rem;
+  }
+  
+  .flipbook-modal-close {
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    padding: 0.25rem;
+    top: 0.25rem;
+    right: 0.25rem;
+  }
+}

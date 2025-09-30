@@ -396,6 +396,7 @@ enum PublicationType {
   MAGAZINE
   LITERARY_FOLIO
   ART_COMPILATION
+  SPECIAL_EDITIONS
 }
 
 enum NotificationType {

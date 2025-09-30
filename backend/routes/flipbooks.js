@@ -67,7 +67,78 @@ const handleMulterError = (error, req, res, next) => {
   next(error);
 };
 
-// Get all flipbooks (with optional filtering)
+// Get public flipbooks (no authentication required)
+router.get('/public', async (req, res) => {
+  try {
+    const { type, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    
+    const where = {
+      isActive: true // Only show active flipbooks
+    };
+    
+    // Filter by type if provided
+    if (type) {
+      where.type = type.toUpperCase();
+    }
+    
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Build orderBy object
+    let orderBy = {};
+    if (sortBy === 'name' || sortBy === 'title') {
+      orderBy.name = sortOrder;
+    } else if (sortBy === 'type') {
+      orderBy.type = sortOrder;
+    } else if (sortBy === 'releaseDate') {
+      orderBy.releaseDate = sortOrder;
+    } else {
+      orderBy.createdAt = sortOrder;
+    }
+    
+    const [flipbooks, total] = await Promise.all([
+      prisma.flipbook.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              username: true
+            }
+          }
+        },
+        orderBy,
+        skip,
+        take: parseInt(limit)
+      }),
+      prisma.flipbook.count({ where })
+    ]);
+    
+    res.json({
+      success: true,
+      data: {
+        items: flipbooks,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching public flipbooks:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch flipbooks',
+      error: error.message
+    });
+  }
+});
+
+// Get all flipbooks (with optional filtering) - requires authentication
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const { type, isActive, page = 1, limit = 10, search, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
@@ -244,7 +315,7 @@ router.post('/', authenticateToken, upload.single('thumbnailImage'), handleMulte
     }
     
     // Validate publication type
-    const validTypes = ['NEWSLETTER', 'TABLOID', 'MAGAZINE', 'LITERARY_FOLIO', 'ART_COMPILATION'];
+    const validTypes = ['NEWSLETTER', 'TABLOID', 'MAGAZINE', 'LITERARY_FOLIO', 'ART_COMPILATION', 'SPECIAL_EDITIONS'];
     if (!validTypes.includes(type.toUpperCase())) {
       return res.status(400).json({
         success: false,
@@ -373,7 +444,7 @@ router.put('/:id', authenticateToken, upload.single('thumbnailImage'), handleMul
     
     // Validate publication type if provided
     if (type) {
-      const validTypes = ['NEWSLETTER', 'TABLOID', 'MAGAZINE', 'LITERARY_FOLIO', 'ART_COMPILATION'];
+      const validTypes = ['NEWSLETTER', 'TABLOID', 'MAGAZINE', 'LITERARY_FOLIO', 'ART_COMPILATION', 'SPECIAL_EDITIONS'];
       if (!validTypes.includes(type.toUpperCase())) {
         return res.status(400).json({
           success: false,

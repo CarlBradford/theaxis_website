@@ -28,7 +28,7 @@
   font-size: 2.5rem;
   font-weight: 800;
   color: var(--color-textPrimary, #1c4643);
-  margin: 0 0 1rem 0;
+  margin: 0 0 0 0;
   line-height: 1.2;
 }
 
@@ -94,7 +94,7 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .legal-main {
-    padding: 1.5rem 0;
+    padding: 2rem 0;
   }
   
   .legal-container {
@@ -134,7 +134,7 @@
 
 @media (max-width: 480px) {
   .legal-main {
-    padding: 1rem 0;
+    padding: 2rem 0;
   }
   
   .legal-container {

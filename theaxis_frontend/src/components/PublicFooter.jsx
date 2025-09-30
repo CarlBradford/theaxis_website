@@ -1,9 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/public-footer.css';
 import theaxisWordmark from '../assets/theaxis_wordmark.png';
+import siteSettingsService from '../services/siteSettingsService';
 
 const PublicFooter = () => {
+  const [wordmarkUrl, setWordmarkUrl] = useState(theaxisWordmark);
+
+  // Load site assets on component mount
+  useEffect(() => {
+    const loadAssets = async () => {
+      try {
+        const { assets } = await siteSettingsService.initialize();
+        console.log('PublicFooter - Loaded assets:', assets);
+        if (assets && assets.length > 0) {
+          const wordmarkAsset = assets.find(asset => asset.assetType === 'wordmark' && asset.isActive);
+          console.log('PublicFooter - Found wordmark asset:', wordmarkAsset);
+          
+          if (wordmarkAsset) {
+            const newWordmarkUrl = `http://localhost:3001/uploads/${wordmarkAsset.fileName}`;
+            console.log('PublicFooter - Setting wordmark URL:', newWordmarkUrl);
+            setWordmarkUrl(newWordmarkUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load site assets:', error);
+      }
+    };
+
+    loadAssets();
+  }, []);
 
   return (
     <footer className="public-footer">
@@ -14,7 +40,7 @@ const PublicFooter = () => {
             <div className="public-footer-logo">
               <Link to="/" className="public-footer-logo-link">
                 <img 
-                  src={theaxisWordmark} 
+                  src={wordmarkUrl} 
                   alt="The AXIS Wordmark" 
                   className="public-footer-wordmark"
                 />
@@ -65,8 +91,8 @@ const PublicFooter = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/art" className="public-footer-link">
-                  Art
+                <Link to="/gallery" className="public-footer-link">
+                  Gallery
                 </Link>
               </li>
               <li>

@@ -1095,15 +1095,37 @@ const CreateArticle = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={handleSendToEIC}
-                  className="create-article-submit-btn"
+                  onClick={handlePublish}
+                  disabled={isSubmitting}
+                  className="create-article-publish-btn"
                 >
-                  Submit to EIC
+                  {isSubmitting ? 'Publishing...' : 'Publish'}
                 </button>
               </>
             )}
             
             {user?.role === 'EDITOR_IN_CHIEF' && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSaveAsDraft}
+                  disabled={isSubmitting}
+                  className="create-article-save-btn"
+                >
+                  {isSubmitting ? 'Saving...' : 'Save as Draft'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePublish}
+                  disabled={isSubmitting}
+                  className="create-article-publish-btn"
+                >
+                  {isSubmitting ? 'Publishing...' : 'Publish'}
+                </button>
+              </>
+            )}
+            
+            {user?.role === 'ADVISER' && (
               <>
                 <button
                   type="button"
@@ -1146,7 +1168,7 @@ const CreateArticle = () => {
             )}
             
             {/* Fallback for other roles */}
-            {!['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'SYSTEM_ADMIN'].includes(user?.role) && (
+            {!['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(user?.role) && (
               <button
                 type="button"
                 onClick={handleSaveAsDraft}

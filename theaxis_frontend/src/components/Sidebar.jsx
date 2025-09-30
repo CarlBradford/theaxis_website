@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { hasPermission, ROLE_DISPLAY_NAMES } from '../config/permissions';
@@ -22,11 +22,13 @@ import {
 } from '@heroicons/react/24/outline';
 import '../styles/navbar-sidebar.css';
 import theaxisLogo from '../assets/theaxis_logo.png';
+import siteSettingsService from '../services/siteSettingsService';
 
 const Sidebar = () => {
   const { user, hasRole, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [logoUrl, setLogoUrl] = useState(theaxisLogo);
 
   const handleLogout = () => {
     // Clear auth state first
@@ -34,6 +36,30 @@ const Sidebar = () => {
     // Navigate to login page using React Router
     navigate('/admin-portal', { replace: true });
   };
+
+  // Load site assets on component mount
+  useEffect(() => {
+    const loadAssets = async () => {
+      try {
+        const { assets } = await siteSettingsService.initialize();
+        console.log('Sidebar - Loaded assets:', assets);
+        if (assets && assets.length > 0) {
+          const logoAsset = assets.find(asset => asset.assetType === 'logo' && asset.isActive);
+          console.log('Sidebar - Found logo asset:', logoAsset);
+          
+          if (logoAsset) {
+            const newLogoUrl = `http://localhost:3001/uploads/${logoAsset.fileName}`;
+            console.log('Sidebar - Setting logo URL:', newLogoUrl);
+            setLogoUrl(newLogoUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load site assets:', error);
+      }
+    };
+
+    loadAssets();
+  }, []);
 
   // Define navigation items with permissions
   const navigationItems = [
@@ -59,13 +85,11 @@ const Sidebar = () => {
           name: 'My Content',
           href: '/content/mycontent',
           permission: 'article:read',
-          hideForRoles: ['ADVISER'], // Hide for advisers
         },
         {
           name: 'Content Status',
           href: '/content/status',
           permission: 'article:read',
-          hideForRoles: ['ADVISER'], // Hide for advisers
         },
         {
           name: 'Review Queue',
@@ -90,6 +114,12 @@ const Sidebar = () => {
       href: '/analytics',
       icon: ChartBarIcon,
       permission: 'analytics:read',
+    },
+    {
+      name: 'Site Settings',
+      href: '/settings',
+      icon: ShieldCheckIcon,
+      permission: 'system:config',
     },
   ];
 
@@ -172,7 +202,7 @@ const Sidebar = () => {
         <div className="sidebar-logo-container">
           <div className="sidebar-logo-icon">
             <img 
-              src={theaxisLogo} 
+              src={logoUrl} 
               alt="The AXIS Logo" 
               className="sidebar-logo-image"
             />

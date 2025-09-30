@@ -46,8 +46,17 @@ const FeaturedArticlesHero = () => {
           imageUrl = `http://localhost:3001${imageUrl}`;
         }
         
-        // Resize image for hero section - add size parameters
-        if (imageUrl && imageUrl.includes('http')) {
+        // Check if it's a video before adding image parameters
+        const isVideo = imageUrl && (
+          /\.(mp4|webm|ogg|avi|mov|quicktime)$/i.test(imageUrl) || 
+          imageUrl.includes('video/') ||
+          imageUrl.includes('.mp4') ||
+          imageUrl.includes('.webm') ||
+          imageUrl.includes('.ogg')
+        );
+
+        // Resize image for hero section - add size parameters (only for images, not videos)
+        if (imageUrl && imageUrl.includes('http') && !isVideo) {
           // For external URLs, add size parameters
           if (imageUrl.includes('unsplash.com')) {
             imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=1200&h=750');
@@ -160,15 +169,40 @@ const FeaturedArticlesHero = () => {
 
   const currentArticle = featuredArticles[currentSlide];
 
+  // Check if the featured media is a video
+  const isVideo = currentArticle.featuredImage && (
+    /\.(mp4|webm|ogg|avi|mov|quicktime)$/i.test(currentArticle.featuredImage) || 
+    currentArticle.featuredImage.includes('video/') ||
+    currentArticle.featuredImage.includes('.mp4') ||
+    currentArticle.featuredImage.includes('.webm') ||
+    currentArticle.featuredImage.includes('.ogg')
+  );
+
   return (
     <section className="featured-articles-hero">
       <div className="featured-articles-hero-container">
         <div className="featured-articles-hero-content">
-          {/* Background Image */}
+          {/* Background Image or Video */}
+          {isVideo ? (
+            <video 
+              className="featured-articles-hero-bg-image"
+              src={currentArticle.featuredImage}
+              muted
+              playsInline
+              preload="metadata"
+              onError={(e) => {
+                console.error('Video failed to load:', currentArticle.featuredImage);
+                // Fallback to background image if video fails
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'block';
+              }}
+            />
+          ) : null}
           <div 
             className="featured-articles-hero-bg-image"
             style={{
-              backgroundImage: `url(${currentArticle.featuredImage})`
+              backgroundImage: isVideo ? 'none' : `url(${currentArticle.featuredImage})`,
+              display: isVideo ? 'none' : 'block'
             }}
           ></div>
           

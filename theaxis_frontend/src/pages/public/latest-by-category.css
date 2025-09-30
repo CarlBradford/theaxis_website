@@ -9,7 +9,7 @@
 
 /* Latest by Category Section */
 .latest-by-category {
-  background: #ffffff;
+  background: var(--color-background);
   position: relative;
   margin-bottom: 2rem;
 }

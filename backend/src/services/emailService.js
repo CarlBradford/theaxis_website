@@ -904,6 +904,107 @@ class EmailService {
   }
 
   /**
+   * Send email to ADVISER when any article is published
+   */
+  async sendAdviserArticlePublishedNotification(email, firstName, articleTitle, authorName, authorRole, categories) {
+    if (!this.transporter) {
+      logger.warn('Email service not available. ADVISER publish notification not sent.');
+      return false;
+    }
+
+    const mailOptions = {
+      from: config.email.from,
+      to: email,
+      subject: `Article Published: ${articleTitle} - The AXIS`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Article Published</h2>
+          <p>Hello ${firstName},</p>
+          <p>A new article has been published on The AXIS website:</p>
+          <div style="background-color: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4caf50;">
+            <p><strong>Article Title:</strong> ${articleTitle}</p>
+            <p><strong>Author:</strong> ${authorName} (${authorRole})</p>
+            <p><strong>Categories:</strong> ${categories}</p>
+            <p><strong>Status:</strong> Published</p>
+            <p><strong>Published At:</strong> ${new Date().toLocaleString()}</p>
+          </div>
+          <p>This article is now live on the platform and available to readers.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/published-content" style="background-color: #4caf50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Published Content</a>
+          </div>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+          <p style="color: #666; font-size: 12px;">The AXIS - Student Publication Platform</p>
+        </div>
+      `
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      logger.info('ADVISER publish notification email sent', {
+        to: email,
+        articleTitle,
+        authorName,
+        authorRole,
+        messageId: info.messageId
+      });
+      return true;
+    } catch (error) {
+      logger.error('Failed to send ADVISER publish notification email', {
+        to: email,
+        articleTitle,
+        authorName,
+        authorRole,
+        error: error.message
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Send email to EIC when Section Head publishes their own article
+   */
+  async sendEICSectionHeadPublishedNotification(email, firstName, articleTitle, authorName) {
+    if (!this.transporter) {
+      logger.warn('Email service not available. EIC Section Head publish notification not sent.');
+      return false;
+    }
+
+    const mailOptions = {
+      from: config.email.from,
+      to: email,
+      subject: `Article Published by Section Head: ${articleTitle} - The AXIS`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Article Published by Section Head</h2>
+          <p>Hello ${firstName},</p>
+          <p>A Section Head has published their own article:</p>
+          <div style="background-color: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4caf50;">
+            <p><strong>Article Title:</strong> ${articleTitle}</p>
+            <p><strong>Author:</strong> ${authorName} (Section Head)</p>
+            <p><strong>Status:</strong> Published</p>
+            <p><strong>Published At:</strong> ${new Date().toLocaleString()}</p>
+          </div>
+          <p>This article has been published directly by a Section Head and is now live on the platform.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/published-content" style="background-color: #4caf50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Published Content</a>
+          </div>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+          <p style="color: #666; font-size: 12px;">The AXIS - Student Publication Platform</p>
+        </div>
+      `,
+    };
+
+    try {
+      const result = await this.transporter.sendMail(mailOptions);
+      logger.info('EIC Section Head publish notification sent successfully', { email, articleTitle, messageId: result.messageId });
+      return true;
+    } catch (error) {
+      logger.error('Failed to send EIC Section Head publish notification', { email, articleTitle, error: error.message });
+      return false;
+    }
+  }
+
+  /**
    * Send email to EIC when Section Head updates an online issue (flipbook)
    */
   async sendEICFlipbookUpdatedNotification(email, firstName, flipbookName, flipbookType, updatedByName, creatorName) {

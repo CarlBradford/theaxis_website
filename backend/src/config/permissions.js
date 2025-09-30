@@ -78,21 +78,51 @@ const ROLE_PERMISSIONS = {
     PERMISSIONS.USER_CREATE,
     PERMISSIONS.USER_READ,
     PERMISSIONS.USER_UPDATE,
+    PERMISSIONS.USER_DELETE,
     PERMISSIONS.USER_ACTIVATE,
     PERMISSIONS.USER_DEACTIVATE,
     PERMISSIONS.USER_ROLE_CHANGE,
 
     // Article Management
+    PERMISSIONS.ARTICLE_CREATE,
     PERMISSIONS.ARTICLE_READ,
+    PERMISSIONS.ARTICLE_UPDATE,
+    PERMISSIONS.ARTICLE_DELETE,
+    PERMISSIONS.ARTICLE_PUBLISH,
+    PERMISSIONS.ARTICLE_APPROVE,
+    PERMISSIONS.ARTICLE_REJECT,
     PERMISSIONS.ARTICLE_REVIEW,
+
+    // Category & Tag Management
+    PERMISSIONS.CATEGORY_CREATE,
+    PERMISSIONS.CATEGORY_READ,
+    PERMISSIONS.CATEGORY_UPDATE,
+    PERMISSIONS.CATEGORY_DELETE,
+    PERMISSIONS.TAG_CREATE,
+    PERMISSIONS.TAG_READ,
+    PERMISSIONS.TAG_UPDATE,
+    PERMISSIONS.TAG_DELETE,
+
+    // Comment Management
+    PERMISSIONS.COMMENT_READ,
+    PERMISSIONS.COMMENT_DELETE,
+    PERMISSIONS.COMMENT_MODERATE,
 
     // Media Management
     PERMISSIONS.MEDIA_UPLOAD,
     PERMISSIONS.MEDIA_READ,
+    PERMISSIONS.MEDIA_DELETE,
 
     // Analytics & Reports
     PERMISSIONS.ANALYTICS_READ,
     PERMISSIONS.REPORTS_GENERATE,
+
+    // Announcements
+    PERMISSIONS.ANNOUNCEMENT_CREATE,
+    PERMISSIONS.ANNOUNCEMENT_READ,
+    PERMISSIONS.ANNOUNCEMENT_UPDATE,
+    PERMISSIONS.ANNOUNCEMENT_DELETE,
+    PERMISSIONS.ANNOUNCEMENT_PUBLISH,
 
     // Editorial Notes
     PERMISSIONS.EDITORIAL_NOTE_CREATE,
@@ -160,12 +190,7 @@ const ROLE_PERMISSIONS = {
   ],
 
   SECTION_HEAD: [
-    // User Management (limited - can only create STAFF)
-    PERMISSIONS.USER_CREATE,
-    PERMISSIONS.USER_READ,
-    PERMISSIONS.USER_UPDATE,
-
-    // Article Management
+    // Article Management (can publish directly without approval)
     PERMISSIONS.ARTICLE_CREATE,
     PERMISSIONS.ARTICLE_READ,
     PERMISSIONS.ARTICLE_UPDATE,
@@ -179,17 +204,9 @@ const ROLE_PERMISSIONS = {
     PERMISSIONS.TAG_READ,
     PERMISSIONS.TAG_UPDATE,
 
-    // Comment Management
-    PERMISSIONS.COMMENT_READ,
-    PERMISSIONS.COMMENT_DELETE,
-
     // Media Management
     PERMISSIONS.MEDIA_UPLOAD,
     PERMISSIONS.MEDIA_READ,
-
-    // Analytics & Reports
-    PERMISSIONS.ANALYTICS_READ,
-    PERMISSIONS.REPORTS_GENERATE,
 
     // Editorial Notes
     PERMISSIONS.EDITORIAL_NOTE_CREATE,
@@ -293,9 +310,9 @@ const canManageRole = (managerRole, targetRole) => {
     return ['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER'].includes(targetRole);
   }
   
-  // SECTION_HEAD cannot update higher roles (only STAFF under them)
+  // SECTION_HEAD cannot update any roles
   if (managerRole === 'SECTION_HEAD') {
-    return targetRole === 'STAFF';
+    return false;
   }
   
   // STAFF cannot update any roles
@@ -323,9 +340,9 @@ const canCreateUserRole = (creatorRole, targetRole) => {
     return ['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER'].includes(targetRole);
   }
   
-  // SECTION_HEAD can only create STAFF accounts
+  // SECTION_HEAD cannot create any user accounts
   if (creatorRole === 'SECTION_HEAD') {
-    return targetRole === 'STAFF';
+    return false;
   }
   
   // STAFF cannot create any user accounts

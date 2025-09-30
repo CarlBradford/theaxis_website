@@ -11,7 +11,8 @@ const MediaDisplay = ({
   onError,
   onClick,
   title,
-  showVideoIcon = true
+  showVideoIcon = true,
+  controls = false
 }) => {
   if (!mediaUrl) {
     return (
@@ -54,6 +55,7 @@ const MediaDisplay = ({
           }}
           muted
           preload="metadata"
+          controls={controls}
         >
           Your browser does not support the video tag.
         </video>

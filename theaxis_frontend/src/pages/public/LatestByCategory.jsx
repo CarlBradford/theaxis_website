@@ -68,8 +68,17 @@ const LatestByCategory = () => {
               imageUrl = `http://localhost:3001${imageUrl}`;
             }
             
-            // Resize image for latest by category section
-            if (imageUrl && imageUrl.includes('http')) {
+            // Check if it's a video before adding image parameters
+            const isVideo = imageUrl && (
+              /\.(mp4|webm|ogg|avi|mov|quicktime)$/i.test(imageUrl) || 
+              imageUrl.includes('video/') ||
+              imageUrl.includes('.mp4') ||
+              imageUrl.includes('.webm') ||
+              imageUrl.includes('.ogg')
+            );
+
+            // Resize image for latest by category section (only for images, not videos)
+            if (imageUrl && imageUrl.includes('http') && !isVideo) {
               if (imageUrl.includes('unsplash.com')) {
                 imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=400&h=300');
               } else if (imageUrl.includes('localhost:3001')) {
@@ -99,9 +108,9 @@ const LatestByCategory = () => {
         'Editorial',
         'Feature',
         'Literary',
-        'DevComm',
+        'DevCom',
         'Sports',
-        'Arts'
+        'Gallery'
       ];
       
       // Filter out "The AXIS Online" and sort by predefined order

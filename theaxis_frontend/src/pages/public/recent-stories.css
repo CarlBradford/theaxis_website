@@ -10,7 +10,7 @@
 
 /* Recent Stories Section */
 .recent-stories {
-  background: #ffffff;
+  background: var(--color-background);
   position: relative;
 }
 

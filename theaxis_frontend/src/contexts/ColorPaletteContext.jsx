@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { DEFAULT_THEMES, colorPaletteUtils } from '../config/colorPalette';
 
 // Create the context
-const ColorPaletteContext = createContext();
+const ColorPaletteContext = createContext(null);
 
 // Color Palette Provider Component
-export const ColorPaletteProvider = ({ children }) => {
+export const ColorPaletteProvider = React.memo(({ children }) => {
   const [currentTheme, setCurrentTheme] = useState(DEFAULT_THEMES.custom);
   const [isLoading, setIsLoading] = useState(true);
   const [customThemes, setCustomThemes] = useState({});
@@ -47,54 +47,107 @@ export const ColorPaletteProvider = ({ children }) => {
   };
 
   // Change theme
-  const changeTheme = (themeName) => {
+  const changeTheme = useCallback((themeName) => {
     const theme = DEFAULT_THEMES[themeName] || customThemes[themeName];
     if (theme && colorPaletteUtils.validateTheme(theme)) {
       setCurrentTheme(theme);
     } else {
       console.error('Invalid theme:', themeName);
     }
-  };
+  }, [customThemes]);
 
   // Apply custom theme
-  const applyCustomTheme = (theme) => {
-    if (colorPaletteUtils.validateTheme(theme)) {
-      setCurrentTheme(theme);
+  const applyCustomTheme = useCallback((theme) => {
+    // Handle both full theme objects and color-only objects
+    let fullTheme;
+    
+    if (theme.colors && !theme.name) {
+      // Convert CSS custom properties to color keys if needed
+      let colors = theme.colors;
+      
+      // Check if colors are in CSS custom property format (--color-*)
+      const hasCSSProperties = Object.keys(colors).some(key => key.startsWith('--color-'));
+      
+      if (hasCSSProperties) {
+        // Convert CSS custom properties to color keys
+        colors = {};
+        Object.entries(theme.colors).forEach(([key, value]) => {
+          if (key.startsWith('--color-')) {
+            const colorKey = key.replace('--color-', '');
+            colors[colorKey] = value;
+          }
+        });
+      }
+      
+      // Ensure required colors exist with fallbacks
+      const requiredColors = {
+        primary: colors.primary || colors.accent || '#215d55',
+        secondary: colors.secondary || colors.border || '#656362',
+        background: colors.background || '#ffffff',
+        textPrimary: colors.textPrimary || colors.text || '#1c4643',
+        header: colors.header || colors.primary || colors.accent || '#1c4643',
+        footer: colors.footer || colors.secondary || colors.border || '#656362'
+      };
+      
+      colors = { ...colors, ...requiredColors };
+      
+      // Create a full theme object
+      fullTheme = {
+        name: 'Custom',
+        description: 'Custom theme from database',
+        colors: colors
+      };
+    } else {
+      // Use the provided theme as-is
+      fullTheme = theme;
+    }
+    
+    if (colorPaletteUtils.validateTheme(fullTheme)) {
+      setCurrentTheme(fullTheme);
       // Store custom theme
       const customThemeKey = `custom_${Date.now()}`;
       setCustomThemes(prev => ({
         ...prev,
-        [customThemeKey]: theme
+        [customThemeKey]: fullTheme
       }));
     } else {
-      console.error('Invalid custom theme structure');
+      console.error('Invalid custom theme structure', fullTheme);
+      console.error('Theme colors:', fullTheme.colors);
+      console.error('Required colors check:', {
+        primary: !!fullTheme.colors?.primary,
+        secondary: !!fullTheme.colors?.secondary,
+        background: !!fullTheme.colors?.background,
+        textPrimary: !!fullTheme.colors?.textPrimary,
+        header: !!fullTheme.colors?.header,
+        footer: !!fullTheme.colors?.footer
+      });
     }
-  };
+  }, [setCustomThemes]);
 
   // Reset to default theme
-  const resetToDefault = (themeName = 'custom') => {
+  const resetToDefault = useCallback((themeName = 'custom') => {
     const defaultTheme = DEFAULT_THEMES[themeName];
     if (defaultTheme) {
       setCurrentTheme(defaultTheme);
       localStorage.removeItem('reader-theme');
     }
-  };
+  }, []);
 
   // Get available themes
-  const getAvailableThemes = () => {
+  const getAvailableThemes = useCallback(() => {
     return {
       ...DEFAULT_THEMES,
       ...customThemes
     };
-  };
+  }, [customThemes]);
 
   // Get theme colors as CSS variables
-  const getThemeCSSVariables = () => {
+  const getThemeCSSVariables = useCallback(() => {
     return colorPaletteUtils.getCSSVariables(currentTheme);
-  };
+  }, [currentTheme]);
 
   // Generate theme preview
-  const generateThemePreview = (theme) => {
+  const generateThemePreview = useCallback((theme) => {
     const colors = theme.colors;
     return {
       primary: colors.primary,
@@ -104,20 +157,20 @@ export const ColorPaletteProvider = ({ children }) => {
       text: colors.textPrimary,
       accent: colors.accent
     };
-  };
+  }, []);
 
   // Export theme configuration
-  const exportTheme = () => {
+  const exportTheme = useCallback(() => {
     return {
       name: currentTheme.name,
       description: currentTheme.description,
       colors: currentTheme.colors,
       exportedAt: new Date().toISOString()
     };
-  };
+  }, [currentTheme]);
 
   // Import theme configuration
-  const importTheme = (themeConfig) => {
+  const importTheme = useCallback((themeConfig) => {
     try {
       if (colorPaletteUtils.validateTheme(themeConfig)) {
         applyCustomTheme(themeConfig);
@@ -128,10 +181,10 @@ export const ColorPaletteProvider = ({ children }) => {
     } catch (error) {
       return { success: false, error: error.message };
     }
-  };
+  }, [applyCustomTheme]);
 
-  // Context value
-  const value = {
+  // Context value - memoized to prevent unnecessary re-renders
+  const value = useMemo(() => ({
     // State
     currentTheme,
     isLoading,
@@ -152,14 +205,26 @@ export const ColorPaletteProvider = ({ children }) => {
     
     // Constants
     defaultThemes: DEFAULT_THEMES
-  };
+  }), [
+    currentTheme,
+    isLoading,
+    customThemes,
+    changeTheme,
+    applyCustomTheme,
+    resetToDefault,
+    getAvailableThemes,
+    getThemeCSSVariables,
+    generateThemePreview,
+    exportTheme,
+    importTheme
+  ]);
 
   return (
     <ColorPaletteContext.Provider value={value}>
       {children}
     </ColorPaletteContext.Provider>
   );
-};
+});
 
 // Custom hook to use color palette
 export const useColorPalette = () => {
@@ -199,4 +264,5 @@ export const useThemeManagement = () => {
   };
 };
 
-export default ColorPaletteContext;
+// Export the context for external use
+export { ColorPaletteContext };

@@ -70,35 +70,7 @@ router.get('/settings', async (req, res) => {
   }
 });
 
-// Get specific setting
-router.get('/settings/:key', async (req, res) => {
-  try {
-    const { key } = req.params;
-    const setting = await prisma.siteSetting.findUnique({
-      where: { key }
-    });
-    
-    if (!setting) {
-      return res.status(404).json({
-        success: false,
-        message: 'Setting not found'
-      });
-    }
-    
-    res.json({
-      success: true,
-      data: setting.value
-    });
-  } catch (error) {
-    console.error('Error fetching setting:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch setting'
-    });
-  }
-});
-
-// Get color settings
+// Get color settings (must be before /settings/:key to avoid route conflicts)
 router.get('/settings/colors', async (req, res) => {
   try {
     const setting = await prisma.siteSetting.findUnique({
@@ -126,7 +98,7 @@ router.get('/settings/colors', async (req, res) => {
 });
 
 // Update site settings (colors)
-router.put('/settings/colors', authenticateToken, requireRole(['EDITOR_IN_CHIEF', 'SYSTEM_ADMIN']), async (req, res) => {
+router.put('/settings/colors', authenticateToken, requireRole(['ADVISER', 'SYSTEM_ADMIN']), async (req, res) => {
   try {
     const { colors } = req.body;
     const userId = req.user.id;
@@ -184,6 +156,34 @@ router.put('/settings/colors', authenticateToken, requireRole(['EDITOR_IN_CHIEF'
   }
 });
 
+// Get specific setting (must be after specific routes to avoid conflicts)
+router.get('/settings/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const setting = await prisma.siteSetting.findUnique({
+      where: { key }
+    });
+    
+    if (!setting) {
+      return res.status(404).json({
+        success: false,
+        message: 'Setting not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: setting.value
+    });
+  } catch (error) {
+    console.error('Error fetching setting:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch setting'
+    });
+  }
+});
+
 // Get current site assets
 router.get('/assets', async (req, res) => {
   try {
@@ -206,7 +206,7 @@ router.get('/assets', async (req, res) => {
 });
 
 // Upload logo
-router.post('/assets/logo', authenticateToken, requireRole(['EDITOR_IN_CHIEF', 'SYSTEM_ADMIN']), upload.single('logo'), async (req, res) => {
+router.post('/assets/logo', authenticateToken, requireRole(['ADVISER', 'SYSTEM_ADMIN']), upload.single('logo'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -272,7 +272,7 @@ router.post('/assets/logo', authenticateToken, requireRole(['EDITOR_IN_CHIEF', '
 });
 
 // Upload wordmark
-router.post('/assets/wordmark', authenticateToken, requireRole(['EDITOR_IN_CHIEF', 'SYSTEM_ADMIN']), upload.single('wordmark'), async (req, res) => {
+router.post('/assets/wordmark', authenticateToken, requireRole(['ADVISER', 'SYSTEM_ADMIN']), upload.single('wordmark'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -338,7 +338,7 @@ router.post('/assets/wordmark', authenticateToken, requireRole(['EDITOR_IN_CHIEF
 });
 
 // Delete asset
-router.delete('/assets/:id', authenticateToken, requireRole(['EDITOR_IN_CHIEF', 'SYSTEM_ADMIN']), async (req, res) => {
+router.delete('/assets/:id', authenticateToken, requireRole(['ADVISER', 'SYSTEM_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -379,7 +379,7 @@ router.delete('/assets/:id', authenticateToken, requireRole(['EDITOR_IN_CHIEF', 
 });
 
 // Reset color settings to default
-router.post('/settings/colors/reset', authenticateToken, requireRole(['EDITOR_IN_CHIEF', 'SYSTEM_ADMIN']), async (req, res) => {
+router.post('/settings/colors/reset', authenticateToken, requireRole(['ADVISER', 'SYSTEM_ADMIN']), async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -388,7 +388,7 @@ router.post('/settings/colors/reset', authenticateToken, requireRole(['EDITOR_IN
       secondary: '#656362',
       background: '#ffffff',
       textPrimary: '#1c4643',
-      header: '#215d55',
+      header: '#1c4643',
       footer: '#656362'
     };
     

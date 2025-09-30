@@ -53,7 +53,8 @@ const FlipbookInputForm = ({ isOpen, onClose, onSubmit, editData = null }) => {
     { value: 'tabloid', label: 'Tabloid' },
     { value: 'magazine', label: 'Magazine' },
     { value: 'literary_folio', label: 'Literary Folio' },
-    { value: 'art_compilation', label: 'Art Compilation' }
+    { value: 'art_compilation', label: 'Art Compilation' },
+    { value: 'special_editions', label: 'Special Editions' }
   ];
 
   const handleInputChange = (e) => {

@@ -727,6 +727,22 @@ router.get(
           _sum: { viewCount: true }
         }).then(result => result._sum.viewCount || 0)
       };
+    } else if (userRole === 'ADVISER' && authorId) {
+      // ADVISER viewing their own content: Personal stats
+      const adviserWhere = { ...baseWhere, authorId: userId };
+      
+      stats = {
+        totalContent: await prisma.article.count({ where: adviserWhere }),
+        drafts: await prisma.article.count({ where: { ...adviserWhere, status: 'DRAFT' } }),
+        inReview: await prisma.article.count({ where: { ...adviserWhere, status: 'IN_REVIEW' } }),
+        needsRevision: await prisma.article.count({ where: { ...adviserWhere, status: 'NEEDS_REVISION' } }),
+        published: await prisma.article.count({ where: { ...adviserWhere, status: 'PUBLISHED' } }),
+        archived: await prisma.article.count({ where: { ...adviserWhere, status: 'ARCHIVED' } }),
+        totalViews: await prisma.article.aggregate({
+          where: adviserWhere,
+          _sum: { viewCount: true }
+        }).then(result => result._sum.viewCount || 0)
+      };
     } else if (['EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(userRole)) {
       // EIC and higher: All content stats
       stats = {
@@ -1756,6 +1772,7 @@ router.get(
         status: true,
         publishedAt: true,
         authorId: true,
+        viewCount: true,
         likeCount: true,
         dislikeCount: true,
         commentCount: true,

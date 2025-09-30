@@ -8,13 +8,12 @@ export const DEFAULT_THEMES = {
     name: 'Custom',
     description: 'Admin customizable theme',
     colors: {
-      // Essential colors only
       primary: '#215d55',        // Teal - Main brand color
-      secondary: '#656362',      // Dark Gray - Accent color
+      secondary: '#656362',      // Dark Gray - Accent color  
       background: '#ffffff',     // Main background
-      textPrimary: '#1c4643',   // Dark Teal - Main text
+      textPrimary: '#1c4643',    // Dark Teal - Main text
       header: '#1c4643',         // Header color (same as primary)
-      footer: '#656362',         // Dark Teal - Main text
+      footer: '#656362',         // Footer color (same as secondary)
     }
   }
 };
@@ -92,8 +91,4 @@ export const colorPaletteUtils = {
   }
 };
 
-// Default export
-export default {
-  themes: DEFAULT_THEMES,
-  utils: colorPaletteUtils
-};
+// No default export to maintain Fast Refresh compatibility

@@ -2,122 +2,40 @@
 
 /* CSS Custom Properties for Color Palette */
 :root {
-  /* Primary colors */
+  /* Essential colors only - set by ColorPaletteContext */
   --color-primary: #215d55;        /* Teal - Main brand color */
-  --color-primary-light: #2a7a6f;  /* Lighter teal variant */
-  --color-primary-dark: #1c4643;   /* Dark Teal - Darker variant */
-  
-  /* Secondary colors */
   --color-secondary: #656362;      /* Dark Gray - Accent color */
-  --color-secondary-light: #b3b0ac; /* Light Gray - Lighter accent */
-  --color-secondary-dark: #4a4847;  /* Darker gray variant */
-  
-  /* Neutral colors */
   --color-background: #ffffff;     /* Main background */
-  --color-surface: #f8fafc;       /* Card/surface background */
-  --color-surface-hover: #f1f5f9;  /* Hover state */
-  
-  /* Text colors */
-  --color-text-primary: #1c4643;   /* Dark Teal - Main text */
-  --color-text-secondary: #656362; /* Dark Gray - Secondary text */
-  --color-text-muted: #b3b0ac;     /* Light Gray - Muted text */
-  --color-text-inverse: #ffffff;   /* Text on dark backgrounds */
-  
-  /* Header and Footer colors */
-  --color-header: #215d55;         /* Header color (same as primary) */
+  --color-textPrimary: #1c4643;    /* Dark Teal - Main text */
+  --color-header: #1c4643;         /* Header color (same as primary) */
   --color-footer: #656362;         /* Footer color (same as secondary) */
-  
-  /* Border colors */
-  --color-border: #b3b0ac;         /* Light Gray - Default borders */
-  --color-border-light: #e5e7eb;   /* Very light borders */
-  --color-border-dark: #656362;    /* Dark Gray - Dark borders */
-  
-  /* Status colors */
-  --color-success: #215d55;        /* Teal - Success states */
-  --color-warning: #f59e0b;        /* Warning states */
-  --color-error: #ef4444;          /* Error states */
-  --color-info: #215d55;           /* Teal - Info states */
-  
-  /* Interactive states */
-  --color-hover: #f1f5f9;          /* Hover background */
-  --color-active: #e5e7eb;         /* Active state */
-  --color-focus: #215d55;          /* Teal - Focus ring */
-  
-  /* Special colors */
-  --color-accent: #215d55;         /* Teal - Special accent */
-  --color-highlight: #f0f9f7;      /* Light teal highlight background */
 }
 
 /* Utility Classes for Color Palette */
 .color-primary { color: var(--color-primary) !important; }
-.color-primary-light { color: var(--color-primary-light) !important; }
-.color-primary-dark { color: var(--color-primary-dark) !important; }
-
 .color-secondary { color: var(--color-secondary) !important; }
-.color-secondary-light { color: var(--color-secondary-light) !important; }
-.color-secondary-dark { color: var(--color-secondary-dark) !important; }
-
-.color-text-primary { color: var(--color-text-primary) !important; }
-.color-text-secondary { color: var(--color-text-secondary) !important; }
-.color-text-muted { color: var(--color-text-muted) !important; }
-.color-text-inverse { color: var(--color-text-inverse) !important; }
-
+.color-textPrimary { color: var(--color-textPrimary) !important; }
 .color-header { color: var(--color-header) !important; }
 .color-footer { color: var(--color-footer) !important; }
 
-.color-success { color: var(--color-success) !important; }
-.color-warning { color: var(--color-warning) !important; }
-.color-error { color: var(--color-error) !important; }
-.color-info { color: var(--color-info) !important; }
-
-.color-accent { color: var(--color-accent) !important; }
-
 /* Background Utility Classes */
 .bg-primary { background-color: var(--color-primary) !important; }
-.bg-primary-light { background-color: var(--color-primary-light) !important; }
-.bg-primary-dark { background-color: var(--color-primary-dark) !important; }
-
 .bg-secondary { background-color: var(--color-secondary) !important; }
-.bg-secondary-light { background-color: var(--color-secondary-light) !important; }
-.bg-secondary-dark { background-color: var(--color-secondary-dark) !important; }
-
 .bg-background { background-color: var(--color-background) !important; }
-.bg-surface { background-color: var(--color-surface) !important; }
-.bg-surface-hover { background-color: var(--color-surface-hover) !important; }
-
-.bg-success { background-color: var(--color-success) !important; }
-.bg-warning { background-color: var(--color-warning) !important; }
-.bg-error { background-color: var(--color-error) !important; }
-.bg-info { background-color: var(--color-info) !important; }
-
-.bg-accent { background-color: var(--color-accent) !important; }
-.bg-highlight { background-color: var(--color-highlight) !important; }
 
 /* Border Utility Classes */
 .border-primary { border-color: var(--color-primary) !important; }
 .border-secondary { border-color: var(--color-secondary) !important; }
-.border-default { border-color: var(--color-border) !important; }
-.border-light { border-color: var(--color-border-light) !important; }
-.border-dark { border-color: var(--color-border-dark) !important; }
-
-.border-success { border-color: var(--color-success) !important; }
-.border-warning { border-color: var(--color-warning) !important; }
-.border-error { border-color: var(--color-error) !important; }
-.border-info { border-color: var(--color-info) !important; }
 
 /* Hover and Focus States */
 .hover-primary:hover { 
   background-color: var(--color-primary) !important; 
-  color: var(--color-text-inverse) !important; 
+  color: #ffffff !important; 
 }
 
 .hover-secondary:hover { 
   background-color: var(--color-secondary) !important; 
-  color: var(--color-text-inverse) !important; 
-}
-
-.hover-surface:hover { 
-  background-color: var(--color-surface-hover) !important; 
+  color: #ffffff !important; 
 }
 
 .focus-primary:focus { 
@@ -133,24 +51,24 @@
 /* Button Styles with Color Palette */
 .btn-primary {
   background-color: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: #ffffff;
   border: 1px solid var(--color-primary);
 }
 
 .btn-primary:hover {
-  background-color: var(--color-primary-dark);
-  border-color: var(--color-primary-dark);
+  background-color: var(--color-textPrimary);
+  border-color: var(--color-textPrimary);
 }
 
 .btn-secondary {
   background-color: var(--color-secondary);
-  color: var(--color-text-inverse);
+  color: #ffffff;
   border: 1px solid var(--color-secondary);
 }
 
 .btn-secondary:hover {
-  background-color: var(--color-secondary-dark);
-  border-color: var(--color-secondary-dark);
+  background-color: var(--color-footer);
+  border-color: var(--color-footer);
 }
 
 .btn-outline-primary {
@@ -161,7 +79,7 @@
 
 .btn-outline-primary:hover {
   background-color: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: #ffffff;
 }
 
 .btn-outline-secondary {
@@ -172,32 +90,32 @@
 
 .btn-outline-secondary:hover {
   background-color: var(--color-secondary);
-  color: var(--color-text-inverse);
+  color: #ffffff;
 }
 
 /* Card Styles with Color Palette */
 .card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-secondary);
+  color: var(--color-textPrimary);
 }
 
 .card:hover {
-  background-color: var(--color-surface-hover);
-  border-color: var(--color-border-dark);
+  background-color: #f8f9fa;
+  border-color: var(--color-primary);
 }
 
 /* Input Styles with Color Palette */
 .input {
   background-color: var(--color-background);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-primary);
+  border: 1px solid var(--color-secondary);
+  color: var(--color-textPrimary);
 }
 
 .input:focus {
   border-color: var(--color-primary);
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-focus);
+  box-shadow: 0 0 0 2px rgba(33, 93, 85, 0.2);
 }
 
 /* Link Styles with Color Palette */
@@ -207,7 +125,7 @@
 }
 
 .link-primary:hover {
-  color: var(--color-primary-dark);
+  color: var(--color-textPrimary);
   text-decoration: underline;
 }
 
@@ -217,29 +135,8 @@
 }
 
 .link-secondary:hover {
-  color: var(--color-secondary-dark);
+  color: var(--color-footer);
   text-decoration: underline;
-}
-
-/* Status Badge Styles */
-.badge-success {
-  background-color: var(--color-success);
-  color: var(--color-text-inverse);
-}
-
-.badge-warning {
-  background-color: var(--color-warning);
-  color: var(--color-text-inverse);
-}
-
-.badge-error {
-  background-color: var(--color-error);
-  color: var(--color-text-inverse);
-}
-
-.badge-info {
-  background-color: var(--color-info);
-  color: var(--color-text-inverse);
 }
 
 /* Theme Transition */
@@ -247,28 +144,13 @@
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: #0f172a;
-    --color-surface: #1e293b;
-    --color-surface-hover: #334155;
-    --color-text-primary: #f8fafc;
-    --color-text-secondary: #cbd5e1;
-    --color-text-muted: #94a3b8;
-    --color-border: #334155;
-    --color-border-light: #475569;
-    --color-border-dark: #1e293b;
-  }
-}
 
 /* Print Styles */
 @media print {
   :root {
     --color-background: #ffffff;
-    --color-surface: #ffffff;
-    --color-text-primary: #000000;
-    --color-text-secondary: #333333;
-    --color-border: #cccccc;
+    --color-textPrimary: #000000;
+    --color-primary: #000000;
+    --color-secondary: #333333;
   }
 }

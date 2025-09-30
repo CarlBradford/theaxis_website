@@ -145,7 +145,8 @@ const PublishedContent = () => {
           'Tabloid': 'TABLOID', 
           'Magazine': 'MAGAZINE',
           'Literary Folio': 'LITERARY_FOLIO',
-          'Art Compilation': 'ART_COMPILATION'
+          'Art Compilation': 'ART_COMPILATION',
+          'Special Editions': 'SPECIAL_EDITIONS'
         };
         
         if (categoryToTypeMap[filters.category]) {
@@ -1057,7 +1058,8 @@ const PublishedContent = () => {
         'TABLOID': '#F59E0B',         // Amber
         'MAGAZINE': '#10B981',        // Emerald
         'LITERARY_FOLIO': '#8B5CF6',  // Violet
-        'ART_COMPILATION': '#EC4899'  // Pink
+        'ART_COMPILATION': '#EC4899', // Pink
+        'SPECIAL_EDITIONS': '#EF4444' // Red
       };
       
       const typeIcons = {
@@ -1065,7 +1067,8 @@ const PublishedContent = () => {
         'TABLOID': '📰',
         'MAGAZINE': '📖',
         'LITERARY_FOLIO': '📚',
-        'ART_COMPILATION': '🎨'
+        'ART_COMPILATION': '🎨',
+        'SPECIAL_EDITIONS': '⭐'
       };
       
       const color = typeColors[type] || '#6B7280';
@@ -1364,7 +1367,7 @@ const PublishedContent = () => {
             </label>
             {activeFilter === 'online_issues' ? (
               // Show flipbook types for online issues
-              ['Newsletter', 'Tabloid', 'Magazine', 'Literary Folio', 'Art Compilation'].map(type => (
+              ['Newsletter', 'Tabloid', 'Magazine', 'Literary Folio', 'Art Compilation', 'Special Editions'].map(type => (
                 <label key={type} className={`filter-modal-radio-item ${selectedCategory === type ? 'selected' : ''}`}>
                   <input
                     type="radio"

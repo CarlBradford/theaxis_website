@@ -219,6 +219,30 @@ class FlipbookService {
       throw error;
     }
   }
+
+  /**
+   * Get all flipbooks (alias for getFlipbooks for consistency)
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Response data
+   */
+  async getAllFlipbooks(params = {}) {
+    return this.getFlipbooks(params);
+  }
+
+  /**
+   * Get public flipbooks (no authentication required)
+   * @param {Object} params - Query parameters
+   * @returns {Promise<Object>} Response data
+   */
+  async getPublicFlipbooks(params = {}) {
+    try {
+      const response = await axios.get(`${this.api.defaults.baseURL}/public`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching public flipbooks:', error);
+      throw error;
+    }
+  }
 }
 
 // Create and export singleton instance

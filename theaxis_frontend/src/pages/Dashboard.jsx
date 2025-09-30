@@ -288,13 +288,15 @@ const Dashboard = () => {
                 </button>
               )}
               
-              <button 
-                className="dashboard-quick-action-btn"
-                onClick={() => handleQuickAction('view-analytics')}
-              >
-                <ChartBarIcon className="dashboard-action-icon" />
-                <span>View Analytics</span>
-          </button>
+              {hasRole(['EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN']) && (
+                <button 
+                  className="dashboard-quick-action-btn"
+                  onClick={() => handleQuickAction('view-analytics')}
+                >
+                  <ChartBarIcon className="dashboard-action-icon" />
+                  <span>View Analytics</span>
+                </button>
+              )}
             </div>
             </div>
           </div>

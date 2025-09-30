@@ -60,6 +60,7 @@ const CommentManagement = () => {
   const statusOptions = [
     { value: 'all', label: 'All Comments' },
     { value: 'approved', label: 'Active Comments' },
+    { value: 'pending', label: 'Auto-Flagged Comments' },
     { value: 'rejected', label: 'Removed Comments' }
   ];
 
@@ -642,6 +643,17 @@ const CommentManagement = () => {
                     >
                       <XCircleIcon className="w-4 h-4" />
                       Remove Comment
+                    </button>
+                  )}
+                  
+                  {(!comment.isApproved && !comment.isModerated) && (
+                    <button
+                      onClick={() => handleCommentAction(comment.id, 'approve')}
+                      disabled={actionLoading === comment.id}
+                      className="comment-action-btn approve"
+                    >
+                      <CheckCircleIcon className="w-4 h-4" />
+                      Approve Comment
                     </button>
                   )}
                   

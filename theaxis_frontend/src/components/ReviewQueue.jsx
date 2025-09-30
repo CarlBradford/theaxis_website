@@ -15,7 +15,7 @@ import {
 import '../styles/review-queue.css';
 import '../styles/filter-modal.css';
 import { reviewQueueService } from '../services/reviewQueueService';
-import { articlesAPI } from '../services/apiService';
+import { articlesAPI, categoriesAPI } from '../services/apiService';
 import { useNotifications } from './NotificationBell';
 import { trackArticleApproval, trackArticleRejection, trackError } from '../config/analytics';
 import ConfirmationModal from './ConfirmationModal';
@@ -64,6 +64,8 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
   const [showResubmitModal, setShowResubmitModal] = useState(false);
   const [articleToResubmit, setArticleToResubmit] = useState(null);
   const [resubmitLoading, setResubmitLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
   // Map frontend status values to backend database values
   const mapFrontendStatusToBackend = (frontendStatus) => {
@@ -77,6 +79,26 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
     };
     return statusMap[frontendStatus] || frontendStatus;
   };
+
+  // Load categories from API
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setLoadingCategories(true);
+        const response = await categoriesAPI.getCategories();
+        const categoriesData = response.data?.items || response.items || [];
+        setCategories(categoriesData);
+        console.log('Categories loaded for review queue:', categoriesData);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        setCategories([]);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   // Load articles from API
   useEffect(() => {
@@ -917,7 +939,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-black">
-              {queueType === 'section-head' ? 'Section Review Queue' : 'Editor-in-Chief Review Queue'}
+              {queueType === 'section-head' ? 'Section Review Queue' : 'Administrator\'s Review Queue'}
             </h1>
             <p className="text-gray-600">
               {queueType === 'section-head' 
@@ -1016,7 +1038,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       <FilterModal
         isOpen={showFilterModal}
         onClose={() => setShowFilterModal(false)}
-        title={queueType === 'section-head' ? 'Filter Section Review Queue' : 'Filter EIC Review Queue'}
+        title={queueType === 'section-head' ? 'Filter Section Review Queue' : 'Filter Administrator\'s Review Queue'}
         onApply={() => setShowFilterModal(false)}
         onClear={() => {
           setSelectedStatus('all');
@@ -1043,118 +1065,29 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
               />
               <span className="filter-modal-radio-label">All Categories</span>
             </label>
-            <label className={`filter-modal-radio-item ${selectedCategory === 'Development Communication' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="category"
-                value="Development Communication"
-                checked={selectedCategory === 'Development Communication'}
-                onChange={(e) => {
-                  console.log('Category filter changed to:', e.target.value);
-                  setSelectedCategory(e.target.value);
-                }}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">Development Communication</span>
-            </label>
-            <label className={`filter-modal-radio-item ${selectedCategory === 'Editorial' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="category"
-                value="Editorial"
-                checked={selectedCategory === 'Editorial'}
-                onChange={(e) => {
-                  console.log('Category filter changed to:', e.target.value);
-                  setSelectedCategory(e.target.value);
-                }}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">Editorial</span>
-            </label>
-            <label className={`filter-modal-radio-item ${selectedCategory === 'Feature' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="category"
-                value="Feature"
-                checked={selectedCategory === 'Feature'}
-                onChange={(e) => {
-                  console.log('Category filter changed to:', e.target.value);
-                  setSelectedCategory(e.target.value);
-                }}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">Feature</span>
-            </label>
-            <label className={`filter-modal-radio-item ${selectedCategory === 'Literary' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="category"
-                value="Literary"
-                checked={selectedCategory === 'Literary'}
-                onChange={(e) => {
-                  console.log('Category filter changed to:', e.target.value);
-                  setSelectedCategory(e.target.value);
-                }}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">Literary</span>
-            </label>
-            <label className={`filter-modal-radio-item ${selectedCategory === 'News' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="category"
-                value="News"
-                checked={selectedCategory === 'News'}
-                onChange={(e) => {
-                  console.log('Category filter changed to:', e.target.value);
-                  setSelectedCategory(e.target.value);
-                }}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">News</span>
-            </label>
-            <label className={`filter-modal-radio-item ${selectedCategory === 'Opinion' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="category"
-                value="Opinion"
-                checked={selectedCategory === 'Opinion'}
-                onChange={(e) => {
-                  console.log('Category filter changed to:', e.target.value);
-                  setSelectedCategory(e.target.value);
-                }}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">Opinion</span>
-            </label>
-            <label className={`filter-modal-radio-item ${selectedCategory === 'Sports' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="category"
-                value="Sports"
-                checked={selectedCategory === 'Sports'}
-                onChange={(e) => {
-                  console.log('Category filter changed to:', e.target.value);
-                  setSelectedCategory(e.target.value);
-                }}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">Sports</span>
-            </label>
-            <label className={`filter-modal-radio-item ${selectedCategory === 'The AXIS Online' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="category"
-                value="The AXIS Online"
-                checked={selectedCategory === 'The AXIS Online'}
-                onChange={(e) => {
-                  console.log('Category filter changed to:', e.target.value);
-                  setSelectedCategory(e.target.value);
-                }}
-                className="filter-modal-radio-input"
-              />
-              <span className="filter-modal-radio-label">The AXIS Online</span>
-            </label>
+            {loadingCategories ? (
+              <div className="filter-modal-loading">Loading categories...</div>
+            ) : (
+              categories.map((category) => (
+                <label 
+                  key={category.id} 
+                  className={`filter-modal-radio-item ${selectedCategory === category.name ? 'selected' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="category"
+                    value={category.name}
+                    checked={selectedCategory === category.name}
+                    onChange={(e) => {
+                      console.log('Category filter changed to:', e.target.value);
+                      setSelectedCategory(e.target.value);
+                    }}
+                    className="filter-modal-radio-input"
+                  />
+                  <span className="filter-modal-radio-label">{category.name}</span>
+                </label>
+              ))
+            )}
           </div>
         </div>
 

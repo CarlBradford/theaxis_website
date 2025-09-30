@@ -4,10 +4,15 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ColorPaletteProvider } from './contexts/ColorPaletteContext';
 import { NotificationProvider } from './components/NotificationBell';
 import Layout from './components/Layout';
+import ScrollToTop from './components/ScrollToTop';
 import { useGAInit, useAnalytics } from './hooks/useAnalytics';
 import Home from './pages/public/Home';
 import ArticleDetail from './pages/public/ArticleDetail';
 import SearchPage from './pages/public/SearchPage';
+import OfflineArticles from './pages/public/OfflineArticles';
+import CategoryPage from './pages/public/CategoryPage';
+import Gallery from './pages/public/Gallery';
+import AnnualEditions from './pages/public/AnnualEditions';
 import PrivacyPolicy from './pages/public/PrivacyPolicy';
 import TermsOfService from './pages/public/TermsOfService';
 import Login from './pages/Login';
@@ -49,7 +54,27 @@ function AppWithAnalytics() {
   
   // Initialize site settings on app load
   React.useEffect(() => {
-    siteSettingsService.initialize();
+    const initializeSettings = async () => {
+      try {
+        const { assets } = await siteSettingsService.initialize();
+        
+        // Update favicon if logo asset is available
+        if (assets && assets.length > 0) {
+          const logoAsset = assets.find(asset => asset.assetType === 'logo' && asset.isActive);
+          
+          if (logoAsset) {
+            const faviconLink = document.querySelector('link[rel="icon"]');
+            if (faviconLink) {
+              faviconLink.href = `http://localhost:3001/uploads/${logoAsset.fileName}`;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to initialize site settings:', error);
+      }
+    };
+
+    initializeSettings();
   }, []);
   
   return (
@@ -57,6 +82,7 @@ function AppWithAnalytics() {
       <ColorPaletteProvider>
         <NotificationProvider>
           <Router>
+            <ScrollToTop />
             <AnalyticsTracker />
             <div className="min-h-screen bg-gray-50">
             <Routes>
@@ -65,6 +91,18 @@ function AppWithAnalytics() {
               
               {/* Public Search Page - Outside Layout */}
               <Route path="search" element={<SearchPage />} />
+              
+              {/* Public Offline Articles Page - Outside Layout */}
+              <Route path="offline" element={<OfflineArticles />} />
+              
+              {/* Public Category Page - Outside Layout */}
+              <Route path=":categorySlug" element={<CategoryPage />} />
+              
+              {/* Public Gallery Page - Outside Layout */}
+              <Route path="gallery" element={<Gallery />} />
+              
+              {/* Public Annual Editions Page - Outside Layout */}
+              <Route path="annual-editions" element={<AnnualEditions />} />
               
               {/* Public Legal Pages - Outside Layout */}
               <Route path="privacy" element={<PrivacyPolicy />} />
@@ -90,12 +128,12 @@ function AppWithAnalytics() {
               
               {/* Article Management Routes */}
               <Route path="content/mycontent" element={
-                <ProtectedRoute requiredRole="STAFF" excludeRoles={['ADVISER']}>
+                <ProtectedRoute>
                   <MyContent />
                 </ProtectedRoute>
               } />
               <Route path="content/status" element={
-                <ProtectedRoute requiredRole="STAFF" excludeRoles={['ADVISER']}>
+                <ProtectedRoute>
                   <ContentStatus />
                 </ProtectedRoute>
               } />
@@ -158,7 +196,7 @@ function AppWithAnalytics() {
               } />
               
               <Route path="settings" element={
-                <ProtectedRoute requiredRole="EDITOR_IN_CHIEF">
+                <ProtectedRoute requiredRole="ADVISER">
                   <Settings />
                 </ProtectedRoute>
               } />

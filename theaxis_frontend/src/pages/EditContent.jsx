@@ -993,19 +993,42 @@ const EditContent = () => {
                     >
                       {saveLoading ? 'Saving...' : 'Save as Draft'}
                     </button>
-                <button
-                  type="button"
-                  onClick={handleSendToEIC}
-                  className="create-article-submit-btn"
-                >
-                      Submit to EIC
-                </button>
+                    <button
+                      type="button"
+                      onClick={handlePublish}
+                      disabled={isSubmitting}
+                      className="create-article-publish-btn"
+                    >
+                      {isSubmitting ? 'Publishing...' : 'Publish'}
+                    </button>
                   </>
                 )}
               </>
             )}
             
             {user?.role === 'EDITOR_IN_CHIEF' && (
+              <>
+                {articleStatus !== 'PUBLISHED' && (
+                  <button
+                    type="button"
+                    onClick={handleSaveAsDraft}
+                    disabled={isSubmitting}
+                    className="create-article-save-btn"
+                  >
+                    {isSubmitting ? 'Saving...' : 'Save as Draft'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handlePublish}
+                  className="create-article-publish-btn"
+                >
+                  {articleStatus === 'PUBLISHED' ? 'Update' : 'Publish'}
+                </button>
+              </>
+            )}
+            
+            {user?.role === 'ADVISER' && (
               <>
                 {articleStatus !== 'PUBLISHED' && (
                   <button
@@ -1051,7 +1074,7 @@ const EditContent = () => {
             )}
             
             {/* Fallback for other roles */}
-            {!['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'SYSTEM_ADMIN'].includes(user?.role) && (
+            {!['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(user?.role) && (
               <>
                 {articleStatus !== 'PUBLISHED' && (
                   <button

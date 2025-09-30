@@ -1,10 +1,11 @@
 /* Public Header Styles */
-/* Custom Color Theme Variables */
+/* Using Color Palette System Variables */
 :root {
-  --cyan-primary: #215d55;
-  --cyan-dark: #1c4643;
+  /* Use existing color palette variables from color-palette.css */
+  --cyan-primary: var(--color-primary);
+  --cyan-dark: var(--color-header);
   --gray-light: #b3b0ac;
-  --gray-dark: #656362;
+  --gray-dark: var(--color-footer);
 }
 
 .public-header {
@@ -17,7 +18,7 @@
 
 /* Logo Section - Separate from header, shows by default */
 .public-header-logo-section {
-  background-color: #ffffff;
+  background-color: var(--color-background);
   border-bottom: 1px solid #e5e7eb;
   transition: all 0.3s ease;
   overflow: hidden;
@@ -64,6 +65,13 @@
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  height: 4rem;
+}
+
+@media (max-width: 767px) {
+  .public-header-categories {
+    height: 3rem;
+  }
 }
 
 /* Hide desktop navigation on mobile */
@@ -138,6 +146,12 @@
   height: 4rem; /* 64px */
 }
 
+@media (max-width: 767px) {
+  .public-header-content {
+    height: 3rem;
+  }
+}
+
 /* Logo Section */
 .public-header-logo {
   display: flex;
@@ -159,7 +173,7 @@
 }
 
 .public-header-logo-image {
-  height: 80px; /* Slightly larger */
+  height: 4rem; /* Slightly larger */
   width: auto;
   max-width: 100%;
   object-fit: contain;
@@ -246,7 +260,7 @@
 }
 
 .public-header-mobile-logo-image {
-  height: 40px;
+  height: 3rem;
   width: auto;
   object-fit: contain;
 }
@@ -386,20 +400,19 @@
 .public-header-mobile-nav {
   display: flex;
   flex-direction: column;
-  padding: 0.5rem 1.5rem 1.5rem 1.5rem;
+  padding: 0.75rem 0;
   gap: 0;
 }
 
 .public-header-mobile-link {
   color: #ffffff;
   text-decoration: none;
-  padding: 0.5rem 0;
-  font-size: 0.875rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9rem;
   font-weight: 500;
   transition: all 0.2s ease;
   text-align: left;
-  display: flex;
-  align-items: center;
+  display: block;
   position: relative;
   background: none;
   border: none;
@@ -409,7 +422,7 @@
 
 .public-header-mobile-link:hover {
   color: var(--gray-light);
-  padding-left: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .public-header-mobile-link:active {
@@ -425,11 +438,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem 1.5rem 0.5rem 1.5rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
 }
 
 .public-header-mobile-wordmark-image {
-  height: 2.5rem;
+  height: 3rem;
   width: auto;
   object-fit: contain;
 }
@@ -478,7 +493,7 @@
 .public-header-mobile-separator {
   height: 1px;
   background-color: rgba(255, 255, 255, 0.1);
-  margin: 0;
+  margin: 0 1rem;
 }
 
 /* Responsive adjustments */
@@ -545,7 +560,7 @@
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .public-header {
-    border-bottom: 2px solid #000000;
+    border-bottom: 2px solid var(--color-textPrimary);
   }
   
   .public-header-nav-link {

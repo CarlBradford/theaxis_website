@@ -1,0 +1,215 @@
+/* Public Page Header Styles */
+.public-page-header {
+  background-color: var(--color-background);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.public-page-header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4rem;
+}
+
+@media (max-width: 767px) {
+  .public-page-header-container {
+    height: 3rem;
+  }
+}
+
+/* Menu Button */
+.public-page-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: 2px solid var(--color-primary, #1c4643);
+  color: var(--color-textPrimary, #1c4643);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0;
+  transition: none;
+}
+
+.public-page-menu-button:hover {
+  background-color: #f3f4f6;
+}
+
+.public-page-menu-button.menu-open {
+  background-color: var(--color-primary, #1c4643);
+  color: white;
+}
+
+.public-page-menu-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.public-page-menu-text {
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+/* Logo */
+.public-page-logo {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.public-page-logo-link {
+  display: flex;
+  align-items: center;
+}
+
+.public-page-logo-image {
+  height: 4rem;
+  width: auto;
+}
+
+/* Search Button */
+.public-page-search-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--color-textPrimary, #1c4643);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s ease;
+}
+
+.public-page-search-button:hover {
+  background-color: #f3f4f6;
+}
+
+.public-page-search-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Mobile Menu Overlay */
+.public-page-mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.public-page-mobile-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Mobile Menu Sidebar */
+.public-page-mobile-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  background-color: var(--color-background);
+  z-index: 50;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  overflow-y: auto;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.public-page-mobile-menu.open {
+  transform: translateX(0);
+}
+
+/* Mobile Wordmark */
+.public-page-mobile-wordmark {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.public-page-mobile-wordmark-image {
+  height: 4rem;
+  width: auto;
+}
+
+/* Mobile Navigation */
+.public-page-mobile-nav {
+  padding: 0.75rem 0;
+}
+
+.public-page-mobile-link {
+  display: block;
+  padding: 0.75rem 1.25rem;
+  color: var(--color-textPrimary, #1c4643);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.public-page-mobile-link:hover {
+  background-color: #f3f4f6;
+}
+
+.public-page-mobile-separator {
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 0 1rem;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .public-page-mobile-overlay {
+    display: none;
+  }
+  
+  .public-page-mobile-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    background-color: var(--color-background);
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .public-page-mobile-menu.open {
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .public-page-header-container {
+    padding: 0 0.75rem;
+  }
+  
+  .public-page-logo-image {
+    height: 3rem;
+  }
+  
+  .public-page-menu-text {
+    display: none;
+  }
+  
+  .public-page-menu-button {
+    border: none;
+  }
+}

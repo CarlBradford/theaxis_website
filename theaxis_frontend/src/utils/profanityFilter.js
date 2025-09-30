@@ -4,7 +4,7 @@ class FrontendProfanityFilter {
     // Common profanity words - subset for frontend
     this.profanityWords = [
       // Mild profanity
-      'damn', 'hell', 'crap', 'stupid', 'idiot', 'moron', 'dumb', 'dumbass',
+      'damn', 'crap', 'stupid', 'idiot', 'moron', 'dumb', 'dumbass',
       'fool', 'loser', 'jerk', 'freak', 'weirdo', 'creep', 'pervert',
       
       // Strong profanity
