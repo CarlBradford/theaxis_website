@@ -196,7 +196,7 @@ function AppWithAnalytics() {
               } />
               
               <Route path="settings" element={
-                <ProtectedRoute requiredRole="ADVISER">
+                <ProtectedRoute requiredRole="ADMINISTRATOR">
                   <Settings />
                 </ProtectedRoute>
               } />

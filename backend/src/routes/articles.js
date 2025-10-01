@@ -162,7 +162,7 @@ router.post(
   '/',
   [
     authenticateToken,
-    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
+    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     body('title').isLength({ min: 3 }).withMessage('Title must be at least 3 characters'),
     body('content').isLength({ min: 1 }).withMessage('Content is required'),
     body('featuredImage').optional().isString(),
@@ -727,8 +727,8 @@ router.get(
           _sum: { viewCount: true }
         }).then(result => result._sum.viewCount || 0)
       };
-    } else if (userRole === 'ADVISER' && authorId) {
-      // ADVISER viewing their own content: Personal stats
+    } else if (userRole === 'ADMINISTRATOR' && authorId) {
+      // ADMINISTRATOR viewing their own content: Personal stats
       const adviserWhere = { ...baseWhere, authorId: userId };
       
       stats = {
@@ -743,7 +743,7 @@ router.get(
           _sum: { viewCount: true }
         }).then(result => result._sum.viewCount || 0)
       };
-    } else if (['EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(userRole)) {
+    } else if (['EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(userRole)) {
       // EIC and higher: All content stats
       stats = {
         totalContent: await prisma.article.count({ where: baseWhere }),
@@ -830,7 +830,7 @@ router.get(
 // Get article creation form data
 router.get(
   '/create',
-  [authenticateToken, requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN')],
+  [authenticateToken, requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN')],
   asyncHandler(async (req, res) => {
     // Return form data needed for creating articles
     const formData = {
@@ -898,7 +898,7 @@ router.get(
   '/review-queue',
   [
     authenticateToken,
-    requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
+    requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     query('queueType').optional().isIn(['section-head', 'eic']),
     query('status').optional().isString(),
     query('search').optional().isString(),
@@ -915,7 +915,7 @@ router.get(
     // Determine queue type based on user role if not specified
     let effectiveQueueType = queueType;
     if (!effectiveQueueType) {
-      if (req.user.role === 'EDITOR_IN_CHIEF' || req.user.role === 'ADVISER') {
+      if (req.user.role === 'EDITOR_IN_CHIEF' || req.user.role === 'ADMINISTRATOR') {
         effectiveQueueType = 'eic';
       } else {
         effectiveQueueType = 'section-head';
@@ -1119,7 +1119,7 @@ router.patch(
   '/:id/review-action',
   [
     authenticateToken,
-    requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
+    requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     param('id').isString(),
     body('action').isIn(['approve-to-eic', 'request-revision', 'publish', 'return-to-section']),
     body('feedback').optional().isString(),
@@ -1346,7 +1346,7 @@ router.put(
   '/featured',
   [
     authenticateToken,
-    requireRole('EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
+    requireRole('EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     body('articleIds').isArray({ max: 5 }).withMessage('Maximum 5 articles can be featured'),
     body('articleIds.*').isString().withMessage('Article ID must be a string')
   ],
@@ -1843,7 +1843,7 @@ router.get(
 
     const canView =
       article.status === 'PUBLISHED' ||
-      (req.user && (req.user.id === article.authorId || ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER'].includes(req.user.role)));
+      (req.user && (req.user.id === article.authorId || ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(req.user.role)));
     if (!canView) {
       return sendErrorResponse(res, 403, 'Article not published');
     }
@@ -2286,7 +2286,7 @@ router.post(
   '/:id/authors',
   [
     authenticateToken,
-    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
+    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     param('id').isString(),
     body('userId').isString().withMessage('User ID is required'),
     body('role').optional().isString()
@@ -2629,7 +2629,7 @@ router.get(
   '/:id/analytics',
   [
     authenticateToken,
-    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'),
+    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     param('id').isString(),
     query('days').optional().isInt({ min: 1, max: 365 }).toInt()
   ],

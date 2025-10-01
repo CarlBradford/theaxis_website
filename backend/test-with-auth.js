@@ -13,7 +13,7 @@ async function testWithAuth() {
   if (authToken === 'your-auth-token-here') {
     console.log('❌ Please update the authToken variable with a real token from login');
     console.log('   You can get this by:');
-    console.log('   1. Login to the frontend as ADVISER or SYSTEM_ADMIN');
+    console.log('   1. Login to the frontend as ADMINISTRATOR or SYSTEM_ADMIN');
     console.log('   2. Open browser DevTools > Application > Local Storage');
     console.log('   3. Copy the "token" value');
     return;

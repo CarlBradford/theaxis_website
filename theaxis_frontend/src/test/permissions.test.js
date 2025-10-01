@@ -7,7 +7,7 @@ describe('Permission Restrictions for SYSTEM_ADMIN', () => {
       expect(canCreateUserRole('SYSTEM_ADMIN', 'STAFF')).toBe(true)
       expect(canCreateUserRole('SYSTEM_ADMIN', 'SECTION_HEAD')).toBe(true)
       expect(canCreateUserRole('SYSTEM_ADMIN', 'EDITOR_IN_CHIEF')).toBe(true)
-      expect(canCreateUserRole('SYSTEM_ADMIN', 'ADVISER')).toBe(true)
+      expect(canCreateUserRole('SYSTEM_ADMIN', 'ADMINISTRATOR')).toBe(true)
       expect(canCreateUserRole('SYSTEM_ADMIN', 'SYSTEM_ADMIN')).toBe(true)
     })
 
@@ -15,22 +15,22 @@ describe('Permission Restrictions for SYSTEM_ADMIN', () => {
       expect(canCreateUserRole('EDITOR_IN_CHIEF', 'SYSTEM_ADMIN')).toBe(false)
     })
 
-    it('should NOT allow ADVISER to create SYSTEM_ADMIN users', () => {
-      expect(canCreateUserRole('ADVISER', 'SYSTEM_ADMIN')).toBe(false)
+    it('should NOT allow ADMINISTRATOR to create SYSTEM_ADMIN users', () => {
+      expect(canCreateUserRole('ADMINISTRATOR', 'SYSTEM_ADMIN')).toBe(false)
     })
 
     it('should allow EDITOR_IN_CHIEF to create other roles', () => {
       expect(canCreateUserRole('EDITOR_IN_CHIEF', 'STAFF')).toBe(true)
       expect(canCreateUserRole('EDITOR_IN_CHIEF', 'SECTION_HEAD')).toBe(true)
       expect(canCreateUserRole('EDITOR_IN_CHIEF', 'EDITOR_IN_CHIEF')).toBe(true)
-      expect(canCreateUserRole('EDITOR_IN_CHIEF', 'ADVISER')).toBe(true)
+      expect(canCreateUserRole('EDITOR_IN_CHIEF', 'ADMINISTRATOR')).toBe(true)
     })
 
-    it('should allow ADVISER to create other roles', () => {
-      expect(canCreateUserRole('ADVISER', 'STAFF')).toBe(true)
-      expect(canCreateUserRole('ADVISER', 'SECTION_HEAD')).toBe(true)
-      expect(canCreateUserRole('ADVISER', 'EDITOR_IN_CHIEF')).toBe(true)
-      expect(canCreateUserRole('ADVISER', 'ADVISER')).toBe(true)
+    it('should allow ADMINISTRATOR to create other roles', () => {
+      expect(canCreateUserRole('ADMINISTRATOR', 'STAFF')).toBe(true)
+      expect(canCreateUserRole('ADMINISTRATOR', 'SECTION_HEAD')).toBe(true)
+      expect(canCreateUserRole('ADMINISTRATOR', 'EDITOR_IN_CHIEF')).toBe(true)
+      expect(canCreateUserRole('ADMINISTRATOR', 'ADMINISTRATOR')).toBe(true)
     })
   })
 
@@ -39,7 +39,7 @@ describe('Permission Restrictions for SYSTEM_ADMIN', () => {
       expect(canManageRole('SYSTEM_ADMIN', 'STAFF')).toBe(true)
       expect(canManageRole('SYSTEM_ADMIN', 'SECTION_HEAD')).toBe(true)
       expect(canManageRole('SYSTEM_ADMIN', 'EDITOR_IN_CHIEF')).toBe(true)
-      expect(canManageRole('SYSTEM_ADMIN', 'ADVISER')).toBe(true)
+      expect(canManageRole('SYSTEM_ADMIN', 'ADMINISTRATOR')).toBe(true)
       expect(canManageRole('SYSTEM_ADMIN', 'SYSTEM_ADMIN')).toBe(true)
     })
 
@@ -47,27 +47,27 @@ describe('Permission Restrictions for SYSTEM_ADMIN', () => {
       expect(canManageRole('EDITOR_IN_CHIEF', 'SYSTEM_ADMIN')).toBe(false)
     })
 
-    it('should NOT allow ADVISER to manage SYSTEM_ADMIN roles', () => {
-      expect(canManageRole('ADVISER', 'SYSTEM_ADMIN')).toBe(false)
+    it('should NOT allow ADMINISTRATOR to manage SYSTEM_ADMIN roles', () => {
+      expect(canManageRole('ADMINISTRATOR', 'SYSTEM_ADMIN')).toBe(false)
     })
 
     it('should allow EDITOR_IN_CHIEF to manage other roles', () => {
       expect(canManageRole('EDITOR_IN_CHIEF', 'STAFF')).toBe(true)
       expect(canManageRole('EDITOR_IN_CHIEF', 'SECTION_HEAD')).toBe(true)
       expect(canManageRole('EDITOR_IN_CHIEF', 'EDITOR_IN_CHIEF')).toBe(true)
-      expect(canManageRole('EDITOR_IN_CHIEF', 'ADVISER')).toBe(true)
+      expect(canManageRole('EDITOR_IN_CHIEF', 'ADMINISTRATOR')).toBe(true)
     })
 
-    it('should allow ADVISER to manage other roles', () => {
-      expect(canManageRole('ADVISER', 'STAFF')).toBe(true)
-      expect(canManageRole('ADVISER', 'SECTION_HEAD')).toBe(true)
-      expect(canManageRole('ADVISER', 'EDITOR_IN_CHIEF')).toBe(true)
-      expect(canManageRole('ADVISER', 'ADVISER')).toBe(true)
+    it('should allow ADMINISTRATOR to manage other roles', () => {
+      expect(canManageRole('ADMINISTRATOR', 'STAFF')).toBe(true)
+      expect(canManageRole('ADMINISTRATOR', 'SECTION_HEAD')).toBe(true)
+      expect(canManageRole('ADMINISTRATOR', 'EDITOR_IN_CHIEF')).toBe(true)
+      expect(canManageRole('ADMINISTRATOR', 'ADMINISTRATOR')).toBe(true)
     })
   })
 
   describe('User Visibility Restrictions', () => {
-    it('should hide SYSTEM_ADMIN users from EIC and ADVISER', () => {
+    it('should hide SYSTEM_ADMIN users from EIC and ADMINISTRATOR', () => {
       const mockUsers = [
         { id: '1', role: 'STAFF', firstName: 'John', lastName: 'Doe' },
         { id: '2', role: 'EDITOR_IN_CHIEF', firstName: 'Jane', lastName: 'Smith' },
@@ -115,11 +115,11 @@ describe('Permission Restrictions for SYSTEM_ADMIN', () => {
   describe('Self-Role Change Prevention', () => {
     it('should prevent users from changing their own role to lower privilege level', () => {
       const mockUsers = [
-        { id: '1', role: 'ADVISER', firstName: 'Adviser', lastName: 'User' },
+        { id: '1', role: 'ADMINISTRATOR', firstName: 'Adviser', lastName: 'User' },
         { id: '2', role: 'STAFF', firstName: 'Staff', lastName: 'User' },
       ]
 
-      const currentUser = { id: '1', role: 'ADVISER' }
+      const currentUser = { id: '1', role: 'ADMINISTRATOR' }
       
       // Filter function for role dropdown (simplified version)
       const availableRoles = mockUsers.filter(user => {
@@ -128,7 +128,7 @@ describe('Permission Restrictions for SYSTEM_ADMIN', () => {
             'STAFF': 0,
             'SECTION_HEAD': 1,
             'EDITOR_IN_CHIEF': 2,
-            'ADVISER': 3,
+            'ADMINISTRATOR': 3,
             'SYSTEM_ADMIN': 4,
           }
           
@@ -141,7 +141,7 @@ describe('Permission Restrictions for SYSTEM_ADMIN', () => {
         return true
       })
 
-      // Should only allow ADVISER to change to SYSTEM_ADMIN (higher level)
+      // Should only allow ADMINISTRATOR to change to SYSTEM_ADMIN (higher level)
       // Should not allow changing to STAFF, SECTION_HEAD, or EDITOR_IN_CHIEF (lower levels)
       expect(availableRoles.length).toBeGreaterThan(0)
     })
@@ -151,14 +151,14 @@ describe('Permission Restrictions for SYSTEM_ADMIN', () => {
         'STAFF': 0,
         'SECTION_HEAD': 1,
         'EDITOR_IN_CHIEF': 2,
-        'ADVISER': 3,
+        'ADMINISTRATOR': 3,
         'SYSTEM_ADMIN': 4,
       }
 
-      const currentRoleLevel = roleHierarchy['ADVISER']
+      const currentRoleLevel = roleHierarchy['ADMINISTRATOR']
       const targetRoleLevel = roleHierarchy['SYSTEM_ADMIN']
 
-      // ADVISER should be able to change to SYSTEM_ADMIN (higher level)
+      // ADMINISTRATOR should be able to change to SYSTEM_ADMIN (higher level)
       expect(targetRoleLevel >= currentRoleLevel).toBe(true)
     })
 
@@ -167,14 +167,14 @@ describe('Permission Restrictions for SYSTEM_ADMIN', () => {
         'STAFF': 0,
         'SECTION_HEAD': 1,
         'EDITOR_IN_CHIEF': 2,
-        'ADVISER': 3,
+        'ADMINISTRATOR': 3,
         'SYSTEM_ADMIN': 4,
       }
 
-      const currentRoleLevel = roleHierarchy['ADVISER']
+      const currentRoleLevel = roleHierarchy['ADMINISTRATOR']
       const targetRoleLevel = roleHierarchy['STAFF']
 
-      // ADVISER should NOT be able to change to STAFF (lower level)
+      // ADMINISTRATOR should NOT be able to change to STAFF (lower level)
       expect(targetRoleLevel >= currentRoleLevel).toBe(false)
     })
   })

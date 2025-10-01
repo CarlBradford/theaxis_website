@@ -187,7 +187,7 @@ router.delete(
 
     // Allow users to delete their own files, or SECTION_HEAD+ to delete any file
     const canDelete = media.uploadedBy === req.user.id || 
-                     ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(req.user.role);
+                     ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(req.user.role);
     
     if (!canDelete) {
       return sendErrorResponse(res, 403, 'You can only delete your own uploaded files');

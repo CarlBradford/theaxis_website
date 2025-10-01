@@ -99,7 +99,7 @@ async function ensureSeedData() {
       firstName: 'System', 
       lastName: 'Administrator', 
       passwordHash: '$argon2id$v=19$m=65536,t=3,p=1$9qAt6+s3OYV8gDjiRN1Gkw$zzeWQW9SsJYfsM9EMcfUinuxGVAnuChzbvq7UMp/Dzo', 
-      role: 'ADVISER' 
+      role: 'ADMINISTRATOR' 
     },
     { 
       id: 'user_eic', 

@@ -46,7 +46,7 @@ const UserManagement = () => {
     { value: 'STAFF', label: 'Publication Staff', description: 'Can write and submit articles' },
     { value: 'SECTION_HEAD', label: 'Section Head', description: 'Can manage section articles' },
     { value: 'EDITOR_IN_CHIEF', label: 'Editor-in-Chief', description: 'Can manage all content' },
-    { value: 'ADVISER', label: 'Adviser', description: 'Can oversee publication' },
+    { value: 'ADMINISTRATOR', label: 'Administrator', description: 'Can oversee publication' },
     { value: 'SYSTEM_ADMIN', label: 'System Admin', description: 'Full system access' }
   ];
 
@@ -451,7 +451,7 @@ const UserManagement = () => {
       'STAFF': 'publication-staff',
       'SECTION_HEAD': 'section-head',
       'EDITOR_IN_CHIEF': 'editor-in-chief',
-      'ADVISER': 'adviser',
+      'ADMINISTRATOR': 'adviser',
       'SYSTEM_ADMIN': 'system-admin'
     };
     return classes[role] || 'publication-staff';
@@ -462,7 +462,7 @@ const UserManagement = () => {
       'STAFF': 'Publication Staff',
       'SECTION_HEAD': 'Section Head',
       'EDITOR_IN_CHIEF': 'Editor-in-Chief',
-      'ADVISER': 'Adviser',
+      'ADMINISTRATOR': 'Administrator',
       'SYSTEM_ADMIN': 'System Admin'
     };
     return names[role] || 'Publication Staff';
@@ -542,7 +542,7 @@ const UserManagement = () => {
       (statusFilter === 'active' && user.isActive) ||
       (statusFilter === 'inactive' && !user.isActive);
     
-    // Hide SYSTEM_ADMIN users from EIC and ADVISER
+    // Hide SYSTEM_ADMIN users from EIC and ADMINISTRATOR
     const isVisibleToCurrentUser = currentUser?.role === 'SYSTEM_ADMIN' || user.role !== 'SYSTEM_ADMIN';
     
     return matchesRole && matchesStatus && isVisibleToCurrentUser;
@@ -621,8 +621,8 @@ const UserManagement = () => {
                       All Roles
                     </button>
                     {allRoles.filter(role => {
-                      // Hide SYSTEM_ADMIN from EIC and ADVISER
-                      if (['EDITOR_IN_CHIEF', 'ADVISER'].includes(currentUser?.role) && role.value === 'SYSTEM_ADMIN') {
+                      // Hide SYSTEM_ADMIN from EIC and ADMINISTRATOR
+                      if (['EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(currentUser?.role) && role.value === 'SYSTEM_ADMIN') {
                         return false;
                       }
                       return true;
@@ -809,7 +809,7 @@ const UserManagement = () => {
                                       'STAFF': 0,
                                       'SECTION_HEAD': 1,
                                       'EDITOR_IN_CHIEF': 2,
-                                      'ADVISER': 3,
+                                      'ADMINISTRATOR': 3,
                                       'SYSTEM_ADMIN': 4,
                                     };
                                     
@@ -845,7 +845,7 @@ const UserManagement = () => {
                                     'STAFF': 0,
                                     'SECTION_HEAD': 1,
                                     'EDITOR_IN_CHIEF': 2,
-                                    'ADVISER': 3,
+                                    'ADMINISTRATOR': 3,
                                     'SYSTEM_ADMIN': 4,
                                   };
                                   
@@ -865,7 +865,7 @@ const UserManagement = () => {
                         )}
                         
                         {/* Toggle Active/Inactive Status */}
-                        {(currentUser?.role === 'EDITOR_IN_CHIEF' || currentUser?.role === 'ADVISER' || currentUser?.role === 'SYSTEM_ADMIN') && (
+                        {(currentUser?.role === 'EDITOR_IN_CHIEF' || currentUser?.role === 'ADMINISTRATOR' || currentUser?.role === 'SYSTEM_ADMIN') && (
                           <button
                             onClick={() => {
                               handleToggleUserStatus(user.id, user.isActive);
@@ -886,7 +886,7 @@ const UserManagement = () => {
                         )}
                         
                         {/* Delete User Option */}
-                        {(currentUser?.role === 'EDITOR_IN_CHIEF' || currentUser?.role === 'ADVISER' || currentUser?.role === 'SYSTEM_ADMIN') && (
+                        {(currentUser?.role === 'EDITOR_IN_CHIEF' || currentUser?.role === 'ADMINISTRATOR' || currentUser?.role === 'SYSTEM_ADMIN') && (
                           <button
                             onClick={() => {
                               setUserToDelete(user);

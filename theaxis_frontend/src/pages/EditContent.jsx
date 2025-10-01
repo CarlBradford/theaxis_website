@@ -1028,7 +1028,7 @@ const EditContent = () => {
               </>
             )}
             
-            {user?.role === 'ADVISER' && (
+            {user?.role === 'ADMINISTRATOR' && (
               <>
                 {articleStatus !== 'PUBLISHED' && (
                   <button
@@ -1074,7 +1074,7 @@ const EditContent = () => {
             )}
             
             {/* Fallback for other roles */}
-            {!['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(user?.role) && (
+            {!['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(user?.role) && (
               <>
                 {articleStatus !== 'PUBLISHED' && (
                   <button

@@ -12,8 +12,6 @@ export const DEFAULT_THEMES = {
       secondary: '#656362',      // Dark Gray - Accent color  
       background: '#ffffff',     // Main background
       textPrimary: '#1c4643',    // Dark Teal - Main text
-      header: '#1c4643',         // Header color (same as primary)
-      footer: '#656362',         // Footer color (same as secondary)
     }
   }
 };
@@ -59,9 +57,7 @@ export const colorPaletteUtils = {
       'primary',
       'secondary', 
       'background',
-      'textPrimary',
-      'header',
-      'footer'
+      'textPrimary'
     ];
     
     return requiredColors.every(color => theme.colors && theme.colors[color]);

@@ -1,6 +1,6 @@
 /* Category Page Styles */
 .category-page {
-  background: #ffffff;
+  background: var(--color-background);
   padding-top: 2rem;
 }
 
@@ -546,7 +546,7 @@
 }
 
 .category-page-story-author-date-separator {
-  color: #d1d5db;
+  color: var(--color-secondary);
 }
 
 .category-page-story-card.featured .category-page-story-author-date-separator {

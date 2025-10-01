@@ -904,11 +904,11 @@ class EmailService {
   }
 
   /**
-   * Send email to ADVISER when any article is published
+   * Send email to ADMINISTRATOR when any article is published
    */
   async sendAdviserArticlePublishedNotification(email, firstName, articleTitle, authorName, authorRole, categories) {
     if (!this.transporter) {
-      logger.warn('Email service not available. ADVISER publish notification not sent.');
+      logger.warn('Email service not available. ADMINISTRATOR publish notification not sent.');
       return false;
     }
 
@@ -940,7 +940,7 @@ class EmailService {
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
-      logger.info('ADVISER publish notification email sent', {
+      logger.info('ADMINISTRATOR publish notification email sent', {
         to: email,
         articleTitle,
         authorName,
@@ -949,7 +949,7 @@ class EmailService {
       });
       return true;
     } catch (error) {
-      logger.error('Failed to send ADVISER publish notification email', {
+      logger.error('Failed to send ADMINISTRATOR publish notification email', {
         to: email,
         articleTitle,
         authorName,

@@ -32,9 +32,7 @@ async function comprehensiveTest() {
       primary: '#215d55',
       secondary: '#656362',
       background: '#ffffff',
-      textPrimary: '#1c4643',
-      header: '#215d55',
-      footer: '#656362'
+      textPrimary: '#1c4643'
     };
     
     try {
@@ -102,7 +100,7 @@ async function comprehensiveTest() {
     console.log('   • Reset to Default button: ✅ Should work with proper auth');
     
     console.log('\n🎯 Next steps:');
-    console.log('   1. Login as ADVISER or SYSTEM_ADMIN in frontend');
+    console.log('   1. Login as ADMINISTRATOR or SYSTEM_ADMIN in frontend');
     console.log('   2. Navigate to Site Settings page');
     console.log('   3. Try changing colors and clicking Save Colors');
     console.log('   4. Test Reset to Default button');

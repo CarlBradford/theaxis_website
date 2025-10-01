@@ -1,7 +1,7 @@
 /* Homepage Color Theme - Connected to Color Palette */
 :root {
   --cyan-primary: var(--color-primary, #215d55);
-  --cyan-dark: var(--color-textPrimary, #1c4643);
+  --cyan-dark: var(--color-primary, #215d55);
   --gray-light: #b3b0ac;
   --gray-dark: var(--color-secondary, #656362);
 }

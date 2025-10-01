@@ -7,6 +7,10 @@ import siteSettingsService from '../services/siteSettingsService';
 const PublicFooter = () => {
   const [wordmarkUrl, setWordmarkUrl] = useState(theaxisWordmark);
 
+  const handleLinkClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Load site assets on component mount
   useEffect(() => {
     const loadAssets = async () => {
@@ -56,52 +60,52 @@ const PublicFooter = () => {
             <h3 className="public-footer-section-title">Quick Links</h3>
             <ul className="public-footer-links-list">
               <li>
-                <Link to="/" className="public-footer-link">
+                <Link to="/" className="public-footer-link" onClick={handleLinkClick}>
                   Home
                 </Link>
               </li>
               <li>
-                <Link to="/news" className="public-footer-link">
+                <Link to="/news" className="public-footer-link" onClick={handleLinkClick}>
                   News
                 </Link>
               </li>
               <li>
-                <Link to="/opinion" className="public-footer-link">
+                <Link to="/opinion" className="public-footer-link" onClick={handleLinkClick}>
                   Opinion
                 </Link>
               </li>
               <li>
-                <Link to="/editorial" className="public-footer-link">
+                <Link to="/editorial" className="public-footer-link" onClick={handleLinkClick}>
                   Editorial
                 </Link>
               </li>
               <li>
-                <Link to="/feature" className="public-footer-link">
+                <Link to="/feature" className="public-footer-link" onClick={handleLinkClick}>
                   Feature
                 </Link>
               </li>
               <li>
-                <Link to="/literary" className="public-footer-link">
+                <Link to="/literary" className="public-footer-link" onClick={handleLinkClick}>
                   Literary
                 </Link>
               </li>
               <li>
-                <Link to="/sports" className="public-footer-link">
+                <Link to="/sports" className="public-footer-link" onClick={handleLinkClick}>
                   Sports
                 </Link>
               </li>
               <li>
-                <Link to="/gallery" className="public-footer-link">
+                <Link to="/gallery" className="public-footer-link" onClick={handleLinkClick}>
                   Gallery
                 </Link>
               </li>
               <li>
-                <Link to="/the-axis-online" className="public-footer-link">
+                <Link to="/the-axis-online" className="public-footer-link" onClick={handleLinkClick}>
                   The AXIS Online
                 </Link>
               </li>
               <li>
-                <Link to="/annual-editions" className="public-footer-link">
+                <Link to="/annual-editions" className="public-footer-link" onClick={handleLinkClick}>
                   Annual Editions
                 </Link>
               </li>

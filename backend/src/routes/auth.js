@@ -46,7 +46,7 @@ const router = express.Router();
  *           description: User's password (min 8 characters)
  *         role:
  *           type: string
- *           enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADVISER]
+ *           enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADMINISTRATOR]
  *           default: READER
  *           description: User's role in the system
  *     UserLogin:
@@ -116,7 +116,7 @@ const router = express.Router();
  *           description: User's last name
  *         role:
  *           type: string
- *           enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADVISER]
+ *           enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADMINISTRATOR]
  *           description: User's role
  *         isActive:
  *           type: boolean
@@ -207,7 +207,7 @@ router.post('/register', [
     .withMessage('Password must be at least 8 characters long'),
   body('role')
     .optional()
-    .isIn(['READER', 'STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER'])
+    .isIn(['READER', 'STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR'])
     .withMessage('Invalid role specified'),
 ], asyncHandler(async (req, res) => {
   // Check for validation errors

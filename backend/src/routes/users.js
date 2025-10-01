@@ -79,7 +79,7 @@ const generatePassword = () => {
  *         name: role
  *         schema:
  *           type: string
- *           enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADVISER]
+ *           enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADMINISTRATOR]
  *         description: Filter by user role
  *       - in: query
  *         name: search
@@ -162,8 +162,8 @@ router.get('/', [
     }
   }
   
-  // Hide SYSTEM_ADMIN users from EIC and ADVISER
-  if (['EDITOR_IN_CHIEF', 'ADVISER'].includes(req.user.role)) {
+  // Hide SYSTEM_ADMIN users from EIC and ADMINISTRATOR
+  if (['EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(req.user.role)) {
     if (role) {
       // If role filter is set and it's not SYSTEM_ADMIN, keep the filter
       if (role !== 'SYSTEM_ADMIN') {
@@ -259,7 +259,7 @@ router.get('/', [
  *                 description: User's last name
  *               role:
  *                 type: string
- *                 enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADVISER, SYSTEM_ADMIN]
+ *                 enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADMINISTRATOR, SYSTEM_ADMIN]
  *                 description: User's role in the system
  *               bio:
  *                 type: string
@@ -337,7 +337,7 @@ router.post('/', [
     .isLength({ min: 1, max: 50 })
     .withMessage('Last name must be between 1 and 50 characters'),
   body('role')
-    .isIn(['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'])
+    .isIn(['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'])
     .withMessage('Invalid role specified'),
   body('bio')
     .optional()
@@ -766,7 +766,7 @@ router.get('/:id', [
  *                 type: string
  *               role:
  *                 type: string
- *                 enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADVISER]
+ *                 enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADMINISTRATOR]
  *               isActive:
  *                 type: boolean
  *               bio:
@@ -798,7 +798,7 @@ router.put('/:id', [
     .withMessage('Last name must be between 1 and 50 characters'),
   body('role')
     .optional()
-    .isIn(['READER', 'STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER'])
+    .isIn(['READER', 'STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR'])
     .withMessage('Invalid role specified'),
   body('isActive')
     .optional()
@@ -1010,7 +1010,7 @@ router.post('/:id/activate', [
  *             properties:
  *               role:
  *                 type: string
- *                 enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADVISER]
+ *                 enum: [READER, STAFF, SECTION_HEAD, EDITOR_IN_CHIEF, ADMINISTRATOR]
  *     responses:
  *       200:
  *         description: User role updated successfully
@@ -1028,7 +1028,7 @@ router.put('/:id/role', [
   requirePermission(PERMISSIONS.USER_ROLE_CHANGE),
   canManageUserRole,
   body('role')
-    .isIn(['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'])
+    .isIn(['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'])
     .withMessage('Invalid role specified'),
 ], asyncHandler(async (req, res) => {
   // Check for validation errors
@@ -1063,7 +1063,7 @@ router.put('/:id/role', [
       'STAFF': 0,
       'SECTION_HEAD': 1,
       'EDITOR_IN_CHIEF': 2,
-      'ADVISER': 3,
+      'ADMINISTRATOR': 3,
       'SYSTEM_ADMIN': 4,
     };
     

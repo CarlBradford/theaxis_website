@@ -30,9 +30,7 @@ async function fixColorEndpoints() {
         primary: '#215d55',
         secondary: '#656362',
         background: '#ffffff',
-        textPrimary: '#1c4643',
-        header: '#215d55',
-        footer: '#656362'
+        textPrimary: '#1c4643'
       };
       
       colorSetting = await prisma.siteSetting.create({
@@ -153,7 +151,7 @@ async function fixColorEndpoints() {
     
     console.log('\n🎯 Next Steps:');
     console.log('   1. Make sure backend server is running: npm start');
-    console.log('   2. Login to frontend as ADVISER or SYSTEM_ADMIN');
+    console.log('   2. Login to frontend as ADMINISTRATOR or SYSTEM_ADMIN');
     console.log('   3. Test Save Colors and Reset to Default buttons');
     
     console.log('\n🧪 Alternative Debug Route:');

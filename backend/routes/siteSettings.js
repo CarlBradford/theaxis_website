@@ -98,13 +98,13 @@ router.get('/settings/colors', async (req, res) => {
 });
 
 // Update site settings (colors)
-router.put('/settings/colors', authenticateToken, requireRole(['ADVISER', 'SYSTEM_ADMIN']), async (req, res) => {
+router.put('/settings/colors', authenticateToken, requireRole(['ADMINISTRATOR', 'SYSTEM_ADMIN']), async (req, res) => {
   try {
     const { colors } = req.body;
     const userId = req.user.id;
     
     // Validate colors object
-    const requiredColors = ['primary', 'secondary', 'background', 'textPrimary', 'header', 'footer'];
+    const requiredColors = ['primary', 'secondary', 'background', 'textPrimary'];
     const missingColors = requiredColors.filter(color => !colors[color]);
     
     if (missingColors.length > 0) {
@@ -206,7 +206,7 @@ router.get('/assets', async (req, res) => {
 });
 
 // Upload logo
-router.post('/assets/logo', authenticateToken, requireRole(['ADVISER', 'SYSTEM_ADMIN']), upload.single('logo'), async (req, res) => {
+router.post('/assets/logo', authenticateToken, requireRole(['ADMINISTRATOR', 'SYSTEM_ADMIN']), upload.single('logo'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -272,7 +272,7 @@ router.post('/assets/logo', authenticateToken, requireRole(['ADVISER', 'SYSTEM_A
 });
 
 // Upload wordmark
-router.post('/assets/wordmark', authenticateToken, requireRole(['ADVISER', 'SYSTEM_ADMIN']), upload.single('wordmark'), async (req, res) => {
+router.post('/assets/wordmark', authenticateToken, requireRole(['ADMINISTRATOR', 'SYSTEM_ADMIN']), upload.single('wordmark'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -338,7 +338,7 @@ router.post('/assets/wordmark', authenticateToken, requireRole(['ADVISER', 'SYST
 });
 
 // Delete asset
-router.delete('/assets/:id', authenticateToken, requireRole(['ADVISER', 'SYSTEM_ADMIN']), async (req, res) => {
+router.delete('/assets/:id', authenticateToken, requireRole(['ADMINISTRATOR', 'SYSTEM_ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -379,7 +379,7 @@ router.delete('/assets/:id', authenticateToken, requireRole(['ADVISER', 'SYSTEM_
 });
 
 // Reset color settings to default
-router.post('/settings/colors/reset', authenticateToken, requireRole(['ADVISER', 'SYSTEM_ADMIN']), async (req, res) => {
+router.post('/settings/colors/reset', authenticateToken, requireRole(['ADMINISTRATOR', 'SYSTEM_ADMIN']), async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -387,9 +387,7 @@ router.post('/settings/colors/reset', authenticateToken, requireRole(['ADVISER',
       primary: '#215d55',
       secondary: '#656362',
       background: '#ffffff',
-      textPrimary: '#1c4643',
-      header: '#1c4643',
-      footer: '#656362'
+      textPrimary: '#1c4643'
     };
     
     const colorSettings = await prisma.siteSetting.upsert({

@@ -742,13 +742,13 @@ const PublishedContent = () => {
       console.log('   User role:', user?.role);
       console.log('   User role uppercase:', user?.role?.toUpperCase());
       console.log('   Has SECTION_HEAD role:', hasRole('SECTION_HEAD'));
-      console.log('   Required roles for flipbook:', ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN']);
-      console.log('   User has required role:', ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(user?.role?.toUpperCase()));
+      console.log('   Required roles for flipbook:', ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN']);
+      console.log('   User has required role:', ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(user?.role?.toUpperCase()));
       console.log('   Token exists:', !!localStorage.getItem('token'));
       console.log('   Token value:', localStorage.getItem('token'));
       
       // Check user role before proceeding - use explicit role check
-      const allowedRoles = ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'];
+      const allowedRoles = ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'];
       if (!allowedRoles.includes(user?.role?.toUpperCase())) {
         throw new Error('Access denied. Only Section Heads, Editor-in-Chief, Advisers, and System Admins can publish online issues.');
       }
@@ -1651,7 +1651,7 @@ const PublishedContent = () => {
                       >
                         <EyeIcon className="w-4 h-4" />
                       </button>
-                      {(user?.role?.toUpperCase() === 'SECTION_HEAD' || user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
+                      {(user?.role?.toUpperCase() === 'SECTION_HEAD' || user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADMINISTRATOR' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
                         <button
                           className="published-content-action-btn update"
                           onClick={() => handleEditFlipbook(flipbook)}
@@ -1660,7 +1660,7 @@ const PublishedContent = () => {
                           <PencilIcon className="w-4 h-4" />
                         </button>
                       )}
-                      {(user?.role?.toUpperCase() === 'SECTION_HEAD' || user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
+                      {(user?.role?.toUpperCase() === 'SECTION_HEAD' || user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADMINISTRATOR' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
                         <button
                           className="published-content-action-btn update"
                           onClick={() => handleToggleFlipbookStatus(flipbook)}
@@ -1669,7 +1669,7 @@ const PublishedContent = () => {
                           <PowerIcon className="w-4 h-4" />
                         </button>
                       )}
-                      {(user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
+                      {(user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADMINISTRATOR' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
                         <button
                           className="published-content-action-btn delete"
                           onClick={() => handleDeleteFlipbook(flipbook)}
@@ -1808,7 +1808,7 @@ const PublishedContent = () => {
                     </button>
                     )}
                     {article.status === 'archived' ? (
-                      (user?.role?.toUpperCase() === 'SECTION_HEAD' || user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
+                      (user?.role?.toUpperCase() === 'SECTION_HEAD' || user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADMINISTRATOR' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && (
                         <button
                           className="published-content-action-btn restore"
                           onClick={() => handleRestoreArticle(article)}
@@ -1826,7 +1826,7 @@ const PublishedContent = () => {
                       <ArchiveBoxIcon className="w-4 h-4" />
                     </button>
                     )}
-                    {(user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADVISER' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && article.status === 'archived' && (
+                    {(user?.role?.toUpperCase() === 'EDITOR_IN_CHIEF' || user?.role?.toUpperCase() === 'ADMINISTRATOR' || user?.role?.toUpperCase() === 'SYSTEM_ADMIN') && article.status === 'archived' && (
                       <button
                         className="published-content-action-btn delete"
                         onClick={() => handleDeleteArticle(article)}

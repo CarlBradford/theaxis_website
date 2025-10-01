@@ -116,8 +116,8 @@ const Settings = () => {
       }
     };
 
-    // Only load for ADVISER and SYSTEM_ADMIN roles
-    if (user?.role === 'ADVISER' || user?.role === 'SYSTEM_ADMIN') {
+    // Only load for ADMINISTRATOR and SYSTEM_ADMIN roles
+    if (user?.role === 'ADMINISTRATOR' || user?.role === 'SYSTEM_ADMIN') {
       loadColorsFromDatabase();
     }
   }, [user?.role]);
@@ -350,16 +350,7 @@ const Settings = () => {
       colors: ['textPrimary'],
       description: 'Main text color for content and headings'
     },
-    {
-      title: 'Header Color',
-      colors: ['header'],
-      description: 'Background color for website header'
-    },
-    {
-      title: 'Footer Color',
-      colors: ['footer'],
-      description: 'Background color for website footer'
-    }];
+];
 
   // Tabs configuration
   const tabs = [
@@ -442,6 +433,7 @@ const Settings = () => {
 
               <div className="color-customization-info">
                 <p>Customize the appearance of your website's reader-side.</p>
+                <p><strong>Note:</strong> Header uses the primary color, footer uses the secondary color.</p>
               </div>
 
               <form onSubmit={handleColorSubmit} className="color-customization-form">

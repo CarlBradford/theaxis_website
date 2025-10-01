@@ -7,8 +7,8 @@
   --color-secondary: #656362;      /* Dark Gray - Accent color */
   --color-background: #ffffff;     /* Main background */
   --color-textPrimary: #1c4643;    /* Dark Teal - Main text */
-  --color-header: #1c4643;         /* Header color (same as primary) */
-  --color-footer: #656362;         /* Footer color (same as secondary) */
+  --color-header: var(--color-primary);    /* Header uses primary color */
+  --color-footer: var(--color-secondary);  /* Footer uses secondary color */
 }
 
 /* Utility Classes for Color Palette */

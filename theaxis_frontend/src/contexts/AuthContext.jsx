@@ -92,7 +92,7 @@ export function AuthProvider({ children }) {
       'STAFF': 0,
       'SECTION_HEAD': 1,
       'EDITOR_IN_CHIEF': 2,
-      'ADVISER': 3,
+      'ADMINISTRATOR': 3,
       'SYSTEM_ADMIN': 4
     };
     

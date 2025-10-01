@@ -325,7 +325,7 @@ const Profile = () => {
       'STAFF': 'Staff Member',
       'SECTION_HEAD': 'Section Head',
       'EDITOR_IN_CHIEF': 'Editor-in-Chief',
-      'ADVISER': 'Adviser',
+      'ADMINISTRATOR': 'Administrator',
       'SYSTEM_ADMIN': 'System Administrator',
       'READER': 'Reader'
     };

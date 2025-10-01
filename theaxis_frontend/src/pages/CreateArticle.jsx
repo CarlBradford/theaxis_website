@@ -1125,7 +1125,7 @@ const CreateArticle = () => {
               </>
             )}
             
-            {user?.role === 'ADVISER' && (
+            {user?.role === 'ADMINISTRATOR' && (
               <>
                 <button
                   type="button"
@@ -1168,7 +1168,7 @@ const CreateArticle = () => {
             )}
             
             {/* Fallback for other roles */}
-            {!['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADVISER', 'SYSTEM_ADMIN'].includes(user?.role) && (
+            {!['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(user?.role) && (
               <button
                 type="button"
                 onClick={handleSaveAsDraft}

@@ -988,7 +988,7 @@ class NotificationService {
           notificationPromises.push(this.notifyEICSectionHeadPublishedArticle(articleId));
         }
         
-        // Notify ADVISER when any article is published
+        // Notify ADMINISTRATOR when any article is published
         notificationPromises.push(this.notifyAdviserArticlePublished(articleId));
       }
 
@@ -1563,7 +1563,7 @@ class NotificationService {
   }
 
   /**
-   * Notify ADVISER when any article is published
+   * Notify ADMINISTRATOR when any article is published
    */
   async notifyAdviserArticlePublished(articleId) {
     try {
@@ -1589,14 +1589,14 @@ class NotificationService {
       });
 
       if (!article) {
-        logger.warn('Article not found for ADVISER publish notification', { articleId });
+        logger.warn('Article not found for ADMINISTRATOR publish notification', { articleId });
         return;
       }
 
-      // Get all ADVISER users
+      // Get all ADMINISTRATOR users
       const advisers = await prisma.user.findMany({
         where: { 
-          role: 'ADVISER',
+          role: 'ADMINISTRATOR',
           isActive: true 
         },
         select: {
@@ -1609,14 +1609,14 @@ class NotificationService {
       });
 
       if (advisers.length === 0) {
-        logger.info('No ADVISER users found for publish notification', { articleId });
+        logger.info('No ADMINISTRATOR users found for publish notification', { articleId });
         return;
       }
 
       const authorName = `${article.author.firstName} ${article.author.lastName}`;
       const categoryNames = article.categories.map(cat => cat.name).join(', ');
 
-      // Create in-app notifications for all ADVISER users
+      // Create in-app notifications for all ADMINISTRATOR users
       const notificationPromises = advisers.map(adviser => 
         prisma.notification.create({
           data: {
@@ -1637,7 +1637,7 @@ class NotificationService {
         })
       );
 
-      // Send email notifications to all ADVISER users
+      // Send email notifications to all ADMINISTRATOR users
       const emailPromises = advisers.map(adviser => 
         emailService.sendAdviserArticlePublishedNotification(
           adviser.email,
@@ -1652,7 +1652,7 @@ class NotificationService {
       // Execute all notifications
       await Promise.allSettled([...notificationPromises, ...emailPromises]);
 
-      logger.info('ADVISER publish notifications sent', {
+      logger.info('ADMINISTRATOR publish notifications sent', {
         articleId,
         articleTitle: article.title,
         authorName,
@@ -1661,7 +1661,7 @@ class NotificationService {
       });
 
     } catch (error) {
-      logger.error('Error sending ADVISER publish notifications', {
+      logger.error('Error sending ADMINISTRATOR publish notifications', {
         articleId,
         error: error.message,
         stack: error.stack

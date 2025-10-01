@@ -131,17 +131,20 @@ const requireRole = (...roles) => {
       return next(new AppError('Authentication required', 401));
     }
 
+    // Flatten roles array if it's nested (handle both individual args and array args)
+    const flatRoles = roles.flat();
+    
     // Role hierarchy - higher numbers have more permissions
     const roleHierarchy = {
       'STAFF': 0,
       'SECTION_HEAD': 1,
       'EDITOR_IN_CHIEF': 2,
-      'ADVISER': 3,
+      'ADMINISTRATOR': 3,
       'SYSTEM_ADMIN': 4
     };
 
     const userRoleLevel = roleHierarchy[req.user.role];
-    const requiredRoleLevels = roles.map(role => roleHierarchy[role]);
+    const requiredRoleLevels = flatRoles.map(role => roleHierarchy[role]);
     const hasRequiredRole = requiredRoleLevels.some(level => userRoleLevel >= level);
 
     console.log('   User role level:', userRoleLevel);
@@ -153,7 +156,7 @@ const requireRole = (...roles) => {
       logger.warn('Insufficient role access', {
         userId: req.user.id,
         userRole: req.user.role,
-        requiredRoles: roles,
+        requiredRoles: flatRoles,
         action: req.method,
         resource: req.originalUrl,
       });
@@ -286,7 +289,7 @@ const canCreateUserWithRole = (req, res, next) => {
 };
 
 // Specific role middleware functions
-const requireAdviser = requireRole('ADVISER');
+const requireAdviser = requireRole('ADMINISTRATOR');
 const requireSystemAdmin = requireRole('SYSTEM_ADMIN');
 const requireEditorInChief = requireRole('EDITOR_IN_CHIEF');
 const requireSectionHead = requireRole('SECTION_HEAD');
@@ -301,7 +304,7 @@ const requireOwnership = (resourceType, resourceIdField = 'id') => {
       }
 
       // Advisers, EICs, and System Admins can access all resources
-      if (['ADVISER', 'EDITOR_IN_CHIEF', 'SYSTEM_ADMIN'].includes(req.user.role)) {
+      if (['ADMINISTRATOR', 'EDITOR_IN_CHIEF', 'SYSTEM_ADMIN'].includes(req.user.role)) {
         return next();
       }
 

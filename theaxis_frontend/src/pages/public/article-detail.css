@@ -426,11 +426,11 @@
 }
 
 .article-detail-author-separator {
-  color: var(--color-secondary, #656362);
+  color: var(--color-primary, #215d55);
 }
 
 .article-detail-meta-separator {
-  color: var(--color-secondary, #656362);
+  color: var(--color-primary, #215d55);
   font-weight: 400;
 }
 
@@ -1555,7 +1555,6 @@
 }
 
 .article-detail-author-article {
-  background: #ffffff;
   border-radius: 0;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -1614,7 +1613,7 @@
 }
 
 .article-detail-author-article-title a {
-  color: #111827;
+  color: var(--color-primary, #215d55);
   text-decoration: none;
   transition: color 0.2s ease;
 }

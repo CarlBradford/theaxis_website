@@ -11,7 +11,7 @@ async function verifyReaderRemoval() {
     console.log('  - STAFF');
     console.log('  - SECTION_HEAD');
     console.log('  - EDITOR_IN_CHIEF');
-    console.log('  - ADVISER');
+    console.log('  - ADMINISTRATOR');
     console.log('  - SYSTEM_ADMIN');
     console.log('  ✅ READER role removed');
     

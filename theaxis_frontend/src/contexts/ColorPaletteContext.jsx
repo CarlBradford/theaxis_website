@@ -84,9 +84,7 @@ export const ColorPaletteProvider = React.memo(({ children }) => {
         primary: colors.primary || colors.accent || '#215d55',
         secondary: colors.secondary || colors.border || '#656362',
         background: colors.background || '#ffffff',
-        textPrimary: colors.textPrimary || colors.text || '#1c4643',
-        header: colors.header || colors.primary || colors.accent || '#1c4643',
-        footer: colors.footer || colors.secondary || colors.border || '#656362'
+        textPrimary: colors.textPrimary || colors.text || '#1c4643'
       };
       
       colors = { ...colors, ...requiredColors };
@@ -117,9 +115,7 @@ export const ColorPaletteProvider = React.memo(({ children }) => {
         primary: !!fullTheme.colors?.primary,
         secondary: !!fullTheme.colors?.secondary,
         background: !!fullTheme.colors?.background,
-        textPrimary: !!fullTheme.colors?.textPrimary,
-        header: !!fullTheme.colors?.header,
-        footer: !!fullTheme.colors?.footer
+        textPrimary: !!fullTheme.colors?.textPrimary
       });
     }
   }, [setCustomThemes]);

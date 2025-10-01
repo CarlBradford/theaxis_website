@@ -18,6 +18,10 @@ const PublicPageHeader = () => {
     setIsMobileMenuOpen(false);
   };
 
+  const handleLinkClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Load site assets on component mount
   useEffect(() => {
     const loadAssets = async () => {
@@ -62,7 +66,7 @@ const PublicPageHeader = () => {
         
         {/* Logo/Center */}
         <div className="public-page-logo">
-          <Link to="/" className="public-page-logo-link">
+          <Link to="/" className="public-page-logo-link" onClick={handleLinkClick}>
             <img 
               src={wordmarkUrl} 
               alt="The AXIS" 
@@ -89,70 +93,60 @@ const PublicPageHeader = () => {
 
       {/* Mobile Menu Sidebar */}
       <div className={`public-page-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-        {/* AXIS Wordmark */}
-        <div className="public-page-mobile-wordmark">
-          <Link to="/" onClick={closeMobileMenu}>
-            <img 
-              src={wordmarkUrl} 
-              alt="The AXIS" 
-              className="public-page-mobile-wordmark-image"
-            />
-          </Link>
-        </div>
 
         {/* Navigation Categories */}
         <nav className="public-page-mobile-nav">
-          <Link to="/news" className="public-page-mobile-link" onClick={closeMobileMenu}>
+          <Link to="/news" className="public-page-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
             News
           </Link>
           <div className="public-page-mobile-separator"></div>
           
-          <Link to="/opinion" className="public-page-mobile-link" onClick={closeMobileMenu}>
+          <Link to="/opinion" className="public-page-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
             Opinion
           </Link>
           <div className="public-page-mobile-separator"></div>
           
-          <Link to="/editorial" className="public-page-mobile-link" onClick={closeMobileMenu}>
+          <Link to="/editorial" className="public-page-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
             Editorial
           </Link>
           <div className="public-page-mobile-separator"></div>
           
-          <Link to="/feature" className="public-page-mobile-link" onClick={closeMobileMenu}>
+          <Link to="/feature" className="public-page-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
             Feature
           </Link>
           <div className="public-page-mobile-separator"></div>
           
-          <Link to="/literary" className="public-page-mobile-link" onClick={closeMobileMenu}>
+          <Link to="/literary" className="public-page-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
             Literary
           </Link>
           <div className="public-page-mobile-separator"></div>
           
-          <Link to="/devcom" className="public-page-mobile-link" onClick={closeMobileMenu}>
+          <Link to="/devcom" className="public-page-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
             DevCom
           </Link>
           <div className="public-page-mobile-separator"></div>
           
-          <Link to="/sports" className="public-page-mobile-link" onClick={closeMobileMenu}>
+          <Link to="/sports" className="public-page-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
             Sports
           </Link>
           <div className="public-page-mobile-separator"></div>
           
-          <Link to="/gallery" className="public-page-mobile-link" onClick={closeMobileMenu}>
+          <Link to="/gallery" className="public-page-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
             Gallery
           </Link>
           <div className="public-page-mobile-separator"></div>
           
-          <Link to="/the-axis-online" className="public-page-mobile-link" onClick={closeMobileMenu}>
+          <Link to="/the-axis-online" className="public-page-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
             The AXIS Online
           </Link>
           <div className="public-page-mobile-separator"></div>
           
-          <Link to="/annual-editions" className="public-page-mobile-link" onClick={closeMobileMenu}>
+          <Link to="/annual-editions" className="public-page-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
             Annual Editions
           </Link>
           <div className="public-page-mobile-separator"></div>
           
-          <Link to="/offline" className="public-page-mobile-link" onClick={closeMobileMenu}>
+          <Link to="/offline" className="public-page-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
             Offline Articles
           </Link>
         </nav>

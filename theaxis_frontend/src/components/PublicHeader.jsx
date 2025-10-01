@@ -55,13 +55,17 @@ const PublicHeader = () => {
     setIsMobileMenuOpen(false);
   };
 
+  const handleLinkClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <>
       {/* Logo Section - Separate from header, hides on scroll */}
       <div className={`public-header-logo-section ${isScrolled ? 'hidden' : ''}`}>
         <div className="public-header-container">
           <div className="public-header-logo">
-            <Link to="/" className="public-header-logo-link">
+            <Link to="/" className="public-header-logo-link" onClick={handleLinkClick}>
               <img 
                 src={wordmarkUrl} 
                 alt="The AXIS Wordmark" 
@@ -91,63 +95,62 @@ const PublicHeader = () => {
 
             {/* Mobile Logo */}
             <div className="public-header-mobile-logo">
-              <img 
-                src={wordmarkUrl} 
-                alt="The AXIS" 
-                className="public-header-mobile-logo-image"
-              />
+              <Link to="/" onClick={handleLinkClick}>
+                <img 
+                  src={wordmarkUrl} 
+                  alt="The AXIS" 
+                  className="public-header-mobile-logo-image"
+                />
+              </Link>
             </div>
 
             {/* Mobile Search Button */}
             <button 
-              className="public-header-mobile-search-button"
+              className="public-header-mobile-search-button" 
+              title="Search"
               onClick={() => navigate('/search')}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <MagnifyingGlassIcon className="public-page-search-icon" />
             </button>
 
             {/* Desktop Navigation */}
             <nav className="public-header-categories">
-              <Link to="/news" className="public-header-category-link" onClick={closeMobileMenu}>
+              <Link to="/news" className="public-header-category-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 News
               </Link>
-              <Link to="/opinion" className="public-header-category-link" onClick={closeMobileMenu}>
+              <Link to="/opinion" className="public-header-category-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Opinion
               </Link>
-              <Link to="/editorial" className="public-header-category-link" onClick={closeMobileMenu}>
+              <Link to="/editorial" className="public-header-category-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Editorial
               </Link>
-              <Link to="/feature" className="public-header-category-link" onClick={closeMobileMenu}>
+              <Link to="/feature" className="public-header-category-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Feature
               </Link>
-              <Link to="/literary" className="public-header-category-link" onClick={closeMobileMenu}>
+              <Link to="/literary" className="public-header-category-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Literary
               </Link>
-              <Link to="/devcomm" className="public-header-category-link" onClick={closeMobileMenu}>
+              <Link to="/devcomm" className="public-header-category-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 DevCom
               </Link>
-              <Link to="/sports" className="public-header-category-link" onClick={closeMobileMenu}>
+              <Link to="/sports" className="public-header-category-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Sports
               </Link>
-              <Link to="/gallery" className="public-header-category-link" onClick={closeMobileMenu}>
+              <Link to="/gallery" className="public-header-category-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Gallery
               </Link>
-              <Link to="/the-axis-online" className="public-header-category-link" onClick={closeMobileMenu}>
+              <Link to="/the-axis-online" className="public-header-category-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 The AXIS Online
               </Link>
-              <Link to="/annual-editions" className="public-header-category-link" onClick={closeMobileMenu}>
+              <Link to="/annual-editions" className="public-header-category-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Annual Editions
               </Link>
               <button 
-                className="public-header-search"
-                onClick={() => navigate('/search')}
+                className="public-header-search" 
                 title="Search"
+                onClick={() => navigate('/search')}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                <MagnifyingGlassIcon className="public-page-search-icon" />
               </button>
             </nav>
           </div>
@@ -160,72 +163,61 @@ const PublicHeader = () => {
 
           {/* Mobile Menu Sidebar */}
           <div className={`public-header-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
-            {/* AXIS Wordmark */}
-            <div className="public-header-mobile-wordmark">
-              <Link to="/" onClick={closeMobileMenu}>
-                <img 
-                  src={wordmarkUrl} 
-                  alt="The AXIS" 
-                  className="public-header-mobile-wordmark-image"
-                />
-              </Link>
-            </div>
-            <div className="public-header-mobile-separator"></div>
 
 
             {/* Navigation Categories */}
             <nav className="public-header-mobile-nav">
-              <Link to="/news" className="public-header-mobile-link" onClick={closeMobileMenu}>
+              <Link to="/news" className="public-header-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 News
               </Link>
               <div className="public-header-mobile-separator"></div>
               
-              <Link to="/opinion" className="public-header-mobile-link" onClick={closeMobileMenu}>
+              <Link to="/opinion" className="public-header-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Opinion
               </Link>
               <div className="public-header-mobile-separator"></div>
               
-              <Link to="/editorial" className="public-header-mobile-link" onClick={closeMobileMenu}>
+              <Link to="/editorial" className="public-header-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Editorial
               </Link>
               <div className="public-header-mobile-separator"></div>
               
-              <Link to="/feature" className="public-header-mobile-link" onClick={closeMobileMenu}>
+              <Link to="/feature" className="public-header-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Feature
               </Link>
               <div className="public-header-mobile-separator"></div>
               
-              <Link to="/literary" className="public-header-mobile-link" onClick={closeMobileMenu}>
+              <Link to="/literary" className="public-header-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Literary
               </Link>
               <div className="public-header-mobile-separator"></div>
               
-              <Link to="/devcomm" className="public-header-mobile-link" onClick={closeMobileMenu}>
+              <Link to="/devcomm" className="public-header-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 DevCom
               </Link>
               <div className="public-header-mobile-separator"></div>
               
-              <Link to="/sports" className="public-header-mobile-link" onClick={closeMobileMenu}>
+              <Link to="/sports" className="public-header-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Sports
               </Link>
               <div className="public-header-mobile-separator"></div>
               
-              <Link to="/gallery" className="public-header-mobile-link" onClick={closeMobileMenu}>
+              <Link to="/gallery" className="public-header-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Gallery
               </Link>
               <div className="public-header-mobile-separator"></div>
               
-              <Link to="/the-axis-online" className="public-header-mobile-link" onClick={closeMobileMenu}>
+              <Link to="/the-axis-online" className="public-header-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 The AXIS Online
               </Link>
               <div className="public-header-mobile-separator"></div>
               
-              <Link to="/annual-editions" className="public-header-mobile-link" onClick={closeMobileMenu}>
+              <Link to="/annual-editions" className="public-header-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Annual Editions
               </Link>
               <div className="public-header-mobile-separator"></div>
               
-              <Link to="/offline" className="public-header-mobile-link" onClick={closeMobileMenu}>
+              <Link to="/offline" className="public-header-mobile-link" onClick={() => { closeMobileMenu(); handleLinkClick(); }}>
                 Offline Articles
               </Link>
             </nav>

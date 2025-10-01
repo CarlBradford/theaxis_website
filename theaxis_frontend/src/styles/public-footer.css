@@ -3,9 +3,9 @@
 :root {
   /* Use existing color palette variables from color-palette.css */
   --cyan-primary: var(--color-primary);
-  --cyan-dark: var(--color-header);
+  --cyan-dark: var(--color-primary);
   --gray-light: #b3b0ac;
-  --gray-dark: var(--color-footer);
+  --gray-dark: var(--color-secondary);
 }
 
 /* Fade in animation for login prompt */
@@ -222,8 +222,7 @@
 }
 
 .public-footer-link:hover {
-  color: var(--gray-light);
-  transform: translateX(4px);
+  text-decoration: underline;
 }
 
 /* Contact Section */
@@ -427,30 +426,9 @@
 /* Hover effects for interactive elements */
 .public-footer-link:focus,
 .public-footer-legal-link:focus {
-  outline: 2px solid var(--cyan-primary);
-  outline-offset: 2px;
-  border-radius: 0.25rem;
+  outline: none;
 }
 
-/* Modern hover effects */
-.public-footer-link {
-  position: relative;
-}
-
-.public-footer-link::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 2px;
-  bottom: 0;
-  left: 0;
-  background-color: var(--cyan-primary);
-  transition: width 0.3s ease;
-}
-
-.public-footer-link:hover::after {
-  width: 100%;
-}
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
