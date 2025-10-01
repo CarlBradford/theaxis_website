@@ -456,7 +456,7 @@ const ContentStatus = () => {
                 <span className="content-status-stat-label">Needs Revision</span>
               </div>
             </>
-          ) : (user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'ADMINISTRATOR' || user?.role === 'SYSTEM_ADMIN') ? (
+          ) : (user?.role === 'ADMIN_ASSISTANT' || user?.role === 'ADMINISTRATOR' || user?.role === 'SYSTEM_ADMIN') ? (
             // EIC and higher: Focus on publication and overall status
             <>
               <div className="content-status-stat">

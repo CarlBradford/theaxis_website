@@ -237,7 +237,7 @@ router.put(
  * @swagger
  * /tags/{id}:
  *   delete:
- *     summary: Delete tag (Editor-in-Chief+)
+ *     summary: Delete tag (Admin Assistant+)
  *     tags: [Tags]
  *     security:
  *       - bearerAuth: []

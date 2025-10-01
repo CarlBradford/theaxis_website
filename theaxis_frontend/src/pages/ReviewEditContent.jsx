@@ -1077,7 +1077,7 @@ const ReviewEditContent = () => {
               </>
             )}
             
-            {user?.role === 'EDITOR_IN_CHIEF' && (
+            {user?.role === 'ADMIN_ASSISTANT' && (
               <>
                 {articleStatus !== 'PUBLISHED' && (
                   <button
@@ -1123,7 +1123,7 @@ const ReviewEditContent = () => {
             )}
             
             {/* Fallback for other roles */}
-            {!['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'SYSTEM_ADMIN'].includes(user?.role) && (
+            {!['STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'SYSTEM_ADMIN'].includes(user?.role) && (
               <>
                 {articleStatus !== 'PUBLISHED' && (
                   <button
@@ -1629,7 +1629,7 @@ const ReviewEditContent = () => {
             
             <div className="simple-publish-modal-content">
               <p className="simple-publish-warning-text">
-                Are you sure you want to send "{formData.title}" to the Editor-in-Chief for review?
+                Are you sure you want to send "{formData.title}" to the Admin Assistant for review?
               </p>
               <p className="simple-publish-details">
                 Category: {formData.category || 'Uncategorized'}

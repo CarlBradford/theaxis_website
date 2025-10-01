@@ -278,7 +278,7 @@ router.post('/', authenticateToken, upload.single('thumbnailImage'), handleMulte
     console.log('   Uploaded file:', req.file);
     
     // Manual role check for debugging
-    const allowedRoles = ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'];
+    const allowedRoles = ['SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'];
     const hasRequiredRole = allowedRoles.includes(req.user.role);
     console.log('   Manual role check - Allowed roles:', allowedRoles);
     console.log('   Manual role check - User role:', req.user.role);
@@ -390,7 +390,7 @@ router.put('/:id', authenticateToken, upload.single('thumbnailImage'), handleMul
     console.log('   Flipbook ID:', req.params.id);
     
     // Manual role check for debugging
-    const allowedRoles = ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'];
+    const allowedRoles = ['SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'];
     const hasRequiredRole = allowedRoles.includes(req.user.role);
     console.log('   Manual role check - Allowed roles:', allowedRoles);
     console.log('   Manual role check - User role:', req.user.role);
@@ -430,9 +430,9 @@ router.put('/:id', authenticateToken, upload.single('thumbnailImage'), handleMul
     console.log('   Current user ID:', userId);
     console.log('   User role:', req.user.role);
     console.log('   Is owner:', existingFlipbook.userId === userId);
-    console.log('   Is admin role:', ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(req.user.role));
+    console.log('   Is admin role:', ['SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(req.user.role));
     
-    if (existingFlipbook.userId !== userId && !['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(req.user.role)) {
+    if (existingFlipbook.userId !== userId && !['SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(req.user.role)) {
       console.log('   ❌ Ownership check failed');
       return res.status(403).json({
         success: false,
@@ -531,7 +531,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     console.log('   Flipbook ID:', req.params.id);
     
     // Manual role check for debugging
-    const allowedRoles = ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'];
+    const allowedRoles = ['SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'];
     const hasRequiredRole = allowedRoles.includes(req.user.role);
     console.log('   Manual role check - Allowed roles:', allowedRoles);
     console.log('   Manual role check - User role:', req.user.role);
@@ -570,9 +570,9 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     console.log('   Current user ID:', userId);
     console.log('   User role:', req.user.role);
     console.log('   Is owner:', existingFlipbook.userId === userId);
-    console.log('   Is admin role:', ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(req.user.role));
+    console.log('   Is admin role:', ['SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(req.user.role));
     
-    if (existingFlipbook.userId !== userId && !['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(req.user.role)) {
+    if (existingFlipbook.userId !== userId && !['SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(req.user.role)) {
       console.log('   ❌ Ownership check failed');
       return res.status(403).json({
         success: false,
@@ -611,7 +611,7 @@ router.patch('/:id/toggle', authenticateToken, async (req, res) => {
     console.log('   Flipbook ID:', req.params.id);
     
     // Manual role check for debugging
-    const allowedRoles = ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'];
+    const allowedRoles = ['SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'];
     const hasRequiredRole = allowedRoles.includes(req.user.role);
     console.log('   Manual role check - Allowed roles:', allowedRoles);
     console.log('   Manual role check - User role:', req.user.role);
@@ -645,7 +645,7 @@ router.patch('/:id/toggle', authenticateToken, async (req, res) => {
     }
     
     // Check if user owns the flipbook or has admin privileges
-    if (existingFlipbook.userId !== userId && !['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(req.user.role)) {
+    if (existingFlipbook.userId !== userId && !['SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         message: 'You can only modify your own flipbooks'

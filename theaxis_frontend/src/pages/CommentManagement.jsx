@@ -127,7 +127,7 @@ const CommentManagement = () => {
       
       console.log('🔍 Fetching comments with params:', {
         page: currentPage,
-        limit: 20,
+        limit: 1000, // Increased limit to get all comments
         status: selectedStatus,
         sortBy,
         sortOrder,
@@ -137,7 +137,7 @@ const CommentManagement = () => {
       
       const params = {
         page: currentPage,
-        limit: 20,
+        limit: 1000, // Increased limit to get all comments
         status: selectedStatus,
         sortBy,
         sortOrder,

@@ -100,7 +100,7 @@ async function runMigrationsInOrder() {
         INSERT INTO "User" ("id", "email", "username", "firstName", "lastName", "passwordHash", "role", "isActive", "emailVerified", "bio", "createdAt", "updatedAt") 
         VALUES 
           ('user_admin', 'admin@theaxis.local', 'admin', 'System', 'Administrator', '$argon2id$v=19$m=65536,t=3,p=1$9qAt6+s3OYV8gDjiRN1Gkw$zzeWQW9SsJYfsM9EMcfUinuxGVAnuChzbvq7UMp/Dzo', 'ADMINISTRATOR', true, true, 'System administrator for The AXIS platform', NOW(), NOW()),
-          ('user_eic', 'eic@theaxis.local', 'editorinchief', 'Editor', 'In Chief', '$argon2id$v=19$m=65536,t=3,p=1$64MoHdAwmm64EYtYPqKGag$vbCIXi2M6yG/s/VOKRb9+okUsEqiyv1gzVMSxp/Vhqk', 'EDITOR_IN_CHIEF', true, true, 'Editor-in-Chief of The AXIS publication', NOW(), NOW()),
+          ('user_eic', 'eic@theaxis.local', 'editorinchief', 'Editor', 'In Chief', '$argon2id$v=19$m=65536,t=3,p=1$64MoHdAwmm64EYtYPqKGag$vbCIXi2M6yG/s/VOKRb9+okUsEqiyv1gzVMSxp/Vhqk', 'ADMIN_ASSISTANT', true, true, 'Admin Assistant of The AXIS publication', NOW(), NOW()),
           ('user_section', 'section@theaxis.local', 'sectionhead', 'Section', 'Head', '$argon2id$v=19$m=65536,t=3,p=1$0HGwZW2BPfb9jpNHEe+BjA$e2GnXPfqnfw0zNsWRR/bTJLaGee9Fx3jA8Faj/41ovE', 'SECTION_HEAD', true, true, 'Section Head for The AXIS publication', NOW(), NOW()),
           ('user_staff', 'staff@theaxis.local', 'publicationstaff', 'Staff', 'Writer', '$argon2id$v=19$m=65536,t=3,p=1$L2WHYvS49FrtCfhhA5thqA$9QRfSK2+7u0gTA/neLgNBXNriWYbll4cIFtNyBkwUio', 'STAFF', true, true, 'Publication staff for The AXIS publication', NOW(), NOW())
         ON CONFLICT (email) DO NOTHING;
@@ -290,7 +290,7 @@ async function verifyMigration() {
     console.log('\n🎉 Migration completed successfully!');
     console.log('\n📋 Login Credentials:');
     console.log('👤 Admin: admin@theaxis.local / admin123');
-    console.log('👑 Editor-in-Chief: eic@theaxis.local / eic123');
+    console.log('👑 Admin Assistant: eic@theaxis.local / eic123');
     console.log('📰 Section Head: section@theaxis.local / section123');
     console.log('✍️ Publication Staff: staff@theaxis.local / staff123');
     

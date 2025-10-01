@@ -259,10 +259,10 @@ describe('API Integration Tests', () => {
 
   describe('Cleanup', () => {
     test('DELETE /api/articles/:id - should delete article', async () => {
-      // First promote user to Editor-in-Chief for delete permission
+      // First promote user to Admin Assistant for delete permission
       await prisma.user.update({
         where: { id: testUserId },
-        data: { role: 'EDITOR_IN_CHIEF' },
+        data: { role: 'ADMIN_ASSISTANT' },
       });
 
       const response = await request(app)

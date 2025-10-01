@@ -162,7 +162,7 @@ router.post(
   '/',
   [
     authenticateToken,
-    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
+    requireRole('STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     body('title').isLength({ min: 3 }).withMessage('Title must be at least 3 characters'),
     body('content').isLength({ min: 1 }).withMessage('Content is required'),
     body('featuredImage').optional().isString(),
@@ -729,21 +729,21 @@ router.get(
       };
     } else if (userRole === 'ADMINISTRATOR' && authorId) {
       // ADMINISTRATOR viewing their own content: Personal stats
-      const adviserWhere = { ...baseWhere, authorId: userId };
+      const administratorWhere = { ...baseWhere, authorId: userId };
       
       stats = {
-        totalContent: await prisma.article.count({ where: adviserWhere }),
-        drafts: await prisma.article.count({ where: { ...adviserWhere, status: 'DRAFT' } }),
-        inReview: await prisma.article.count({ where: { ...adviserWhere, status: 'IN_REVIEW' } }),
-        needsRevision: await prisma.article.count({ where: { ...adviserWhere, status: 'NEEDS_REVISION' } }),
-        published: await prisma.article.count({ where: { ...adviserWhere, status: 'PUBLISHED' } }),
-        archived: await prisma.article.count({ where: { ...adviserWhere, status: 'ARCHIVED' } }),
+        totalContent: await prisma.article.count({ where: administratorWhere }),
+        drafts: await prisma.article.count({ where: { ...administratorWhere, status: 'DRAFT' } }),
+        inReview: await prisma.article.count({ where: { ...administratorWhere, status: 'IN_REVIEW' } }),
+        needsRevision: await prisma.article.count({ where: { ...administratorWhere, status: 'NEEDS_REVISION' } }),
+        published: await prisma.article.count({ where: { ...administratorWhere, status: 'PUBLISHED' } }),
+        archived: await prisma.article.count({ where: { ...administratorWhere, status: 'ARCHIVED' } }),
         totalViews: await prisma.article.aggregate({
-          where: adviserWhere,
+          where: administratorWhere,
           _sum: { viewCount: true }
         }).then(result => result._sum.viewCount || 0)
       };
-    } else if (['EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(userRole)) {
+    } else if (['ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(userRole)) {
       // EIC and higher: All content stats
       stats = {
         totalContent: await prisma.article.count({ where: baseWhere }),
@@ -830,7 +830,7 @@ router.get(
 // Get article creation form data
 router.get(
   '/create',
-  [authenticateToken, requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN')],
+  [authenticateToken, requireRole('STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN')],
   asyncHandler(async (req, res) => {
     // Return form data needed for creating articles
     const formData = {
@@ -898,7 +898,7 @@ router.get(
   '/review-queue',
   [
     authenticateToken,
-    requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
+    requireRole('SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     query('queueType').optional().isIn(['section-head', 'eic']),
     query('status').optional().isString(),
     query('search').optional().isString(),
@@ -915,7 +915,7 @@ router.get(
     // Determine queue type based on user role if not specified
     let effectiveQueueType = queueType;
     if (!effectiveQueueType) {
-      if (req.user.role === 'EDITOR_IN_CHIEF' || req.user.role === 'ADMINISTRATOR') {
+      if (req.user.role === 'ADMIN_ASSISTANT' || req.user.role === 'ADMINISTRATOR') {
         effectiveQueueType = 'eic';
       } else {
         effectiveQueueType = 'section-head';
@@ -1119,7 +1119,7 @@ router.patch(
   '/:id/review-action',
   [
     authenticateToken,
-    requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
+    requireRole('SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     param('id').isString(),
     body('action').isIn(['approve-to-eic', 'request-revision', 'publish', 'return-to-section']),
     body('feedback').optional().isString(),
@@ -1346,7 +1346,7 @@ router.put(
   '/featured',
   [
     authenticateToken,
-    requireRole('EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
+    requireRole('ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     body('articleIds').isArray({ max: 5 }).withMessage('Maximum 5 articles can be featured'),
     body('articleIds.*').isString().withMessage('Article ID must be a string')
   ],
@@ -1843,7 +1843,7 @@ router.get(
 
     const canView =
       article.status === 'PUBLISHED' ||
-      (req.user && (req.user.id === article.authorId || ['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(req.user.role)));
+      (req.user && (req.user.id === article.authorId || ['SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(req.user.role)));
     if (!canView) {
       return sendErrorResponse(res, 403, 'Article not published');
     }
@@ -2133,7 +2133,7 @@ router.patch(
       if (status === 'ARCHIVED' && req.user.role === 'SECTION_HEAD') {
         // Notify EIC when Section Head archives an article
         await notificationService.notifyEICArticleArchived(id, req.user.id);
-      } else if (status === 'IN_REVIEW' && req.user.role === 'EDITOR_IN_CHIEF') {
+      } else if (status === 'IN_REVIEW' && req.user.role === 'ADMIN_ASSISTANT') {
         // Notify Section Heads when EIC restores an article
         await notificationService.notifySectionHeadsArticleRestored(id, req.user.id);
       }
@@ -2286,7 +2286,7 @@ router.post(
   '/:id/authors',
   [
     authenticateToken,
-    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
+    requireRole('STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     param('id').isString(),
     body('userId').isString().withMessage('User ID is required'),
     body('role').optional().isString()
@@ -2629,7 +2629,7 @@ router.get(
   '/:id/analytics',
   [
     authenticateToken,
-    requireRole('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
+    requireRole('STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     param('id').isString(),
     query('days').optional().isInt({ min: 1, max: 365 }).toInt()
   ],

@@ -126,7 +126,7 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.EDITORIAL_NOTE_DELETE,
   ],
 
-  EDITOR_IN_CHIEF: [
+  ADMIN_ASSISTANT: [
     // User Management
     PERMISSIONS.USER_CREATE,
     PERMISSIONS.USER_READ,
@@ -249,7 +249,7 @@ export const getRoleLevel = (role) => {
   const hierarchy = {
     STAFF: 0,
     SECTION_HEAD: 1,
-    EDITOR_IN_CHIEF: 2,
+    ADMIN_ASSISTANT: 2,
     ADMINISTRATOR: 3,
     SYSTEM_ADMIN: 4,
   };
@@ -265,9 +265,9 @@ export const canManageRole = (managerRole, targetRole) => {
     return true;
   }
   
-  // EIC and ADMINISTRATOR can update STAFF, SECTION_HEAD, EIC, ADMINISTRATOR (but not SYSTEM_ADMIN)
-  if (['EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(managerRole)) {
-    return ['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(targetRole);
+  // ADMIN_ASSISTANT and ADMINISTRATOR can update STAFF, SECTION_HEAD, ADMIN_ASSISTANT, ADMINISTRATOR (but not SYSTEM_ADMIN)
+  if (['ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(managerRole)) {
+    return ['STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(targetRole);
   }
   
   // SECTION_HEAD cannot update any roles
@@ -295,9 +295,9 @@ export const canCreateUserRole = (creatorRole, targetRole) => {
     return true;
   }
   
-  // EIC and ADMINISTRATOR can create users for STAFF, SECTION_HEAD, EIC, ADMINISTRATOR (but not SYSTEM_ADMIN)
-  if (['EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(creatorRole)) {
-    return ['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(targetRole);
+  // ADMIN_ASSISTANT and ADMINISTRATOR can create users for STAFF, SECTION_HEAD, ADMIN_ASSISTANT, ADMINISTRATOR (but not SYSTEM_ADMIN)
+  if (['ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(creatorRole)) {
+    return ['STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(targetRole);
   }
   
   // SECTION_HEAD cannot create any user accounts
@@ -319,7 +319,7 @@ export const canCreateUserRole = (creatorRole, targetRole) => {
 export const ROLE_DISPLAY_NAMES = {
   SYSTEM_ADMIN: 'System Administrator',
   ADMINISTRATOR: 'Administrator',
-  EDITOR_IN_CHIEF: 'Editor-in-Chief',
+  ADMIN_ASSISTANT: 'Admin Assistant',
   SECTION_HEAD: 'Section Head',
   STAFF: 'Publication Staff',
 };
@@ -330,7 +330,7 @@ export const ROLE_DISPLAY_NAMES = {
 export const ROLE_DESCRIPTIONS = {
   SYSTEM_ADMIN: 'Full access to all system functions and configurations',
   ADMINISTRATOR: 'Secure login, user management, article review, analytics access',
-  EDITOR_IN_CHIEF: 'Full editorial control, user management, content publishing',
+  ADMIN_ASSISTANT: 'Full editorial control, user management, content publishing',
   SECTION_HEAD: 'Manage staff, review submissions, moderate content',
   STAFF: 'Create and submit articles, upload media, view feedback',
 };

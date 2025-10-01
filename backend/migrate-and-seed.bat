@@ -35,7 +35,7 @@ echo Migration and seeding completed!
 echo.
 echo Login Credentials:
 echo Admin: admin@theaxis.local / admin123
-echo Editor-in-Chief: eic@theaxis.local / eic123
+echo Admin Assistant: eic@theaxis.local / eic123
 echo Section Head: section@theaxis.local / section123
 echo Publication Staff: staff@theaxis.local / staff123
 echo.

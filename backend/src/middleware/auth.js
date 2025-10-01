@@ -138,7 +138,7 @@ const requireRole = (...roles) => {
     const roleHierarchy = {
       'STAFF': 0,
       'SECTION_HEAD': 1,
-      'EDITOR_IN_CHIEF': 2,
+      'ADMIN_ASSISTANT': 2,
       'ADMINISTRATOR': 3,
       'SYSTEM_ADMIN': 4
     };
@@ -289,9 +289,9 @@ const canCreateUserWithRole = (req, res, next) => {
 };
 
 // Specific role middleware functions
-const requireAdviser = requireRole('ADMINISTRATOR');
+const requireAdministrator = requireRole('ADMINISTRATOR');
 const requireSystemAdmin = requireRole('SYSTEM_ADMIN');
-const requireEditorInChief = requireRole('EDITOR_IN_CHIEF');
+const requireEditorInChief = requireRole('ADMIN_ASSISTANT');
 const requireSectionHead = requireRole('SECTION_HEAD');
 const requireStaff = requireRole('STAFF');
 
@@ -303,8 +303,8 @@ const requireOwnership = (resourceType, resourceIdField = 'id') => {
         return next(new AppError('Authentication required', 401));
       }
 
-      // Advisers, EICs, and System Admins can access all resources
-      if (['ADMINISTRATOR', 'EDITOR_IN_CHIEF', 'SYSTEM_ADMIN'].includes(req.user.role)) {
+      // Administrators, Admin Assistants, and System Admins can access all resources
+      if (['ADMINISTRATOR', 'ADMIN_ASSISTANT', 'SYSTEM_ADMIN'].includes(req.user.role)) {
         return next();
       }
 
@@ -458,7 +458,7 @@ module.exports = {
   requireAllPermissions,
   canManageUserRole,
   canCreateUserWithRole,
-  requireAdviser,
+  requireAdministrator,
   requireSystemAdmin,
   requireEditorInChief,
   requireSectionHead,

@@ -630,7 +630,7 @@ const MyContent = () => {
         <div className="mycontent-control-bar">
           <div className="mycontent-stats">
             {/* Role-based filter tabs */}
-            {user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'ADMINISTRATOR' || user?.role === 'SYSTEM_ADMIN' ? (
+            {user?.role === 'ADMIN_ASSISTANT' || user?.role === 'ADMINISTRATOR' || user?.role === 'SYSTEM_ADMIN' ? (
               // EIC and higher: Total, Published, Drafts, In Review, Approved, Archived
               <>
                 <button 
@@ -981,7 +981,7 @@ const MyContent = () => {
                     }
                     
                     // EIC and higher: Enable only for draft, published, and approved
-                    if (userRole === 'EDITOR_IN_CHIEF' || userRole === 'ADMINISTRATOR' || userRole === 'SYSTEM_ADMIN') {
+                    if (userRole === 'ADMIN_ASSISTANT' || userRole === 'ADMINISTRATOR' || userRole === 'SYSTEM_ADMIN') {
                       if (status === 'draft' || status === 'published' || status === 'approved') {
                         return (
                   <Link

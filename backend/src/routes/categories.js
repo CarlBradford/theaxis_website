@@ -295,7 +295,7 @@ router.put(
  * @swagger
  * /categories/{id}:
  *   delete:
- *     summary: Delete category (Editor-in-Chief+)
+ *     summary: Delete category (Admin Assistant+)
  *     tags: [Categories]
  *     security:
  *       - bearerAuth: []

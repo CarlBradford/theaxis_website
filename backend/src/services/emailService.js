@@ -245,7 +245,7 @@ class EmailService {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Article Returned for Further Review</h2>
           <p>Hello ${firstName},</p>
-          <p>An article has been returned by the Editor-in-Chief for further review:</p>
+          <p>An article has been returned by the Admin Assistant for further review:</p>
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <p><strong>Article Title:</strong> ${articleTitle}</p>
             <p><strong>Author:</strong> ${authorFirstName} ${authorLastName}</p>
@@ -533,7 +533,7 @@ class EmailService {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Article Returned for Further Review</h2>
           <p>Hello ${firstName},</p>
-          <p>An article has been returned by the Editor-in-Chief for further review:</p>
+          <p>An article has been returned by the Admin Assistant for further review:</p>
           <div style="background-color: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
             <p><strong>Article Title:</strong> ${articleTitle}</p>
             <p><strong>Author:</strong> ${authorFirstName} ${authorLastName}</p>
@@ -831,7 +831,7 @@ class EmailService {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Article Restored to Review Queue</h2>
           <p>Hello ${firstName},</p>
-          <p>An article has been restored to the review queue by the Editor-in-Chief:</p>
+          <p>An article has been restored to the review queue by the Admin Assistant:</p>
           <div style="background-color: #d1ecf1; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #17a2b8;">
             <p><strong>Article Title:</strong> ${articleTitle}</p>
             <p><strong>Author:</strong> ${authorFirstName} ${authorLastName}</p>
@@ -906,7 +906,7 @@ class EmailService {
   /**
    * Send email to ADMINISTRATOR when any article is published
    */
-  async sendAdviserArticlePublishedNotification(email, firstName, articleTitle, authorName, authorRole, categories) {
+  async sendAdministratorArticlePublishedNotification(email, firstName, articleTitle, authorName, authorRole, categories) {
     if (!this.transporter) {
       logger.warn('Email service not available. ADMINISTRATOR publish notification not sent.');
       return false;

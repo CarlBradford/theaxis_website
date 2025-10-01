@@ -34,7 +34,7 @@ class NotificationService {
     switch (action) {
       case 'approve-to-eic':
         notification.title = 'Article Approved';
-        notification.message = `Your article "${articleData.title}" has been approved by Section Head and forwarded to Editor-in-Chief for final review.`;
+        notification.message = `Your article "${articleData.title}" has been approved by Section Head and forwarded to Admin Assistant for final review.`;
         break;
       
       case 'request-revision':
@@ -69,8 +69,8 @@ class NotificationService {
     
     addNotification({
       type: 'feedback',
-      title: 'Feedback from Editor-in-Chief',
-      message: `You have received feedback from the Editor-in-Chief regarding article "${articleData.title}". ${feedback ? `Feedback: ${feedback}` : 'Please check the article for details.'}`,
+      title: 'Feedback from Admin Assistant',
+      message: `You have received feedback from the Admin Assistant regarding article "${articleData.title}". ${feedback ? `Feedback: ${feedback}` : 'Please check the article for details.'}`,
       articleTitle: articleData.title,
       articleId: articleData.id
     });

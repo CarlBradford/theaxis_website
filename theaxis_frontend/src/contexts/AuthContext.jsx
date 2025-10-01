@@ -91,7 +91,7 @@ export function AuthProvider({ children }) {
     const roleHierarchy = {
       'STAFF': 0,
       'SECTION_HEAD': 1,
-      'EDITOR_IN_CHIEF': 2,
+      'ADMIN_ASSISTANT': 2,
       'ADMINISTRATOR': 3,
       'SYSTEM_ADMIN': 4
     };

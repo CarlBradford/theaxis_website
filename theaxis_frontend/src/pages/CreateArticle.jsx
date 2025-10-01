@@ -1104,7 +1104,7 @@ const CreateArticle = () => {
               </>
             )}
             
-            {user?.role === 'EDITOR_IN_CHIEF' && (
+            {user?.role === 'ADMIN_ASSISTANT' && (
               <>
                 <button
                   type="button"
@@ -1168,7 +1168,7 @@ const CreateArticle = () => {
             )}
             
             {/* Fallback for other roles */}
-            {!['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(user?.role) && (
+            {!['STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(user?.role) && (
               <button
                 type="button"
                 onClick={handleSaveAsDraft}
@@ -1612,7 +1612,7 @@ const CreateArticle = () => {
             
             <div className="simple-publish-modal-content">
               <p className="simple-publish-warning-text">
-                Are you sure you want to send "{formData.title}" to the Editor-in-Chief for review?
+                Are you sure you want to send "{formData.title}" to the Admin Assistant for review?
               </p>
               <p className="simple-publish-details">
                 Category: {formData.category || 'Uncategorized'}

@@ -102,7 +102,7 @@ async function verifyData() {
     console.log('\n🎉 Migration and seeding completed successfully!');
     console.log('\n📋 Login Credentials:');
     console.log('👤 Admin: admin@theaxis.local / admin123');
-    console.log('👑 Editor-in-Chief: eic@theaxis.local / eic123');
+    console.log('👑 Admin Assistant: eic@theaxis.local / eic123');
     console.log('📰 Section Head: section@theaxis.local / section123');
     console.log('✍️ Publication Staff: staff@theaxis.local / staff123');
     

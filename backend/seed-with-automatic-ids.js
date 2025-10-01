@@ -108,7 +108,7 @@ async function ensureSeedData() {
       firstName: 'Editor', 
       lastName: 'In Chief', 
       passwordHash: '$argon2id$v=19$m=65536,t=3,p=1$64MoHdAwmm64EYtYPqKGag$vbCIXi2M6yG/s/VOKRb9+okUsEqiyv1gzVMSxp/Vhqk', 
-      role: 'EDITOR_IN_CHIEF' 
+      role: 'ADMIN_ASSISTANT' 
     },
     { 
       id: 'user_section', 
@@ -331,7 +331,7 @@ async function verifyData() {
   console.log('\n🎉 Seeding completed successfully!');
   console.log('\n📋 Login Credentials:');
   console.log('👤 Admin: admin@theaxis.local / admin123');
-  console.log('👑 Editor-in-Chief: eic@theaxis.local / eic123');
+  console.log('👑 Admin Assistant: eic@theaxis.local / eic123');
   console.log('📰 Section Head: section@theaxis.local / section123');
   console.log('✍️ Publication Staff: staff@theaxis.local / staff123');
 }

@@ -10,7 +10,7 @@ async function verifyReaderRemoval() {
     console.log('📋 Current UserRole enum values:');
     console.log('  - STAFF');
     console.log('  - SECTION_HEAD');
-    console.log('  - EDITOR_IN_CHIEF');
+    console.log('  - ADMIN_ASSISTANT');
     console.log('  - ADMINISTRATOR');
     console.log('  - SYSTEM_ADMIN');
     console.log('  ✅ READER role removed');

@@ -324,7 +324,7 @@ const Profile = () => {
     const roleMap = {
       'STAFF': 'Staff Member',
       'SECTION_HEAD': 'Section Head',
-      'EDITOR_IN_CHIEF': 'Editor-in-Chief',
+      'ADMIN_ASSISTANT': 'Admin Assistant',
       'ADMINISTRATOR': 'Administrator',
       'SYSTEM_ADMIN': 'System Administrator',
       'READER': 'Reader'

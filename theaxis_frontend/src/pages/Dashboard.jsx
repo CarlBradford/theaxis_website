@@ -257,7 +257,7 @@ const Dashboard = () => {
 
           <div className="dashboard-header-controls">
             <div className="dashboard-quick-actions">
-              {!hasRole(['EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN']) && (
+              {!hasRole(['ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN']) && (
                 <button 
                   className="dashboard-quick-action-btn"
                   onClick={() => handleQuickAction('new-content')}
@@ -268,7 +268,7 @@ const Dashboard = () => {
               )}
               
               
-              {hasRole(['SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN']) && (
+              {hasRole(['SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN']) && (
                 <button 
                   className="dashboard-quick-action-btn"
                   onClick={() => handleQuickAction('review-pending')}
@@ -278,7 +278,7 @@ const Dashboard = () => {
                 </button>
               )}
               
-              {hasRole(['EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN']) && (
+              {hasRole(['ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN']) && (
                 <button 
                   className="dashboard-quick-action-btn"
                   onClick={() => handleQuickAction('manage-featured')}
@@ -288,7 +288,7 @@ const Dashboard = () => {
                 </button>
               )}
               
-              {hasRole(['EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN']) && (
+              {hasRole(['ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN']) && (
                 <button 
                   className="dashboard-quick-action-btn"
                   onClick={() => handleQuickAction('view-analytics')}

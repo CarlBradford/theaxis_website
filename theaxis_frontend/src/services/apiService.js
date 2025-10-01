@@ -455,7 +455,7 @@ export const utils = {
       'READER': 0,
       'STAFF': 1,
       'SECTION_HEAD': 2,
-      'EDITOR_IN_CHIEF': 3
+      'ADMIN_ASSISTANT': 3
     };
     
     return roleHierarchy[userRole] >= roleHierarchy[requiredRole];

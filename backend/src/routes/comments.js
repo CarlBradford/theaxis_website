@@ -291,7 +291,7 @@ router.get(
     const where = {};
     if (articleId) where.articleId = articleId;
 
-    const isStaffOrAbove = req.user && ['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(req.user.role);
+    const isStaffOrAbove = req.user && ['STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(req.user.role);
     if (!isStaffOrAbove || !includePending) {
       where.isApproved = true;
       where.isPublic = true;
@@ -402,7 +402,7 @@ router.put(
  */
 router.post(
   '/:id/approve',
-  [authenticateToken, requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'), param('id').isString()],
+  [authenticateToken, requireRole('SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'), param('id').isString()],
   auditLog('approve', 'comment'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -456,7 +456,7 @@ router.post(
  */
 router.post(
   '/:id/reject',
-  [authenticateToken, requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'), param('id').isString()],
+  [authenticateToken, requireRole('SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'), param('id').isString()],
   auditLog('reject', 'comment'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -497,7 +497,7 @@ router.post(
  */
 router.delete(
   '/:id',
-  [authenticateToken, requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN')],
+  [authenticateToken, requireRole('SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN')],
   auditLog('delete', 'comment'),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -558,7 +558,7 @@ router.get(
   '/admin',
   [
     authenticateToken,
-    requireRole('SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
+    requireRole('SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'),
     query('page').optional().isInt({ min: 1 }).toInt(),
     query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
     query('status').optional().isIn(['all', 'pending', 'approved', 'rejected']),

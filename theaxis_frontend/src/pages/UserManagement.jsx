@@ -45,7 +45,7 @@ const UserManagement = () => {
   const allRoles = [
     { value: 'STAFF', label: 'Publication Staff', description: 'Can write and submit articles' },
     { value: 'SECTION_HEAD', label: 'Section Head', description: 'Can manage section articles' },
-    { value: 'EDITOR_IN_CHIEF', label: 'Editor-in-Chief', description: 'Can manage all content' },
+    { value: 'ADMIN_ASSISTANT', label: 'Admin Assistant', description: 'Can manage all content' },
     { value: 'ADMINISTRATOR', label: 'Administrator', description: 'Can oversee publication' },
     { value: 'SYSTEM_ADMIN', label: 'System Admin', description: 'Full system access' }
   ];
@@ -55,8 +55,13 @@ const UserManagement = () => {
     canCreateUserRole(currentUser?.role, role.value)
   );
 
-  // Fallback: if no roles are available (user not loaded yet), show all roles
-  const availableRoles = roles.length > 0 ? roles : allRoles;
+  // For ADMINISTRATOR and ADMIN_ASSISTANT, show all roles except SYSTEM_ADMIN
+  const availableRoles = (() => {
+    if (['ADMINISTRATOR', 'ADMIN_ASSISTANT'].includes(currentUser?.role)) {
+      return allRoles.filter(role => role.value !== 'SYSTEM_ADMIN');
+    }
+    return roles.length > 0 ? roles : allRoles;
+  })();
 
   // Form state for creating new user
   const [formData, setFormData] = useState({
@@ -130,7 +135,10 @@ const UserManagement = () => {
       setError(null);
       
       // Build API parameters
-      const params = {};
+      const params = {
+        limit: 1000, // Set high limit to get all users
+        page: 1
+      };
       
       // Add filter parameters
       if (filters.search && filters.search.trim()) {
@@ -450,8 +458,8 @@ const UserManagement = () => {
     const classes = {
       'STAFF': 'publication-staff',
       'SECTION_HEAD': 'section-head',
-      'EDITOR_IN_CHIEF': 'editor-in-chief',
-      'ADMINISTRATOR': 'adviser',
+      'ADMIN_ASSISTANT': 'editor-in-chief',
+      'ADMINISTRATOR': 'administrator',
       'SYSTEM_ADMIN': 'system-admin'
     };
     return classes[role] || 'publication-staff';
@@ -461,7 +469,7 @@ const UserManagement = () => {
     const names = {
       'STAFF': 'Publication Staff',
       'SECTION_HEAD': 'Section Head',
-      'EDITOR_IN_CHIEF': 'Editor-in-Chief',
+      'ADMIN_ASSISTANT': 'Admin Assistant',
       'ADMINISTRATOR': 'Administrator',
       'SYSTEM_ADMIN': 'System Admin'
     };
@@ -622,7 +630,7 @@ const UserManagement = () => {
                     </button>
                     {allRoles.filter(role => {
                       // Hide SYSTEM_ADMIN from EIC and ADMINISTRATOR
-                      if (['EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(currentUser?.role) && role.value === 'SYSTEM_ADMIN') {
+                      if (['ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(currentUser?.role) && role.value === 'SYSTEM_ADMIN') {
                         return false;
                       }
                       return true;
@@ -808,7 +816,7 @@ const UserManagement = () => {
                                     const roleHierarchy = {
                                       'STAFF': 0,
                                       'SECTION_HEAD': 1,
-                                      'EDITOR_IN_CHIEF': 2,
+                                      'ADMIN_ASSISTANT': 2,
                                       'ADMINISTRATOR': 3,
                                       'SYSTEM_ADMIN': 4,
                                     };
@@ -844,7 +852,7 @@ const UserManagement = () => {
                                   const roleHierarchy = {
                                     'STAFF': 0,
                                     'SECTION_HEAD': 1,
-                                    'EDITOR_IN_CHIEF': 2,
+                                    'ADMIN_ASSISTANT': 2,
                                     'ADMINISTRATOR': 3,
                                     'SYSTEM_ADMIN': 4,
                                   };
@@ -865,7 +873,7 @@ const UserManagement = () => {
                         )}
                         
                         {/* Toggle Active/Inactive Status */}
-                        {(currentUser?.role === 'EDITOR_IN_CHIEF' || currentUser?.role === 'ADMINISTRATOR' || currentUser?.role === 'SYSTEM_ADMIN') && (
+                        {(currentUser?.role === 'ADMIN_ASSISTANT' || currentUser?.role === 'ADMINISTRATOR' || currentUser?.role === 'SYSTEM_ADMIN') && (
                           <button
                             onClick={() => {
                               handleToggleUserStatus(user.id, user.isActive);
@@ -886,7 +894,7 @@ const UserManagement = () => {
                         )}
                         
                         {/* Delete User Option */}
-                        {(currentUser?.role === 'EDITOR_IN_CHIEF' || currentUser?.role === 'ADMINISTRATOR' || currentUser?.role === 'SYSTEM_ADMIN') && (
+                        {(currentUser?.role === 'ADMIN_ASSISTANT' || currentUser?.role === 'ADMINISTRATOR' || currentUser?.role === 'SYSTEM_ADMIN') && (
                           <button
                             onClick={() => {
                               setUserToDelete(user);

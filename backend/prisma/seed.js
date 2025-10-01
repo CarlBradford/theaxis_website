@@ -391,7 +391,7 @@ async function main() {
       }
       
       // Add sample review feedback
-      const editors = users.filter(u => u.role === 'EDITOR_IN_CHIEF' || u.role === 'SECTION_HEAD');
+      const editors = users.filter(u => u.role === 'ADMIN_ASSISTANT' || u.role === 'SECTION_HEAD');
       if (editors.length > 0) {
         for (let i = 0; i < Math.min(2, articles.length); i++) {
           const article = articles[i];
@@ -442,7 +442,7 @@ async function main() {
     console.log('✅ Database seeding completed successfully!');
     console.log('\n📋 Default Login Credentials (now permanent via migrations):');
     console.log('👤 Admin: admin@theaxis.local / admin123');
-    console.log('👑 Editor-in-Chief: eic@theaxis.local / eic123');
+    console.log('👑 Admin Assistant: eic@theaxis.local / eic123');
     console.log('📰 Section Head: section@theaxis.local / section123');
     console.log('✍️ Publication Staff: staff@theaxis.local / staff123');
     console.log('\n⚠️  IMPORTANT: Change these passwords in production!');

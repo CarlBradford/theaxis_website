@@ -369,7 +369,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
         addNotification({
           type: 'approval',
           title: 'Article Approved',
-          message: `Your article "${articleToApprove.title}" has been approved by Section Head and forwarded to Editor-in-Chief for final review.`,
+          message: `Your article "${articleToApprove.title}" has been approved by Section Head and forwarded to Admin Assistant for final review.`,
           articleTitle: articleToApprove.title,
           articleId: articleToApprove.id
         });
@@ -1539,7 +1539,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                 Author: {articleToApprove.author} • Category: {articleToApprove.category}
               </p>
               <p className="simple-approve-note">
-                This will send the article to the Editor-in-Chief for final review.
+                This will send the article to the Admin Assistant for final review.
               </p>
             </div>
             

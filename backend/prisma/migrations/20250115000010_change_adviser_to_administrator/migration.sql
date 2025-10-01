@@ -5,7 +5,7 @@ ALTER TYPE "UserRole" ADD VALUE 'ADMINISTRATOR';
 UPDATE "User" SET role = 'ADMINISTRATOR' WHERE role = 'ADVISER';
 
 -- Step 3: Create a new enum without ADVISER
-CREATE TYPE "UserRole_new" AS ENUM ('STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR', 'SYSTEM_ADMIN');
+CREATE TYPE "UserRole_new" AS ENUM ('STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN');
 
 -- Step 4: Update the column to use the new enum
 ALTER TABLE "User" ALTER COLUMN "role" TYPE "UserRole_new" USING "role"::text::"UserRole_new";

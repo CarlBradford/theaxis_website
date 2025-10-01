@@ -184,13 +184,13 @@ function AppWithAnalytics() {
               } />
               
               <Route path="analytics" element={
-                <ProtectedRoute requiredRole="EDITOR_IN_CHIEF">
+                <ProtectedRoute requiredRole="ADMIN_ASSISTANT">
                   <AnalyticsDashboard />
                 </ProtectedRoute>
               } />
               
               <Route path="featured-articles" element={
-                <ProtectedRoute requiredRole="EDITOR_IN_CHIEF" excludeRoles={[]}>
+                <ProtectedRoute requiredRole="ADMIN_ASSISTANT" excludeRoles={[]}>
                   <FeaturedArticlesPage />
                 </ProtectedRoute>
               } />

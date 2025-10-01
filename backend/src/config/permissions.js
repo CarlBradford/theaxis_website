@@ -134,7 +134,7 @@ const ROLE_PERMISSIONS = {
     PERMISSIONS.EDITORIAL_NOTE_DELETE,
   ],
 
-  EDITOR_IN_CHIEF: [
+  ADMIN_ASSISTANT: [
     // User Management
     PERMISSIONS.USER_CREATE,
     PERMISSIONS.USER_READ,
@@ -289,7 +289,7 @@ const getRoleLevel = (role) => {
   const hierarchy = {
     STAFF: 0,
     SECTION_HEAD: 1,
-    EDITOR_IN_CHIEF: 2,
+    ADMIN_ASSISTANT: 2,
     ADMINISTRATOR: 3,
     SYSTEM_ADMIN: 4,
   };
@@ -308,9 +308,9 @@ const canManageRole = (managerRole, targetRole) => {
     return true;
   }
   
-  // EIC and ADMINISTRATOR can update STAFF, SECTION_HEAD, EIC, ADMINISTRATOR (but not SYSTEM_ADMIN)
-  if (['EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(managerRole)) {
-    return ['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(targetRole);
+  // ADMIN_ASSISTANT and ADMINISTRATOR can update STAFF, SECTION_HEAD, ADMIN_ASSISTANT, ADMINISTRATOR (but not SYSTEM_ADMIN)
+  if (['ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(managerRole)) {
+    return ['STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(targetRole);
   }
   
   // SECTION_HEAD cannot update any roles
@@ -338,9 +338,9 @@ const canCreateUserRole = (creatorRole, targetRole) => {
     return true;
   }
   
-  // EIC and ADMINISTRATOR can create users for STAFF, SECTION_HEAD, EIC, ADMINISTRATOR (but not SYSTEM_ADMIN)
-  if (['EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(creatorRole)) {
-    return ['STAFF', 'SECTION_HEAD', 'EDITOR_IN_CHIEF', 'ADMINISTRATOR'].includes(targetRole);
+  // ADMIN_ASSISTANT and ADMINISTRATOR can create users for STAFF, SECTION_HEAD, ADMIN_ASSISTANT, ADMINISTRATOR (but not SYSTEM_ADMIN)
+  if (['ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(creatorRole)) {
+    return ['STAFF', 'SECTION_HEAD', 'ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(targetRole);
   }
   
   // SECTION_HEAD cannot create any user accounts

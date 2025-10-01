@@ -47,7 +47,7 @@ const router = express.Router();
  * @swagger
  * /analytics/articles:
  *   get:
- *     summary: Get article analytics (Editor-in-Chief+)
+ *     summary: Get article analytics (Admin Assistant+)
  *     tags: [Analytics]
  *     security:
  *       - bearerAuth: []
@@ -116,7 +116,7 @@ router.get(
  * @swagger
  * /analytics/users:
  *   get:
- *     summary: Get user analytics (Editor-in-Chief+)
+ *     summary: Get user analytics (Admin Assistant+)
  *     tags: [Analytics]
  *     security:
  *       - bearerAuth: []
@@ -182,7 +182,7 @@ router.get(
  * @swagger
  * /analytics/comments:
  *   get:
- *     summary: Get comment analytics (Editor-in-Chief+)
+ *     summary: Get comment analytics (Admin Assistant+)
  *     tags: [Analytics]
  *     security:
  *       - bearerAuth: []
@@ -247,7 +247,7 @@ router.get(
  * @swagger
  * /analytics/dashboard:
  *   get:
- *     summary: Get dashboard overview (Editor-in-Chief+)
+ *     summary: Get dashboard overview (Admin Assistant+)
  *     tags: [Analytics]
  *     security:
  *       - bearerAuth: []

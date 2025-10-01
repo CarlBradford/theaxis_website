@@ -7,7 +7,7 @@ const ReviewQueuePage = () => {
   
   // Determine queue type based on user role
   const getQueueType = () => {
-    if (user?.role === 'EDITOR_IN_CHIEF' || user?.role === 'ADMINISTRATOR' || user?.role === 'SYSTEM_ADMIN') {
+    if (user?.role === 'ADMIN_ASSISTANT' || user?.role === 'ADMINISTRATOR' || user?.role === 'SYSTEM_ADMIN') {
       return 'eic';
     }
     return 'section-head'; // Default for SECTION_HEAD and other roles

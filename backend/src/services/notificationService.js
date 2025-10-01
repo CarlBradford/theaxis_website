@@ -276,7 +276,7 @@ class NotificationService {
       case 'NEEDS_REVISION':
         return `Your article "${articleTitle}" needs revision. ${feedback ? `Feedback: ${feedback}` : 'Please check the feedback section for details.'}`;
       case 'APPROVED':
-        return `Your article "${articleTitle}" has been approved and forwarded to the Editor-in-Chief for final review.`;
+        return `Your article "${articleTitle}" has been approved and forwarded to the Admin Assistant for final review.`;
       case 'PUBLISHED':
         return `Congratulations! Your article "${articleTitle}" has been published and is now live.`;
       case 'IN_REVIEW':
@@ -292,7 +292,7 @@ class NotificationService {
       // Find EIC users
       const eics = await prisma.user.findMany({
         where: {
-          role: 'EDITOR_IN_CHIEF'
+          role: 'ADMIN_ASSISTANT'
         },
         select: {
           id: true,
@@ -303,7 +303,7 @@ class NotificationService {
       });
 
       if (eics.length === 0) {
-        logger.warn('No Editor-in-Chief found to notify about article approval');
+        logger.warn('No Admin Assistant found to notify about article approval');
         return;
       }
 
@@ -420,8 +420,8 @@ class NotificationService {
         prisma.notification.create({
           data: {
             userId: sectionHead.id,
-            title: 'Article Returned by Editor-in-Chief',
-            message: `Article "${article.title}" by ${article.author.firstName} ${article.author.lastName} has been returned by Editor-in-Chief for further review.${feedback ? ` Feedback: ${feedback}` : ''}`,
+            title: 'Article Returned by Admin Assistant',
+            message: `Article "${article.title}" by ${article.author.firstName} ${article.author.lastName} has been returned by Admin Assistant for further review.${feedback ? ` Feedback: ${feedback}` : ''}`,
             type: 'WARNING',
             data: {
               articleId: article.id,
@@ -962,7 +962,7 @@ class NotificationService {
       }
 
       // Section Head notifications
-      if (newStatus === 'IN_REVIEW' && oldStatus === 'APPROVED' && actorRole === 'EDITOR_IN_CHIEF') {
+      if (newStatus === 'IN_REVIEW' && oldStatus === 'APPROVED' && actorRole === 'ADMIN_ASSISTANT') {
         // EIC returned article to Section Head
         notificationPromises.push(this.notifySectionHeadArticleReturned(articleId, feedback));
       }
@@ -980,7 +980,7 @@ class NotificationService {
 
       // Own article published notifications
       if (newStatus === 'PUBLISHED') {
-        if (authorRole === 'EDITOR_IN_CHIEF') {
+        if (authorRole === 'ADMIN_ASSISTANT') {
           notificationPromises.push(this.notifyEICOwnArticlePublished(articleId));
         } else if (authorRole === 'SECTION_HEAD') {
           notificationPromises.push(this.notifySectionHeadOwnArticlePublished(articleId));
@@ -989,7 +989,7 @@ class NotificationService {
         }
         
         // Notify ADMINISTRATOR when any article is published
-        notificationPromises.push(this.notifyAdviserArticlePublished(articleId));
+        notificationPromises.push(this.notifyAdministratorArticlePublished(articleId));
       }
 
       // General author status change notifications
@@ -1076,7 +1076,7 @@ class NotificationService {
       // Get all EIC users
       const eicUsers = await prisma.user.findMany({
         where: {
-          role: 'EDITOR_IN_CHIEF'
+          role: 'ADMIN_ASSISTANT'
         },
         select: {
           id: true,
@@ -1207,7 +1207,7 @@ class NotificationService {
       // Get all EIC users
       const eicUsers = await prisma.user.findMany({
         where: {
-          role: 'EDITOR_IN_CHIEF'
+          role: 'ADMIN_ASSISTANT'
         },
         select: {
           id: true,
@@ -1365,7 +1365,7 @@ class NotificationService {
 
       const restoredByName = restoredByUser ? 
         `${restoredByUser.firstName} ${restoredByUser.lastName}`.trim() || restoredByUser.username :
-        'The Editor-in-Chief';
+        'The Admin Assistant';
 
       // Create in-app notifications for all Section Head users
       const notificationPromises = sectionHeadUsers.map(sectionHeadUser => 
@@ -1464,7 +1464,7 @@ class NotificationService {
       // Get all EIC users
       const eicUsers = await prisma.user.findMany({
         where: {
-          role: 'EDITOR_IN_CHIEF'
+          role: 'ADMIN_ASSISTANT'
         },
         select: {
           id: true,
@@ -1565,7 +1565,7 @@ class NotificationService {
   /**
    * Notify ADMINISTRATOR when any article is published
    */
-  async notifyAdviserArticlePublished(articleId) {
+  async notifyAdministratorArticlePublished(articleId) {
     try {
       const article = await prisma.article.findUnique({
         where: { id: articleId },
@@ -1594,7 +1594,7 @@ class NotificationService {
       }
 
       // Get all ADMINISTRATOR users
-      const advisers = await prisma.user.findMany({
+      const administrators = await prisma.user.findMany({
         where: { 
           role: 'ADMINISTRATOR',
           isActive: true 
@@ -1608,7 +1608,7 @@ class NotificationService {
         }
       });
 
-      if (advisers.length === 0) {
+      if (administrators.length === 0) {
         logger.info('No ADMINISTRATOR users found for publish notification', { articleId });
         return;
       }
@@ -1617,10 +1617,10 @@ class NotificationService {
       const categoryNames = article.categories.map(cat => cat.name).join(', ');
 
       // Create in-app notifications for all ADMINISTRATOR users
-      const notificationPromises = advisers.map(adviser => 
+      const notificationPromises = administrators.map(administrator => 
         prisma.notification.create({
           data: {
-            userId: adviser.id,
+            userId: administrator.id,
             type: 'ARTICLE_PUBLISHED',
             title: 'Article Published',
             message: `"${article.title}" by ${authorName} (${article.author.role}) has been published.`,
@@ -1638,10 +1638,10 @@ class NotificationService {
       );
 
       // Send email notifications to all ADMINISTRATOR users
-      const emailPromises = advisers.map(adviser => 
-        emailService.sendAdviserArticlePublishedNotification(
-          adviser.email,
-          adviser.firstName,
+      const emailPromises = administrators.map(administrator => 
+        emailService.sendAdministratorArticlePublishedNotification(
+          administrator.email,
+          administrator.firstName,
           article.title,
           authorName,
           article.author.role,
@@ -1657,7 +1657,7 @@ class NotificationService {
         articleTitle: article.title,
         authorName,
         authorRole: article.author.role,
-        adviserCount: advisers.length
+        administratorCount: administrators.length
       });
 
     } catch (error) {
@@ -1702,7 +1702,7 @@ class NotificationService {
       // Get all EIC users
       const eicUsers = await prisma.user.findMany({
         where: {
-          role: 'EDITOR_IN_CHIEF'
+          role: 'ADMIN_ASSISTANT'
         },
         select: {
           id: true,
@@ -1813,7 +1813,7 @@ class NotificationService {
       // Get all EIC users
       const eicUsers = await prisma.user.findMany({
         where: {
-          role: 'EDITOR_IN_CHIEF'
+          role: 'ADMIN_ASSISTANT'
         },
         select: {
           id: true,
