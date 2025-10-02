@@ -1,9 +1,95 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PublicHeader from '../../components/PublicHeader';
 import PublicFooter from '../../components/PublicFooter';
+import siteSettingsService from '../../services/siteSettingsService';
 import './legal-pages.css';
 
 const PrivacyPolicy = () => {
+  const [content, setContent] = useState('');
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadContent = async () => {
+      try {
+        // First try to get from localStorage (faster)
+        const storedContent = siteSettingsService.getCurrentLegalContent();
+        if (storedContent?.privacy_policy) {
+          setContent(storedContent.privacy_policy);
+          if (storedContent.lastUpdated) {
+            setLastUpdated(new Date(storedContent.lastUpdated));
+          }
+        }
+
+        // Then try to get fresh data from API
+        const legalContent = await siteSettingsService.getLegalContent();
+        if (legalContent?.privacy_policy) {
+          setContent(legalContent.privacy_policy);
+          if (legalContent.lastUpdated) {
+            setLastUpdated(new Date(legalContent.lastUpdated));
+          }
+          siteSettingsService.applyLegalContent(legalContent);
+        }
+      } catch (error) {
+        console.error('Failed to load privacy policy content:', error);
+        // Fallback to localStorage if API fails
+        const fallbackContent = siteSettingsService.getCurrentLegalContent();
+        if (fallbackContent?.privacy_policy) {
+          setContent(fallbackContent.privacy_policy);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadContent();
+  }, []);
+
+  const renderMarkdownContent = (text) => {
+    if (!text) return '';
+    
+    return text
+      .split('\n')
+      .map((line, index) => {
+        // Handle headers
+        if (line.startsWith('## ')) {
+          return <h2 key={index} className="legal-h2">{line.substring(3)}</h2>;
+        }
+        if (line.startsWith('### ')) {
+          return <h3 key={index} className="legal-h3">{line.substring(4)}</h3>;
+        }
+        
+        // Handle lists
+        if (line.startsWith('- ')) {
+          return <li key={index} className="legal-li">{line.substring(2)}</li>;
+        }
+        
+        // Handle paragraphs
+        if (line.trim() === '') {
+          return <br key={index} />;
+        }
+        
+        return <p key={index} className="legal-p">{line}</p>;
+      });
+  };
+
+  if (loading) {
+    return (
+      <div className="legal-page">
+        <PublicHeader />
+        <main className="legal-main">
+          <div className="legal-container">
+            <div className="loading-state">
+              <div className="loading-spinner"></div>
+              <p>Loading privacy policy...</p>
+            </div>
+          </div>
+        </main>
+        <PublicFooter />
+      </div>
+    );
+  }
+
   return (
     <div className="legal-page">
       <PublicHeader />
@@ -12,81 +98,26 @@ const PrivacyPolicy = () => {
         <div className="legal-container">
           <header className="legal-header">
             <h1 className="legal-title">Privacy Policy</h1>
+            <div className="legal-date">
+              Last updated: {lastUpdated ? lastUpdated.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              }) : 'Loading...'}
+            </div>
           </header>
 
           <div className="legal-content">
-            <section className="legal-section">
-              <h2>1. Information We Collect</h2>
-              <p>
-                The AXIS Group of Publications ("we," "our," or "us") collects information you provide directly to us, such as when you:
-              </p>
-              <ul>
-                <li>Submit comments on articles</li>
-                <li>Contact us through our website</li>
-              </ul>
-              <p>
-                This information may include your name, email address, and any other information you choose to provide.
-              </p>
-            </section>
-
-            <section className="legal-section">
-              <h2>2. How We Use Your Information</h2>
-              <p>We use the information we collect to:</p>
-              <ul>
-                <li>Publish and moderate comments on our articles</li>
-                <li>Respond to your inquiries and provide customer support</li>
-                <li>Improve our website and services</li>
-                <li>Comply with legal obligations</li>
-              </ul>
-            </section>
-
-            <section className="legal-section">
-              <h2>3. Information Sharing</h2>
-              <p>
-                We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except:
-              </p>
-              <ul>
-                <li>To comply with legal requirements</li>
-                <li>To protect our rights and safety</li>
-                <li>With service providers who assist us in operating our website</li>
-              </ul>
-            </section>
-
-            <section className="legal-section">
-              <h2>4. Data Security</h2>
-              <p>
-                We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
-              </p>
-            </section>
-
-            <section className="legal-section">
-              <h2>5. Cookies and Tracking</h2>
-              <p>
-                Our website may use cookies and similar tracking technologies to enhance your browsing experience and analyze website traffic.
-              </p>
-            </section>
-
-            <section className="legal-section">
-              <h2>6. Your Rights</h2>
-              <p>You have the right to:</p>
-              <ul>
-                <li>Access your personal information</li>
-                <li>Correct inaccurate information</li>
-                <li>Request deletion of your information</li>
-              </ul>
-            </section>
-
-            <section className="legal-section">
-              <h2>7. Contact Us</h2>
-              <p>
-                If you have any questions about this Privacy Policy, please contact us at:
-              </p>
-              <div className="legal-contact">
-                <p><strong>Email:</strong> theaxispub.alangilan@g.batstate-u.edu.ph</p>
-                <p><strong>Address:</strong> Alangilan, Batangas City, Philippines</p>
+            {content ? (
+              <div className="legal-markdown">
+                {renderMarkdownContent(content)}
               </div>
-            </section>
-
+            ) : (
+              <div className="legal-fallback">
+                <p>Privacy policy content is not available at the moment.</p>
+                <p>Please contact us for more information.</p>
+              </div>
+            )}
           </div>
         </div>
       </main>

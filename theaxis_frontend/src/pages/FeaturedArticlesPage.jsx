@@ -28,6 +28,9 @@ const FeaturedArticlesPage = () => {
   const [sortBy, setSortBy] = useState('publicationDate');
   const [sortOrder, setSortOrder] = useState('desc');
   const [categories, setCategories] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     fetchAllArticles();
@@ -35,14 +38,21 @@ const FeaturedArticlesPage = () => {
     fetchCategories();
   }, []);
 
-  const fetchAllArticles = async (filters = {}) => {
+  const fetchAllArticles = async (filters = {}, reset = true) => {
     try {
-      setLoading(true);
+      if (reset) {
+        setLoading(true);
+        setCurrentPage(1);
+      } else {
+        setLoadingMore(true);
+      }
+      
       const params = {
         status: 'published',
         sortBy: filters.sortBy || sortBy,
         sortOrder: filters.sortOrder || sortOrder,
-        limit: 100
+        limit: 10,
+        page: reset ? 1 : currentPage + 1
       };
       
       // Add search parameter
@@ -84,12 +94,24 @@ const FeaturedArticlesPage = () => {
         };
       }) || [];
       
-      setAllArticles(articles);
+      // Check if there are more articles
+      const totalCount = response.data?.pagination?.totalCount || response.data?.pagination?.total || 0;
+      const currentArticlesCount = reset ? articles.length : allArticles.length + articles.length;
+      setHasMore(currentArticlesCount < totalCount);
+      
+      if (reset) {
+        setAllArticles(articles);
+        setCurrentPage(1);
+      } else {
+        setAllArticles(prev => [...prev, ...articles]);
+        setCurrentPage(prev => prev + 1);
+      }
     } catch (err) {
       setError('Failed to fetch published articles');
       console.error('Error fetching articles:', err);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -164,14 +186,14 @@ const FeaturedArticlesPage = () => {
     setSearchTerm(value);
     setError('');
     setSuccess('');
-    fetchAllArticles({ search: value, category: selectedCategory, sortBy, sortOrder });
+    fetchAllArticles({ search: value, category: selectedCategory, sortBy, sortOrder }, true);
   };
 
   const handleFilterChange = (category) => {
     setSelectedCategory(category);
     setError('');
     setSuccess('');
-    fetchAllArticles({ search: searchTerm, category, sortBy, sortOrder });
+    fetchAllArticles({ search: searchTerm, category, sortBy, sortOrder }, true);
   };
 
   const handleSortChange = (newSortBy, newSortOrder) => {
@@ -179,7 +201,11 @@ const FeaturedArticlesPage = () => {
     setSortOrder(newSortOrder);
     setError('');
     setSuccess('');
-    fetchAllArticles({ search: searchTerm, category: selectedCategory, sortBy: newSortBy, sortOrder: newSortOrder });
+    fetchAllArticles({ search: searchTerm, category: selectedCategory, sortBy: newSortBy, sortOrder: newSortOrder }, true);
+  };
+
+  const handleLoadMore = () => {
+    fetchAllArticles({ search: searchTerm, category: selectedCategory, sortBy, sortOrder }, false);
   };
 
   const formatDate = (dateString) => {
@@ -343,6 +369,27 @@ const FeaturedArticlesPage = () => {
                   </div>
                 );
               })}
+              
+              {/* Load More Button */}
+              {hasMore && !loading && (
+                <div className="featured-articles-load-more-container">
+                  <button 
+                    className="featured-articles-load-more-button"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? 'Loading...' : 'Load More Articles'}
+                  </button>
+                </div>
+              )}
+              
+              {/* Loading More Indicator */}
+              {loadingMore && (
+                <div className="featured-articles-loading-more">
+                  <div className="featured-articles-spinner"></div>
+                  <p>Loading more articles...</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -358,7 +405,7 @@ const FeaturedArticlesPage = () => {
           setSelectedCategory('all');
           setSortBy('publicationDate');
           setSortOrder('desc');
-          fetchAllArticles({ search: searchTerm, category: 'all', sortBy: 'publicationDate', sortOrder: 'desc' });
+          fetchAllArticles({ search: searchTerm, category: 'all', sortBy: 'publicationDate', sortOrder: 'desc' }, true);
         }}
       >
         {/* Category Filter */}

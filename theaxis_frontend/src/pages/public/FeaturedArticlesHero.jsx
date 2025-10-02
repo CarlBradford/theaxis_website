@@ -236,18 +236,6 @@ const FeaturedArticlesHero = () => {
                     <span className="featured-articles-hero-author-date-separator"> • </span>
                     <span className="featured-articles-hero-date">{formatDate(currentArticle.publicationDate)}</span>
                   </div>
-                  {currentArticle.authors?.length > 0 && currentArticle.authors.some(author => author.roleDisplay) && (
-                    <div className="featured-articles-hero-author-roles">
-                      {currentArticle.authors
-                        .filter(author => author.roleDisplay)
-                        .map((author, index) => (
-                          <span key={author.id || index} className="featured-articles-hero-author-role">
-                            {author.roleDisplay}
-                            {index < currentArticle.authors.filter(a => a.roleDisplay).length - 1 && ', '}
-                          </span>
-                        ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

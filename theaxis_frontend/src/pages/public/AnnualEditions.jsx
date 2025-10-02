@@ -64,7 +64,17 @@ const AnnualEditions = () => {
       });
 
       if (response.success) {
-        setFlipbooks(response.data.items || []);
+        const flipbooks = response.data.items || [];
+        // Additional client-side sorting to ensure proper order
+        const sortedFlipbooks = flipbooks.sort((a, b) => {
+          // Handle null releaseDate values
+          const aDate = a.releaseDate ? new Date(a.releaseDate) : new Date(a.createdAt);
+          const bDate = b.releaseDate ? new Date(b.releaseDate) : new Date(b.createdAt);
+          
+          // Sort by releaseDate (or createdAt if releaseDate is null) in descending order
+          return bDate - aDate;
+        });
+        setFlipbooks(sortedFlipbooks);
       } else {
         setError('Failed to fetch flipbooks');
       }

@@ -729,8 +729,8 @@ const ArticleDetail = () => {
                     title={savedOffline ? 'Remove from offline' : 'Save for offline reading'}
                     onClick={savedOffline ? removeOffline : saveOffline}
                   >
-                    <BookmarkIcon className="article-detail-action-icon" />
-                  </button>
+                  <BookmarkIcon className="article-detail-action-icon" />
+                </button>
                   {showOfflineMessage && (
                     <div className="article-detail-copied-message">
                       Saved offline!

@@ -35,7 +35,7 @@
 .settings-icon {
   width: 1.5rem;
   height: 1.5rem;
-  color: #ffffff;
+  color: #1a4a44;
 }
 
 .settings-header-text h1 {
@@ -320,7 +320,7 @@
   display: flex;
   gap: 1rem;
   margin-bottom: 0rem;
-  border-bottom: 1px solid var(--color-border, #d1d5db);
+  border-bottom: 1px solid #d1d5db;
   padding: 0 0 1rem 0;
 }
 
@@ -415,7 +415,7 @@
 .section-icon {
   width: 1.25rem;
   height: 1.25rem;
-  color: var(--color-primary, #215d55);
+  color: #215d55;
 }
 
 /* Asset Upload Area */
@@ -621,7 +621,7 @@
 
 .settings-btn-primary:hover:not(:disabled) {
   background-color: #1a4a44;
-  border-color: var(--color-primary-dark, #1a4a44);
+  border-color: #1a4a44;
 }
 
 .settings-btn-secondary {
@@ -748,7 +748,7 @@
   gap: 1rem;
   justify-content: flex-end;
   padding-top: 1rem;
-  border-top: 1px solid var(--color-border, #e5e7eb);
+  border-top: 1px solid #e5e7eb;
 }
 
 /* Logo Customization Styles */
@@ -802,7 +802,7 @@
 .upload-section-icon {
   width: 1.25rem;
   height: 1.25rem;
-  color: var(--color-primary, #215d55);
+  color: #215d55;
 }
 
 .upload-error {
@@ -834,7 +834,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 2px dashed var(--color-border, #e5e7eb);
+  border: 2px dashed #e5e7eb;
   border-radius: 0.5rem;
   padding: 1rem;
 }
@@ -903,7 +903,7 @@
   display: flex;
   justify-content: center;
   padding-top: 1rem;
-  border-top: 1px solid var(--color-border, #e5e7eb);
+  border-top: 1px solid #e5e7eb;
 }
 
 /* Current Assets Section */
@@ -933,7 +933,7 @@
 .assets-group-title {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-primary, #215d55);
+  color: #215d55;
   margin-bottom: 1rem;
   font-family: 'Poppins', system-ui, sans-serif;
 }
@@ -969,5 +969,127 @@
   .preview-image {
     max-width: 150px;
     max-height: 100px;
+  }
+}
+
+/* Site Information Form Styles */
+.site-info-form {
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1f2937;
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #215d55;
+  box-shadow: 0 0 0 3px rgba(33, 93, 85, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.save-button {
+  padding: 0.75rem 2rem;
+  background-color: #215d55;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-size: 0.875rem;
+  transition: background-color 0.2s ease;
+}
+
+.save-button:hover:not(:disabled) {
+  background-color: #1a4a44;
+}
+
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Legal Content Form Styles */
+.legal-content-form {
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0 2rem 2rem 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.legal-textarea {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 300px;
+}
+
+/* Responsive Updates for Forms */
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .form-actions {
+    justify-content: center;
+  }
+  
+  .save-button {
+    width: 100%;
   }
 }

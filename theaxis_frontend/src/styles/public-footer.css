@@ -350,11 +350,12 @@
   color: #ffffff;
   text-decoration: none;
   font-size: 0.875rem; /* 14px */
-  transition: color 0.2s ease;
+  transition: text-decoration 0.2s ease;
 }
 
-.public-footer-legal-link:hover {
-  color: var(--gray-light);
+.public-footer-legal-link:hover,
+.public-footer-legal-link:focus {
+  text-decoration: underline;
 }
 
 /* Responsive adjustments */
@@ -441,14 +442,17 @@
     border-top: 2px solid var(--color-background);
   }
   
-  .public-footer-link,
-  .public-footer-legal-link {
+  .public-footer-link {
     border-bottom: 1px solid transparent;
   }
   
-  .public-footer-link:hover,
-  .public-footer-legal-link:hover {
+  .public-footer-link:hover {
     border-bottom-color: var(--cyan-primary);
+  }
+  
+  .public-footer-legal-link:hover,
+  .public-footer-legal-link:focus {
+    text-decoration: underline;
   }
 }
 

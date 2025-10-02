@@ -24,6 +24,17 @@ export const siteSettingsService = {
     }
   },
 
+  // Get site information (public endpoint)
+  async getSiteInfo() {
+    try {
+      const response = await api.get('/admin/settings/site-info/public');
+      return response.data.success ? response.data.data : null;
+    } catch (error) {
+      console.error('Failed to fetch site info:', error);
+      return null;
+    }
+  },
+
   // Apply colors to the document
   applyColors(colors) {
     if (!colors) return;
@@ -50,7 +61,7 @@ export const siteSettingsService = {
     }
   },
 
-  // Initialize site settings (colors and assets)
+  // Initialize site settings (colors, assets, and site info)
   async initialize() {
     try {
       // Load colors
@@ -69,10 +80,27 @@ export const siteSettingsService = {
       const assets = await this.getAssets();
       this.applyAssets(assets);
 
-      return { colors, assets };
+      // Load site information
+      const siteInfo = await this.getSiteInfo();
+      if (siteInfo) {
+        this.applySiteInfo(siteInfo);
+      } else {
+        // Fallback to localStorage
+        const storedSiteInfo = this.getCurrentSiteInfo();
+        if (storedSiteInfo) {
+          this.applySiteInfo(storedSiteInfo);
+        }
+      }
+
+      return { colors, assets, siteInfo: siteInfo || this.getCurrentSiteInfo() };
     } catch (error) {
       console.error('Failed to initialize site settings:', error);
-      return { colors: null, assets: [] };
+      // Return fallback data from localStorage
+      return { 
+        colors: this.loadColorsFromStorage(), 
+        assets: [], 
+        siteInfo: this.getCurrentSiteInfo() 
+      };
     }
   },
 
@@ -107,6 +135,63 @@ export const siteSettingsService = {
   // Get current wordmark URL
   getCurrentWordmark() {
     return localStorage.getItem('site-wordmark') || null;
+  },
+
+  // Apply site information to the document
+  applySiteInfo(siteInfo) {
+    if (!siteInfo) return;
+
+    // Update document title
+    if (siteInfo.site_name) {
+      document.title = siteInfo.site_name;
+      localStorage.setItem('site-name', siteInfo.site_name);
+    }
+
+    // Store site info in localStorage for other components
+    localStorage.setItem('site-info', JSON.stringify(siteInfo));
+  },
+
+  // Get current site info from localStorage
+  getCurrentSiteInfo() {
+    try {
+      const stored = localStorage.getItem('site-info');
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.error('Failed to load site info from storage:', error);
+      return null;
+    }
+  },
+
+  // Get legal content from public API
+  async getLegalContent() {
+    try {
+      const response = await api.get('/admin/settings/legal/public');
+      return response.data.success ? response.data.data : null;
+    } catch (error) {
+      console.error('Failed to fetch legal content:', error);
+      return null;
+    }
+  },
+
+  // Apply legal content to localStorage
+  applyLegalContent(legalContent) {
+    if (!legalContent) return;
+    try {
+      localStorage.setItem('legal-content', JSON.stringify(legalContent));
+    } catch (error) {
+      console.error('Failed to store legal content:', error);
+    }
+  },
+
+  // Get current legal content from localStorage
+  getCurrentLegalContent() {
+    try {
+      const stored = localStorage.getItem('legal-content');
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.error('Failed to parse stored legal content:', error);
+      return null;
+    }
   }
 };
 

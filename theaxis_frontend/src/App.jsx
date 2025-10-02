@@ -56,7 +56,7 @@ function AppWithAnalytics() {
   React.useEffect(() => {
     const initializeSettings = async () => {
       try {
-        const { assets } = await siteSettingsService.initialize();
+        const { assets, siteInfo } = await siteSettingsService.initialize();
         
         // Update favicon if logo asset is available
         if (assets && assets.length > 0) {
@@ -69,6 +69,9 @@ function AppWithAnalytics() {
             }
           }
         }
+
+        // Site info is already applied by the service (document title, localStorage)
+        console.log('App initialized with site info:', siteInfo);
       } catch (error) {
         console.error('Failed to initialize site settings:', error);
       }

@@ -91,7 +91,11 @@ router.get('/public', async (req, res) => {
     } else if (sortBy === 'type') {
       orderBy.type = sortOrder;
     } else if (sortBy === 'releaseDate') {
-      orderBy.releaseDate = sortOrder;
+      // Handle null releaseDate values - put them at the end for desc, at the beginning for asc
+      orderBy = [
+        { releaseDate: { sort: sortOrder, nulls: sortOrder === 'desc' ? 'last' : 'first' } },
+        { createdAt: 'desc' } // Secondary sort by creation date
+      ];
     } else {
       orderBy.createdAt = sortOrder;
     }
@@ -179,7 +183,11 @@ router.get('/', authenticateToken, async (req, res) => {
     } else if (sortBy === 'isActive') {
       orderBy.isActive = sortOrder;
     } else if (sortBy === 'releaseDate') {
-      orderBy.releaseDate = sortOrder;
+      // Handle null releaseDate values - put them at the end for desc, at the beginning for asc
+      orderBy = [
+        { releaseDate: { sort: sortOrder, nulls: sortOrder === 'desc' ? 'last' : 'first' } },
+        { createdAt: 'desc' } // Secondary sort by creation date
+      ];
     } else {
       orderBy.createdAt = sortOrder;
     }

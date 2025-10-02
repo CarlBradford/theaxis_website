@@ -45,6 +45,40 @@ const Settings = () => {
   const [logoSuccess, setLogoSuccess] = useState(false);
   const [logoUploadLoading, setLogoUploadLoading] = useState(false);
 
+  // Site information states
+  const [siteInfo, setSiteInfo] = useState({
+    site_name: '',
+    site_description: '',
+    contact_email: '',
+    address: '',
+    year_copyright: '',
+    facebook_link: '',
+    instagram_link: '',
+    x_link: ''
+  });
+
+  // Debug: Log siteInfo changes
+  useEffect(() => {
+    console.log('Settings - siteInfo state changed:', siteInfo);
+  }, [siteInfo]);
+  const [siteInfoErrors, setSiteInfoErrors] = useState({});
+  const [siteInfoSuccess, setSiteInfoSuccess] = useState(false);
+  const [siteInfoLoading, setSiteInfoLoading] = useState(false);
+
+  // Legal content states
+  const [legalContent, setLegalContent] = useState({
+    privacy_policy: '',
+    terms_of_service: ''
+  });
+
+  // Debug: Log legalContent changes
+  useEffect(() => {
+    console.log('Settings - legalContent state changed:', legalContent);
+  }, [legalContent]);
+  const [legalErrors, setLegalErrors] = useState({});
+  const [legalSuccess, setLegalSuccess] = useState(false);
+  const [legalLoading, setLegalLoading] = useState(false);
+
   // Color palette context
   const { applyCustomTheme } = useThemeManagement();
   const { currentTheme, isLoading: colorContextLoading } = useColorPalette();
@@ -76,20 +110,40 @@ const Settings = () => {
 
   // Load site assets
   useEffect(() => {
-    const loadAssets = async () => {
+    const loadData = async () => {
       try {
-        const response = await api.get('/admin/assets');
-        if (response.data.success) {
-          setAssets(response.data.data);
+        setIsLoading(true);
+        
+        // Load assets
+        const assetsResponse = await api.get('/admin/assets');
+        if (assetsResponse.data.success) {
+          setAssets(assetsResponse.data.data);
         }
+        
+        // Load site information
+        const siteInfoResponse = await api.get('/admin/settings/site-info');
+        console.log('Settings - Site info response:', siteInfoResponse.data);
+        if (siteInfoResponse.data.success) {
+          console.log('Settings - Setting site info:', siteInfoResponse.data.data);
+          setSiteInfo(siteInfoResponse.data.data);
+        }
+        
+        // Load legal content
+        const legalResponse = await api.get('/admin/settings/legal');
+        console.log('Settings - Legal content response:', legalResponse.data);
+        if (legalResponse.data.success) {
+          console.log('Settings - Setting legal content:', legalResponse.data.data);
+          setLegalContent(legalResponse.data.data);
+        }
+        
       } catch (error) {
-        console.error('Failed to load assets:', error);
+        console.error('Failed to load settings data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadAssets();
+    loadData();
   }, []);
 
   // Load colors from database on component mount
@@ -329,6 +383,84 @@ const Settings = () => {
     }
   };
 
+  // Site information handlers
+  const handleSiteInfoChange = (field, value) => {
+    setSiteInfo(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    // Clear errors when user starts typing
+    if (siteInfoErrors[field]) {
+      setSiteInfoErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  const handleSiteInfoSubmit = async (e) => {
+    e.preventDefault();
+    setSiteInfoLoading(true);
+    setSiteInfoErrors({});
+    setSiteInfoSuccess(false);
+
+    try {
+      const response = await api.put('/admin/settings/site-info', { siteInfo });
+      if (response.data.success) {
+        setSiteInfoSuccess(true);
+        setTimeout(() => setSiteInfoSuccess(false), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to save site information:', error);
+      if (error.response?.data?.message) {
+        setSiteInfoErrors({ general: error.response.data.message });
+      } else {
+        setSiteInfoErrors({ general: 'Failed to save site information' });
+      }
+    } finally {
+      setSiteInfoLoading(false);
+    }
+  };
+
+  // Legal content handlers
+  const handleLegalContentChange = (field, value) => {
+    setLegalContent(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    // Clear errors when user starts typing
+    if (legalErrors[field]) {
+      setLegalErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  const handleLegalContentSubmit = async (e) => {
+    e.preventDefault();
+    setLegalLoading(true);
+    setLegalErrors({});
+    setLegalSuccess(false);
+
+    try {
+      const response = await api.put('/admin/settings/legal', legalContent);
+      if (response.data.success) {
+        setLegalSuccess(true);
+        setTimeout(() => setLegalSuccess(false), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to save legal content:', error);
+      if (error.response?.data?.message) {
+        setLegalErrors({ general: error.response.data.message });
+      } else {
+        setLegalErrors({ general: 'Failed to save legal content' });
+      }
+    } finally {
+      setLegalLoading(false);
+    }
+  };
+
   const colorGroups = [
     {
       title: 'Primary Color',
@@ -367,10 +499,16 @@ const Settings = () => {
       description: 'Manage logos, wordmarks, and site images'
     },
     {
-      id: 'general',
-      name: 'General Settings',
+      id: 'site-info',
+      name: 'Site Information',
       icon: Cog6ToothIcon,
-      description: 'Configure general site settings'
+      description: 'Configure site details and publication info'
+    },
+    {
+      id: 'legal',
+      name: 'Legal Content',
+      icon: ShieldCheckIcon,
+      description: 'Manage privacy policy and terms of service'
     }
   ];
 
@@ -652,12 +790,184 @@ const Settings = () => {
             </div>
           )}
 
-          {activeTab === 'general' && (
+          {activeTab === 'site-info' && (
             <div className="settings-section">
-              <h3 className="section-title">General Settings</h3>
-              <div className="settings-placeholder">
-                <p>General site configuration options will be available here soon.</p>
+              <h3 className="section-title">Site Information</h3>
+              
+              {siteInfoErrors.general && (
+                <div className="settings-message error">
+                  <ExclamationTriangleIcon className="settings-icon" />
+                  <span>{siteInfoErrors.general}</span>
+                </div>
+              )}
+
+              {siteInfoSuccess && (
+                <div className="settings-message success">
+                  <CheckCircleIcon className="settings-icon" />
+                  <span>Site information saved successfully!</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSiteInfoSubmit} className="site-info-form">
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="site_name">Site Name *</label>
+                    <input
+                      type="text"
+                      id="site_name"
+                      value={siteInfo.site_name}
+                      onChange={(e) => handleSiteInfoChange('site_name', e.target.value)}
+                      placeholder="The AXIS"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="address">Address</label>
+                    <input
+                      type="text"
+                      id="address"
+                      value={siteInfo.address}
+                      onChange={(e) => handleSiteInfoChange('address', e.target.value)}
+                      placeholder="123 University Street, City, State 12345"
+                    />
+                  </div>
+
+                  <div className="form-group full-width">
+                    <label htmlFor="site_description">Site Description</label>
+                    <textarea
+                      id="site_description"
+                      value={siteInfo.site_description}
+                      onChange={(e) => handleSiteInfoChange('site_description', e.target.value)}
+                      placeholder="Brief description of your publication"
+                      rows="3"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="contact_email">Contact Email *</label>
+                    <input
+                      type="email"
+                      id="contact_email"
+                      value={siteInfo.contact_email}
+                      onChange={(e) => handleSiteInfoChange('contact_email', e.target.value)}
+                      placeholder="contact@theaxis.local"
+                      required
+                    />
+                  </div>
+
+
+                  <div className="form-group">
+                    <label htmlFor="year_copyright">Copyright Year</label>
+                    <input
+                      type="text"
+                      id="year_copyright"
+                      value={siteInfo.year_copyright}
+                      onChange={(e) => handleSiteInfoChange('year_copyright', e.target.value)}
+                      placeholder="2024"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="facebook_link">Facebook Link</label>
+                    <input
+                      type="url"
+                      id="facebook_link"
+                      value={siteInfo.facebook_link}
+                      onChange={(e) => handleSiteInfoChange('facebook_link', e.target.value)}
+                      placeholder="https://facebook.com/yourpage"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="instagram_link">Instagram Link</label>
+                    <input
+                      type="url"
+                      id="instagram_link"
+                      value={siteInfo.instagram_link}
+                      onChange={(e) => handleSiteInfoChange('instagram_link', e.target.value)}
+                      placeholder="https://instagram.com/yourpage"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="x_link">X (Twitter) Link</label>
+                    <input
+                      type="url"
+                      id="x_link"
+                      value={siteInfo.x_link}
+                      onChange={(e) => handleSiteInfoChange('x_link', e.target.value)}
+                      placeholder="https://x.com/yourpage"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button
+                    type="submit"
+                    className="save-button"
+                    disabled={siteInfoLoading}
+                  >
+                    {siteInfoLoading ? 'Saving...' : 'Save Site Information'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {activeTab === 'legal' && (
+            <div className="settings-section">
+              <h3 className="section-title">Legal Content</h3>
+              
+              {legalErrors.general && (
+                <div className="settings-message error">
+                  <ExclamationTriangleIcon className="settings-icon" />
+                  <span>{legalErrors.general}</span>
+                </div>
+              )}
+
+              {legalSuccess && (
+                <div className="settings-message success">
+                  <CheckCircleIcon className="settings-icon" />
+                  <span>Legal content saved successfully!</span>
+                </div>
+              )}
+
+              <form onSubmit={handleLegalContentSubmit} className="legal-content-form">
+                <div className="form-group">
+                  <label htmlFor="privacy_policy">Privacy Policy</label>
+                  <textarea
+                    id="privacy_policy"
+                    value={legalContent.privacy_policy}
+                    onChange={(e) => handleLegalContentChange('privacy_policy', e.target.value)}
+                    placeholder="Enter your privacy policy content..."
+                    rows="15"
+                    className="legal-textarea"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="terms_of_service">Terms of Service</label>
+                  <textarea
+                    id="terms_of_service"
+                    value={legalContent.terms_of_service}
+                    onChange={(e) => handleLegalContentChange('terms_of_service', e.target.value)}
+                    placeholder="Enter your terms of service content..."
+                    rows="15"
+                    className="legal-textarea"
+                  />
+                </div>
+
+                <div className="form-actions">
+                  <button
+                    type="submit"
+                    className="save-button"
+                    disabled={legalLoading}
+                  >
+                    {legalLoading ? 'Saving...' : 'Save Legal Content'}
+                  </button>
               </div>
+              </form>
             </div>
           )}
 

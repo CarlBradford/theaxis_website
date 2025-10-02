@@ -167,19 +167,6 @@
   font-weight: 400;
 }
 
-.featured-articles-hero-author-roles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-}
-
-.featured-articles-hero-author-role {
-  color: var(--color-primary, #215d55);
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
 
 
 .featured-articles-hero-image {
@@ -487,11 +474,6 @@
     font-weight: 500;
   }
   
-  .featured-articles-hero-author-role {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.6875rem;
-    font-weight: 500;
-  }
   
   .featured-articles-hero-date {
     color: rgba(255, 255, 255, 0.9);
@@ -630,9 +612,6 @@
     font-size: 0.6875rem;
   }
   
-  .featured-articles-hero-author-role {
-    font-size: 0.625rem;
-  }
   
   .featured-articles-hero-date {
     font-size: 0.6875rem;
