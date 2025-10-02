@@ -2199,8 +2199,8 @@ router.delete(
     // Delete review feedback
     await prisma.reviewFeedback.deleteMany({ where: { articleId: id } });
     
-    // Delete flipbook articles
-    await prisma.flipbookArticle.deleteMany({ where: { articleId: id } });
+    // Note: flipbookArticle table doesn't exist in schema - removing this line
+    // await prisma.flipbookArticle.deleteMany({ where: { articleId: id } });
     
     // Finally delete the article
     await prisma.article.delete({ where: { id } });
