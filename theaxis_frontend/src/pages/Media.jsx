@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import usePageTitle from '../hooks/usePageTitle';
 import { PhotoIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { 
   PhotoIcon as PhotoIconSolid,
 } from '@heroicons/react/24/solid';
 
 const Media = () => {
+  // Set page title
+  usePageTitle('Media');
+
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadForm, setUploadForm] = useState({
     altText: '',

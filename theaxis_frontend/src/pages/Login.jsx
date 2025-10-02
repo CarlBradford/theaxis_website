@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import usePageTitle from '../hooks/usePageTitle';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { trackLogin, trackError } from '../config/analytics';
@@ -6,6 +7,9 @@ import '../styles/login.css';
 import theaxisLogo from '../assets/theaxis_wordmark.png';
 
 const Login = () => {
+  // Set page title
+  usePageTitle('Login');
+
   const [formData, setFormData] = useState({
     usernameOrEmail: '',
     password: '',

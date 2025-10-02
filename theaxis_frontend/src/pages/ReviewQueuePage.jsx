@@ -1,9 +1,13 @@
 import React from 'react';
 import ReviewQueue from '../components/ReviewQueue';
 import { useAuth } from '../hooks/useAuth';
+import usePageTitle from '../hooks/usePageTitle';
 
 const ReviewQueuePage = () => {
   const { user } = useAuth();
+
+  // Set page title
+  usePageTitle('Review Queue');
   
   // Determine queue type based on user role
   const getQueueType = () => {

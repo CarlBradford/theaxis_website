@@ -4,9 +4,12 @@ import { articlesAPI } from '../../services/apiService';
 import MediaDisplay from '../../components/MediaDisplay';
 import PublicPageHeader from '../../components/PublicPageHeader';
 import PublicFooter from '../../components/PublicFooter';
+import usePageTitle from '../../hooks/usePageTitle';
 import './gallery.css';
 
 const Gallery = () => {
+  usePageTitle('Gallery');
+  
   const [galleryArticles, setGalleryArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -52,7 +55,6 @@ const Gallery = () => {
           if (imageUrl.includes('unsplash.com')) {
             imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=600&h=400');
           } else if (imageUrl.includes('localhost:3001')) {
-            imageUrl = `${imageUrl}?w=600&h=400&fit=crop&quality=90`;
           }
         }
         
@@ -203,7 +205,6 @@ const Gallery = () => {
           if (imageUrl.includes('unsplash.com')) {
             imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=600&h=400');
           } else if (imageUrl.includes('localhost:3001')) {
-            imageUrl = `${imageUrl}?w=600&h=400&fit=crop&quality=90`;
           }
         }
         

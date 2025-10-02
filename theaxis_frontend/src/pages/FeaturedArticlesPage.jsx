@@ -8,6 +8,7 @@ import { articlesAPI, categoriesAPI } from '../services/apiService';
 import MediaDisplay from '../components/MediaDisplay';
 import FilterModal from '../components/FilterModal';
 import SuccessModal from '../components/SuccessModal';
+import usePageTitle from '../hooks/usePageTitle';
 import '../styles/dashboard.css';
 import '../styles/featured-articles-page.css';
 import '../styles/filter-modal.css';
@@ -31,6 +32,9 @@ const FeaturedArticlesPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Set page title
+  usePageTitle('Manage Featured Articles');
 
   useEffect(() => {
     fetchAllArticles();

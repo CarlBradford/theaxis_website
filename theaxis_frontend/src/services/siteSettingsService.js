@@ -141,10 +141,23 @@ export const siteSettingsService = {
   applySiteInfo(siteInfo) {
     if (!siteInfo) return;
 
-    // Update document title
-    if (siteInfo.site_name) {
-      document.title = siteInfo.site_name;
-      localStorage.setItem('site-name', siteInfo.site_name);
+    // Check if page has already set a specific title (containing "The AXIS |")
+    const currentTitle = document.title;
+    const hasPageSpecificTitle = currentTitle.includes('The AXIS |') && currentTitle !== 'The AXIS | The AXIS';
+    
+    // Only set base title if no page-specific title exists
+    if (!hasPageSpecificTitle) {
+      if (siteInfo.site_name) {
+        // Avoid double "The AXIS" prefix
+        if (siteInfo.site_name === 'The AXIS') {
+          document.title = 'The AXIS';
+        } else {
+          document.title = `The AXIS | ${siteInfo.site_name}`;
+        }
+        localStorage.setItem('site-name', siteInfo.site_name);
+      } else {
+        document.title = 'The AXIS';
+      }
     }
 
     // Store site info in localStorage for other components

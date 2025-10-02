@@ -4,9 +4,12 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import PublicPageHeader from '../../components/PublicPageHeader';
 import PublicFooter from '../../components/PublicFooter';
 import flipbookService from '../../services/flipbookService';
+import usePageTitle from '../../hooks/usePageTitle';
 import './annual-editions.css';
 
 const AnnualEditions = () => {
+  usePageTitle('Annual Editions');
+  
   const [flipbooks, setFlipbooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

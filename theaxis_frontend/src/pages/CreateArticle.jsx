@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { useAuth } from '../hooks/useAuth';
 import { categoriesAPI, usersAPI, articlesAPI } from '../services/apiService';
 import { trackArticleCreate, trackError } from '../config/analytics';
+import usePageTitle from '../hooks/usePageTitle';
 import { 
   ChevronDownIcon,
   PaperClipIcon,
@@ -26,6 +27,9 @@ import '../styles/article-preview.css';
 const CreateArticle = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Set page title
+  usePageTitle('Create Article');
   const [formData, setFormData] = useState({
     title: '',
     authors: [], // Will store objects: { id, name }
@@ -987,17 +991,17 @@ const CreateArticle = () => {
       });
 
       if (response.status === 'success') {
-        showNotification('Success', 'Article sent to EIC successfully!', 'success');
+        showNotification('Success', 'Article sent to Admin successfully!', 'success');
         // Navigate to dashboard after a short delay
         setTimeout(() => {
           navigate('/dashboard');
         }, 1500);
       } else {
-        showNotification('Error', response.message || 'Failed to send article to EIC', 'error');
+        showNotification('Error', response.message || 'Failed to send article to Admin', 'error');
       }
     } catch (error) {
-      console.error('Error sending to EIC:', error);
-      let errorMessage = 'Failed to send article to EIC';
+      console.error('Error sending to Admin:', error);
+      let errorMessage = 'Failed to send article to Admin';
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
@@ -1092,6 +1096,13 @@ const CreateArticle = () => {
                   className="create-article-save-btn"
                 >
                   {isSubmitting ? 'Saving...' : 'Save as Draft'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendToEIC}
+                  className="create-article-submit-admin-btn"
+                >
+                  Submit to Admin
                 </button>
                 <button
                   type="button"
@@ -1599,7 +1610,7 @@ const CreateArticle = () => {
         <div className="simple-publish-modal-overlay">
           <div className="simple-publish-modal">
             <div className="simple-publish-modal-header">
-              <h3 className="simple-publish-modal-title">Submit to EIC</h3>
+              <h3 className="simple-publish-modal-title">Submit to Admin</h3>
               <button
                 onClick={cancelSendToEIC}
                 className="simple-publish-modal-close"
@@ -1618,7 +1629,7 @@ const CreateArticle = () => {
                 Category: {formData.category || 'Uncategorized'}
               </p>
               <p className="simple-publish-note">
-                This will send the article to the EIC for final review and potential publication.
+                This will send the article to the Admin for final review and potential publication.
               </p>
             </div>
             
@@ -1633,7 +1644,7 @@ const CreateArticle = () => {
               <button
                 onClick={confirmSendToEIC}
                 disabled={sendToEICLoading}
-                className="simple-publish-modal-button publish"
+                className="simple-publish-modal-button admin"
               >
                 {sendToEICLoading ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1641,7 +1652,7 @@ const CreateArticle = () => {
                     Sending...
                   </div>
                 ) : (
-                  'Submit to EIC'
+                  'Submit to Admin'
                 )}
               </button>
             </div>

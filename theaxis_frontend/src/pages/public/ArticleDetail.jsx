@@ -183,6 +183,13 @@ const ArticleDetail = () => {
     }
   }, [article]);
 
+  // Set page title when article loads
+  useEffect(() => {
+    if (article) {
+      document.title = `The AXIS | ${article.title}`;
+    }
+  }, [article]);
+
   const fetchArticle = async () => {
     try {
       setLoading(true);

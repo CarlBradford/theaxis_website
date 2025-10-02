@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import usePageTitle from '../hooks/usePageTitle';
 import { 
   ChartBarIcon, 
   UsersIcon, 
@@ -35,6 +36,9 @@ import '../styles/dashboard.css';
 import '../styles/comment-management.css';
 
 const AnalyticsDashboard = () => {
+  // Set page title
+  usePageTitle('Analytics Dashboard');
+
   const [timeRange, setTimeRange] = useState('7d');
   const [loading, setLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState({

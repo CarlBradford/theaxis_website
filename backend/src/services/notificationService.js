@@ -289,16 +289,19 @@ class NotificationService {
   // Send notification to EIC when article is approved by Section Head
   async notifyEICArticleApproved(articleId) {
     try {
-      // Find EIC users
+      // Find EIC users (Admin Assistants and Administrators)
       const eics = await prisma.user.findMany({
         where: {
-          role: 'ADMIN_ASSISTANT'
+          role: {
+            in: ['ADMIN_ASSISTANT', 'ADMINISTRATOR']
+          }
         },
         select: {
           id: true,
           email: true,
           firstName: true,
-          lastName: true
+          lastName: true,
+          role: true
         }
       });
 
@@ -962,8 +965,8 @@ class NotificationService {
       }
 
       // Section Head notifications
-      if (newStatus === 'IN_REVIEW' && oldStatus === 'APPROVED' && actorRole === 'ADMIN_ASSISTANT') {
-        // EIC returned article to Section Head
+      if (newStatus === 'IN_REVIEW' && oldStatus === 'APPROVED' && (actorRole === 'ADMIN_ASSISTANT' || actorRole === 'ADMINISTRATOR')) {
+        // EIC/Administrator returned article to Section Head
         notificationPromises.push(this.notifySectionHeadArticleReturned(articleId, feedback));
       }
 
@@ -980,11 +983,11 @@ class NotificationService {
 
       // Own article published notifications
       if (newStatus === 'PUBLISHED') {
-        if (authorRole === 'ADMIN_ASSISTANT') {
+        if (authorRole === 'ADMIN_ASSISTANT' || authorRole === 'ADMINISTRATOR') {
           notificationPromises.push(this.notifyEICOwnArticlePublished(articleId));
         } else if (authorRole === 'SECTION_HEAD') {
           notificationPromises.push(this.notifySectionHeadOwnArticlePublished(articleId));
-          // Also notify EIC when Section Head publishes their own article
+          // Also notify EIC/Administrator when Section Head publishes their own article
           notificationPromises.push(this.notifyEICSectionHeadPublishedArticle(articleId));
         }
         
@@ -1073,10 +1076,12 @@ class NotificationService {
         return;
       }
 
-      // Get all EIC users
+      // Get all EIC users (Admin Assistants and Administrators)
       const eicUsers = await prisma.user.findMany({
         where: {
-          role: 'ADMIN_ASSISTANT'
+          role: {
+            in: ['ADMIN_ASSISTANT', 'ADMINISTRATOR']
+          }
         },
         select: {
           id: true,
@@ -1204,10 +1209,12 @@ class NotificationService {
         return;
       }
 
-      // Get all EIC users
+      // Get all EIC users (Admin Assistants and Administrators)
       const eicUsers = await prisma.user.findMany({
         where: {
-          role: 'ADMIN_ASSISTANT'
+          role: {
+            in: ['ADMIN_ASSISTANT', 'ADMINISTRATOR']
+          }
         },
         select: {
           id: true,
@@ -1461,10 +1468,12 @@ class NotificationService {
         return;
       }
 
-      // Get all EIC users
+      // Get all EIC users (Admin Assistants and Administrators)
       const eicUsers = await prisma.user.findMany({
         where: {
-          role: 'ADMIN_ASSISTANT'
+          role: {
+            in: ['ADMIN_ASSISTANT', 'ADMINISTRATOR']
+          }
         },
         select: {
           id: true,
@@ -1593,10 +1602,12 @@ class NotificationService {
         return;
       }
 
-      // Get all ADMINISTRATOR users
+      // Get all ADMINISTRATOR users (including ADMIN_ASSISTANT)
       const administrators = await prisma.user.findMany({
         where: { 
-          role: 'ADMINISTRATOR',
+          role: {
+            in: ['ADMINISTRATOR', 'ADMIN_ASSISTANT']
+          },
           isActive: true 
         },
         select: {
@@ -1604,7 +1615,8 @@ class NotificationService {
           firstName: true,
           lastName: true,
           email: true,
-          username: true
+          username: true,
+          role: true
         }
       });
 
@@ -1699,10 +1711,12 @@ class NotificationService {
         return;
       }
 
-      // Get all EIC users
+      // Get all EIC users (Admin Assistants and Administrators)
       const eicUsers = await prisma.user.findMany({
         where: {
-          role: 'ADMIN_ASSISTANT'
+          role: {
+            in: ['ADMIN_ASSISTANT', 'ADMINISTRATOR']
+          }
         },
         select: {
           id: true,
@@ -1810,10 +1824,12 @@ class NotificationService {
         return;
       }
 
-      // Get all EIC users
+      // Get all EIC users (Admin Assistants and Administrators)
       const eicUsers = await prisma.user.findMany({
         where: {
-          role: 'ADMIN_ASSISTANT'
+          role: {
+            in: ['ADMIN_ASSISTANT', 'ADMINISTRATOR']
+          }
         },
         select: {
           id: true,

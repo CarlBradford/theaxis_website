@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { articlesAPI } from '../services/apiService';
 import ArticlePreviewModal from '../components/ArticlePreviewModal';
 import SuccessModal from '../components/SuccessModal';
+import usePageTitle from '../hooks/usePageTitle';
 import { 
   DocumentTextIcon, 
   EyeIcon, 
@@ -31,6 +32,9 @@ import '../styles/filter-modal.css';
 const ContentStatus = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Set page title
+  usePageTitle('Content Status');
   
   const [articles, setArticles] = useState([]);
   const [filteredArticles, setFilteredArticles] = useState([]);
@@ -457,7 +461,7 @@ const ContentStatus = () => {
               </div>
             </>
           ) : (user?.role === 'ADMIN_ASSISTANT' || user?.role === 'ADMINISTRATOR' || user?.role === 'SYSTEM_ADMIN') ? (
-            // EIC and higher: Focus on publication and overall status
+            // Admin and higher: Focus on publication and overall status
             <>
               <div className="content-status-stat">
                 <span className="content-status-stat-number">{filteredArticles.length}</span>

@@ -3,9 +3,12 @@ import { Link } from 'react-router-dom';
 // Removed unused icons: StarIcon, CalendarIcon, EyeIcon, ArrowRightIcon
 import { articlesAPI } from '../../services/apiService';
 import MediaDisplay from '../../components/MediaDisplay';
+import usePageTitle from '../../hooks/usePageTitle';
 import './featured-articles-hero.css';
 
 const FeaturedArticlesHero = () => {
+  usePageTitle('Featured Articles');
+  
   const [featuredArticles, setFeaturedArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -63,7 +66,6 @@ const FeaturedArticlesHero = () => {
           } else if (imageUrl.includes('localhost:3001')) {
             // For local images, you might want to add query parameters for resizing
             // This depends on your backend image processing capabilities
-            imageUrl = `${imageUrl}?w=1200&h=750&fit=crop&quality=90`;
           }
         }
         

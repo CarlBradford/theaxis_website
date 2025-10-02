@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { articlesAPI, categoriesAPI } from '../../services/apiService';
 import MediaDisplay from '../../components/MediaDisplay';
+import usePageTitle from '../../hooks/usePageTitle';
 import './latest-by-category.css';
 
 const LatestByCategory = () => {
+  usePageTitle('Latest by Category');
+  
   const [categoriesData, setCategoriesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -82,7 +85,6 @@ const LatestByCategory = () => {
               if (imageUrl.includes('unsplash.com')) {
                 imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=400&h=300');
               } else if (imageUrl.includes('localhost:3001')) {
-                imageUrl = `${imageUrl}?w=400&h=300&fit=crop&quality=90`;
               }
             }
             

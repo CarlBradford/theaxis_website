@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { articlesAPI } from '../services/apiService';
 import MediaDisplay from '../components/MediaDisplay';
+import usePageTitle from '../hooks/usePageTitle';
 import { 
   PlusIcon,
   DocumentTextIcon,
@@ -37,6 +38,9 @@ const Dashboard = () => {
     thisWeek: 0
   });
   const [statsLoading, setStatsLoading] = useState(true);
+
+  // Set page title
+  usePageTitle('Dashboard');
 
   // Update time every second
   useEffect(() => {

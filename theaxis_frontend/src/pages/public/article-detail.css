@@ -522,10 +522,10 @@
 
 /* Media Display Container Standard Sizing - Override Global Styles */
 .article-detail-featured-image .media-display-container {
-  width: 100% !important;
+  width: 80% !important;
   height: auto !important;
-  min-height: 400px !important;
-  max-height: 600px !important;
+  min-height: 300px !important;
+  max-height: 500px !important;
   aspect-ratio: 3/2 !important;
   display: flex !important;
   align-items: center !important;
@@ -912,8 +912,8 @@
   }
 
   .article-detail-featured-image .media-display-container {
-    min-height: 240px !important;
-    max-height: 360px !important;
+    min-height: 200px !important;
+    max-height: 400px !important;
     aspect-ratio: 3/2 !important;
   }
 
@@ -1051,8 +1051,8 @@
   }
 
   .article-detail-featured-image .media-display-container {
-    min-height: 200px !important;
-    max-height: 300px !important;
+    min-height: 180px !important;
+    max-height: 380px !important;
     aspect-ratio: 3/2 !important;
   }
 

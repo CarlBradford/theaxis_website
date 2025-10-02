@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import usePageTitle from '../hooks/usePageTitle';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
 import { 
   DocumentTextIcon as DocumentTextIconSolid,
@@ -9,6 +10,9 @@ import {
 const Articles = () => {
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
+
+  // Set page title
+  usePageTitle('Articles');
 
   useEffect(() => {
     // Redirect to My Articles if user has STAFF role, otherwise show empty state

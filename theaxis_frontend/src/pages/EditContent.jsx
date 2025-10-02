@@ -657,7 +657,7 @@ const EditContent = () => {
   const confirmSendToEIC = async () => {
     setSendToEICLoading(true);
     try {
-      console.log('Sending to EIC confirmed');
+      console.log('Sending to Admin confirmed');
       // Call handleSave without affecting the main form loading state
       await handleSave('APPROVED', false, 'none');
     } finally {
@@ -820,6 +820,9 @@ const EditContent = () => {
             break;
           case 'IN_REVIEW':
             successMessage = `Article "${formData.title}" submitted for review!`;
+            break;
+          case 'APPROVED':
+            successMessage = `Article "${formData.title}" sent to Admin successfully!`;
             break;
           case 'PUBLISHED':
             successMessage = `Article "${formData.title}" published successfully!`;
@@ -992,6 +995,13 @@ const EditContent = () => {
                       className="create-article-save-btn"
                     >
                       {saveLoading ? 'Saving...' : 'Save as Draft'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSendToEIC}
+                      className="create-article-submit-admin-btn"
+                    >
+                      Submit to Admin
                     </button>
                     <button
                       type="button"
@@ -1558,7 +1568,7 @@ const EditContent = () => {
         <div className="simple-publish-modal-overlay">
           <div className="simple-publish-modal">
             <div className="simple-publish-modal-header">
-              <h3 className="simple-publish-modal-title">Submit to EIC</h3>
+              <h3 className="simple-publish-modal-title">Submit to Admin</h3>
               <button
                 onClick={cancelSendToEIC}
                 className="simple-publish-modal-close"
@@ -1577,7 +1587,7 @@ const EditContent = () => {
                 Category: {formData.category || 'Uncategorized'}
               </p>
               <p className="simple-publish-note">
-                This will send the article to the EIC for final review and potential publication.
+                This will send the article to the Admin for final review and potential publication.
               </p>
             </div>
             
@@ -1592,7 +1602,7 @@ const EditContent = () => {
               <button
                 onClick={confirmSendToEIC}
                 disabled={sendToEICLoading}
-                className="simple-publish-modal-button publish"
+                className="simple-publish-modal-button admin"
               >
                 {sendToEICLoading ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1600,7 +1610,7 @@ const EditContent = () => {
                     Sending...
                   </div>
                 ) : (
-                  'Submit to EIC'
+                  'Submit to Admin'
                 )}
               </button>
             </div>

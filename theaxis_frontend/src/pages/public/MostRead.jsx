@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { articlesAPI } from '../../services/apiService';
 import MediaDisplay from '../../components/MediaDisplay';
+import usePageTitle from '../../hooks/usePageTitle';
 import './most-read.css';
 
 const MostRead = () => {
+  usePageTitle('Most Read');
+  
   const [mostReadArticles, setMostReadArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -61,7 +64,6 @@ const MostRead = () => {
           if (imageUrl.includes('unsplash.com')) {
             imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=300&h=200');
           } else if (imageUrl.includes('localhost:3001')) {
-            imageUrl = `${imageUrl}?w=300&h=200&fit=crop&quality=90`;
           }
         }
         

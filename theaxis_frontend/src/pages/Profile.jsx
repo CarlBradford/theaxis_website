@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { authAPI } from '../services/apiService';
 import api from '../services/api';
+import usePageTitle from '../hooks/usePageTitle';
 import { 
   UserCircleIcon, 
   EyeIcon, 
@@ -21,6 +22,9 @@ import { hasPermission } from '../config/permissions';
 
 const Profile = () => {
   const { user, refreshUser } = useAuth();
+
+  // Set page title
+  usePageTitle('Profile');
   const fileInputRef = useRef(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);

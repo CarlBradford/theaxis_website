@@ -5,6 +5,7 @@ import { articlesAPI, categoriesAPI } from '../../services/apiService';
 import MediaDisplay from '../../components/MediaDisplay';
 import PublicPageHeader from '../../components/PublicPageHeader';
 import PublicFooter from '../../components/PublicFooter';
+import usePageTitle from '../../hooks/usePageTitle';
 import './category-page.css';
 
 // Helper function to create excerpt from content
@@ -31,12 +32,20 @@ const createExcerpt = (content, maxLength = 150) => {
 
 const CategoryPage = () => {
   const { categorySlug } = useParams();
+  
   const [articles, setArticles] = useState([]);
   const [category, setCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [additionalArticles, setAdditionalArticles] = useState([]);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Set page title dynamically based on category
+  useEffect(() => {
+    if (category) {
+      document.title = `The AXIS | ${category.name}`;
+    }
+  }, [category]);
   const [hasMore, setHasMore] = useState(true);
   const [popularArticles, setPopularArticles] = useState([]);
 
@@ -96,7 +105,6 @@ const CategoryPage = () => {
           if (imageUrl.includes('unsplash.com')) {
             imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=400&h=250');
           } else if (imageUrl.includes('localhost:3001')) {
-            imageUrl = `${imageUrl}?w=400&h=250&fit=crop&quality=90`;
           }
         }
         
@@ -155,7 +163,6 @@ const CategoryPage = () => {
           if (imageUrl.includes('unsplash.com')) {
             imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=400&h=250');
           } else if (imageUrl.includes('localhost:3001')) {
-            imageUrl = `${imageUrl}?w=400&h=250&fit=crop&quality=90`;
           }
         }
         
@@ -223,7 +230,6 @@ const CategoryPage = () => {
           if (imageUrl.includes('unsplash.com')) {
             imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=400&h=250');
           } else if (imageUrl.includes('localhost:3001')) {
-            imageUrl = `${imageUrl}?w=400&h=250&fit=crop&quality=90`;
           }
         }
         
@@ -305,7 +311,6 @@ const CategoryPage = () => {
           if (imageUrl.includes('unsplash.com')) {
             imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=400&h=250');
           } else if (imageUrl.includes('localhost:3001')) {
-            imageUrl = `${imageUrl}?w=400&h=250&fit=crop&quality=90`;
           }
         }
         

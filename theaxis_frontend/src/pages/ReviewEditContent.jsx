@@ -1072,7 +1072,7 @@ const ReviewEditContent = () => {
                   onClick={handleSendToEIC}
                   className="create-article-submit-btn"
                 >
-                  Submit to EIC
+                  Submit to Admin
                 </button>
               </>
             )}
@@ -1616,7 +1616,7 @@ const ReviewEditContent = () => {
         <div className="simple-publish-modal-overlay">
           <div className="simple-publish-modal">
             <div className="simple-publish-modal-header">
-              <h3 className="simple-publish-modal-title">Submit to EIC</h3>
+              <h3 className="simple-publish-modal-title">Submit to Admin</h3>
               <button
                 onClick={cancelSendToEIC}
                 className="simple-publish-modal-close"
@@ -1635,7 +1635,7 @@ const ReviewEditContent = () => {
                 Category: {formData.category || 'Uncategorized'}
               </p>
               <p className="simple-publish-note">
-                This will send the article to the EIC for final review and potential publication.
+                This will send the article to the Admin for final review and potential publication.
               </p>
             </div>
             
@@ -1658,7 +1658,7 @@ const ReviewEditContent = () => {
                     Sending...
                   </div>
                 ) : (
-                  'Submit to EIC'
+                  'Submit to Admin'
                 )}
               </button>
             </div>

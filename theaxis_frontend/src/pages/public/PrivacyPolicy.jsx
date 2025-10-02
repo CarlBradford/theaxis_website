@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import PublicHeader from '../../components/PublicHeader';
 import PublicFooter from '../../components/PublicFooter';
 import siteSettingsService from '../../services/siteSettingsService';
+import usePageTitle from '../../hooks/usePageTitle';
 import './legal-pages.css';
 
 const PrivacyPolicy = () => {
+  usePageTitle('Privacy Policy');
+  
   const [content, setContent] = useState('');
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);

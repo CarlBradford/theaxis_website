@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { TrashIcon, BookmarkIcon } from '@heroicons/react/24/outline';
 import PublicPageHeader from '../../components/PublicPageHeader';
+import usePageTitle from '../../hooks/usePageTitle';
 import './offline-articles.css';
 
 const OfflineArticles = () => {
+  usePageTitle('Offline Articles');
+  
   const navigate = useNavigate();
   const [offlineArticles, setOfflineArticles] = useState([]);
   const [loading, setLoading] = useState(true);

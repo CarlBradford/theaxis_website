@@ -5,12 +5,17 @@ import { articlesAPI } from '../../services/apiService';
 import MediaDisplay from '../../components/MediaDisplay';
 import PublicFooter from '../../components/PublicFooter';
 import PublicPageHeader from '../../components/PublicPageHeader';
+import usePageTitle from '../../hooks/usePageTitle';
 import './search-page.css';
 import './article-detail.css';
 
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Set page title
+  usePageTitle('Search');
+
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [searchResults, setSearchResults] = useState([]);
   const [additionalResults, setAdditionalResults] = useState([]);

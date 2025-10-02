@@ -3,6 +3,7 @@ import { usersAPI } from '../services/apiService';
 import { useAuth } from '../hooks/useAuth';
 import { canManageRole, canCreateUserRole } from '../config/permissions';
 import api from '../services/api';
+import usePageTitle from '../hooks/usePageTitle';
 import { 
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -20,6 +21,10 @@ import '../styles/user-management.css';
 
 const UserManagement = () => {
   const { user: currentUser } = useAuth();
+
+  // Set page title
+  usePageTitle('User Management');
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

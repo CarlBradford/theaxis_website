@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { hasPermission } from '../config/permissions';
 import { useThemeManagement, useColorPalette } from '../contexts/ColorPaletteContext';
+import usePageTitle from '../hooks/usePageTitle';
 import { 
   ShieldCheckIcon,
   PaintBrushIcon,
@@ -20,6 +21,10 @@ import api from '../services/api';
 
 const Settings = () => {
   const { user } = useAuth();
+
+  // Set page title
+  usePageTitle('Settings');
+
   const [activeTab, setActiveTab] = useState('colors');
   const [assets, setAssets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

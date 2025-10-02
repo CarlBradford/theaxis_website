@@ -6,6 +6,7 @@ import ArticlePreviewModal from '../components/ArticlePreviewModal';
 import NotificationModal from '../components/NotificationModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import FilterModal from '../components/FilterModal';
+import usePageTitle from '../hooks/usePageTitle';
 import { 
   DocumentTextIcon, 
   EyeIcon, 
@@ -32,8 +33,12 @@ const MyContent = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Set page title
+  usePageTitle('My Content');
+
   const [articles, setArticles] = useState([]);
   const [filteredArticles, setFilteredArticles] = useState([]);
+  const [allArticles, setAllArticles] = useState([]); // Keep all articles for counting
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -78,6 +83,7 @@ const MyContent = () => {
   // Fetch user's articles, categories, and stats when component mounts
   useEffect(() => {
     if (user?.id) {
+      fetchAllMyContent(); // Fetch all articles for counting
       fetchMyContent({}, true); // Show loading on initial load
       fetchCategories();
       fetchStats();
@@ -134,6 +140,51 @@ const MyContent = () => {
       setStats({});
     } finally {
       setStatsLoading(false);
+    }
+  };
+
+  const fetchAllMyContent = async () => {
+    try {
+      // Fetch ALL articles belonging to the current user for counting purposes
+      const params = {
+        limit: 1000, // Large limit to get all articles
+        authorId: user?.id, // Filter by current user's ID
+      };
+      
+      const response = await articlesAPI.getMyContent(params);
+      
+      const transformedArticles = (response.data?.items || []).map(article => ({
+        id: article.id,
+        title: article.title,
+        status: article.status?.toLowerCase() || 'draft',
+        author: { 
+          name: article.author 
+            ? `${article.author.firstName || ''} ${article.author.lastName || ''}`.trim() || article.author.username || 'Unknown Author'
+            : `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.username || 'Unknown Author'
+        },
+        viewCount: article.viewCount || 0,
+        createdAt: article.createdAt,
+        publishedAt: article.publishedAt,
+        publicationDate: article.publicationDate,
+        excerpt: article.title,
+        categories: article.categories || [],
+        tags: article.tags || [],
+        featuredImage: article.featuredImage || null
+      }));
+      
+      setAllArticles(transformedArticles);
+      console.log('Total articles fetched for user:', transformedArticles.length);
+      console.log('Article counts:', {
+        total: transformedArticles.length,
+        published: transformedArticles.filter(a => a.status === 'published').length,
+        draft: transformedArticles.filter(a => a.status === 'draft').length,
+        in_review: transformedArticles.filter(a => a.status === 'in_review').length,
+        approved: transformedArticles.filter(a => a.status === 'approved').length,
+        needs_revision: transformedArticles.filter(a => a.status === 'needs_revision').length,
+        archived: transformedArticles.filter(a => a.status === 'archived').length
+      });
+    } catch (error) {
+      console.error('Error fetching all my content:', error);
     }
   };
 
@@ -238,6 +289,7 @@ const MyContent = () => {
       await articlesAPI.deleteArticle(articleToDelete);
       // Remove from local state after successful deletion
       setArticles(articles.filter(article => article.id !== articleToDelete));
+      setAllArticles(allArticles.filter(article => article.id !== articleToDelete)); // Update allArticles too
       console.log('Article deleted successfully');
       
       // Show success notification
@@ -283,6 +335,12 @@ const MyContent = () => {
       await articlesAPI.updateArticleStatus(articleToRestore, 'DRAFT');
           // Update local state
           setArticles(articles.map(article => 
+            article.id === articleToRestore 
+          ? { ...article, status: 'draft' }
+              : article
+          ));
+          // Update allArticles too
+          setAllArticles(allArticles.map(article => 
             article.id === articleToRestore 
           ? { ...article, status: 'draft' }
               : article
@@ -462,26 +520,30 @@ const MyContent = () => {
   };
 
   const getFilterCount = (status) => {
-    // Use stats data for consistent counts that don't change with filters
-    if (statsLoading) {
+    // Always show real counts for each status, not filtered results
+    // This ensures counts don't change when clicking tabs
+    if (statsLoading || loading) {
       return '...';
     }
     
+    // Always use the allArticles array to count all statuses
+    const articlesToCount = allArticles;
+    
     switch (status) {
       case 'all':
-        return stats.totalContent || 0;
+        return articlesToCount.length;
       case 'published':
-        return stats.published || 0;
+        return articlesToCount.filter(article => article.status === 'published').length;
       case 'draft':
-        return stats.drafts || 0;
+        return articlesToCount.filter(article => article.status === 'draft').length;
       case 'pending':
-        return stats.inReview || 0;
+        return articlesToCount.filter(article => article.status === 'in_review').length;
       case 'approved':
-        return stats.approved || 0;
+        return articlesToCount.filter(article => article.status === 'approved').length;
       case 'needs_revision':
-        return stats.needsRevision || 0;
+        return articlesToCount.filter(article => article.status === 'needs_revision').length;
       case 'archived':
-        return stats.archived || 0;
+        return articlesToCount.filter(article => article.status === 'archived').length;
       default:
         return 0;
     }
@@ -631,7 +693,7 @@ const MyContent = () => {
           <div className="mycontent-stats">
             {/* Role-based filter tabs */}
             {user?.role === 'ADMIN_ASSISTANT' || user?.role === 'ADMINISTRATOR' || user?.role === 'SYSTEM_ADMIN' ? (
-              // EIC and higher: Total, Published, Drafts, In Review, Approved, Archived
+              // Admin and higher: Total, Published, Drafts, In Review, Approved, Archived
               <>
                 <button 
                   className={`mycontent-filter-tab ${activeFilter === 'all' ? 'active' : ''}`}
@@ -980,7 +1042,7 @@ const MyContent = () => {
                       }
                     }
                     
-                    // EIC and higher: Enable only for draft, published, and approved
+                    // Admin and higher: Enable only for draft, published, and approved
                     if (userRole === 'ADMIN_ASSISTANT' || userRole === 'ADMINISTRATOR' || userRole === 'SYSTEM_ADMIN') {
                       if (status === 'draft' || status === 'published' || status === 'approved') {
                         return (

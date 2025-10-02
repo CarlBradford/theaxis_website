@@ -8,6 +8,7 @@ import NotificationModal from '../components/NotificationModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import FlipbookDisplay from '../components/FlipbookDisplay';
 import FlipbookInputForm from '../components/FlipbookInputForm';
+import usePageTitle from '../hooks/usePageTitle';
 import MediaDisplay from '../components/MediaDisplay';
 import { 
   DocumentTextIcon, 
@@ -40,6 +41,9 @@ import '../styles/mycontent.css';
 const PublishedContent = () => {
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
+
+  // Set page title
+  usePageTitle('Published Content');
   
   // Debug: Log current user info
   console.log('🔍 PublishedContent Debug:');
@@ -1873,7 +1877,7 @@ const PublishedContent = () => {
         onClose={cancelRestoreArticle}
         onConfirm={confirmRestoreArticle}
         title="Restore Content"
-        message="Are you sure you want to restore this article? It will be sent back to the review queue for EIC approval."
+        message="Are you sure you want to restore this article? It will be sent back to the review queue for Admin approval."
         confirmText="Restore"
         cancelText="Cancel"
         type="info"

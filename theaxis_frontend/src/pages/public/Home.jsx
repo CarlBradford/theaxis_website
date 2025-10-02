@@ -6,11 +6,15 @@ import RecentStories from './RecentStories';
 import MostRead from './MostRead';
 import LatestByCategory from './LatestByCategory';
 import { colorPaletteUtils } from '../../config/colorPalette';
+import usePageTitle from '../../hooks/usePageTitle';
 import { useEffect } from 'react';
 import '../../styles/homepage-theme.css';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
+
+  // Set page title
+  usePageTitle('Home');
 
   // Apply color palette theme on component mount
   useEffect(() => {

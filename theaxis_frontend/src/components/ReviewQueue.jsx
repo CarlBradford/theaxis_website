@@ -163,7 +163,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
 
     const actionLabels = {
       'publish': 'publish',
-      'approve-to-eic': 'approve for EIC review',
+      'approve-to-eic': 'approve for Admin review',
       'request-revision': 'request revision',
       'return-to-section': 'return to section head'
     };
@@ -355,7 +355,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       const approvePromise = reviewQueueService.updateArticleStatus(articleToApprove.id, 'approve-to-eic');
       
       await Promise.race([approvePromise, timeoutPromise]);
-      console.log(`Article ${articleToApprove.id} approved for EIC review`);
+      console.log(`Article ${articleToApprove.id} approved for Admin review`);
       
       // Track article approval
       trackArticleApproval(
@@ -378,7 +378,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       }
       
       // Show success message
-      setSuccessMessage(`Successfully approved "${articleToApprove.title}" for EIC review`);
+      setSuccessMessage(`Successfully approved "${articleToApprove.title}" for Admin review`);
       setShowSuccessModal(true);
       
       // Refresh articles after action
@@ -830,7 +830,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
 
     const actionLabels = {
       'publish': 'publish',
-      'approve-to-eic': 'approve for EIC review',
+      'approve-to-eic': 'approve for Admin review',
       'request-revision': 'request revision',
       'return-to-section': 'return to section head'
     };
@@ -1423,7 +1423,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                         <button
                           className="review-queue-action-btn"
                           onClick={() => handleApproveClick(article)}
-                          title="Approve for EIC Review"
+                          title="Approve for Admin Review"
                         >
                           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -1533,7 +1533,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
             
             <div className="simple-approve-modal-content">
               <p className="simple-approve-warning-text">
-                Are you sure you want to approve <strong>"{articleToApprove.title}"</strong> for EIC review?
+                Are you sure you want to approve <strong>"{articleToApprove.title}"</strong> for Admin review?
               </p>
               <p className="simple-approve-details">
                 Author: {articleToApprove.author} • Category: {articleToApprove.category}
@@ -1561,7 +1561,7 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
                     Approving...
                   </>
                 ) : (
-                  'Approve for EIC'
+                  'Approve for Admin'
                 )}
               </button>
             </div>

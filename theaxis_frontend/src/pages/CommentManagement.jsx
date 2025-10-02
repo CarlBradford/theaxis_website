@@ -4,6 +4,7 @@ import commentService from '../services/commentService';
 import FilterModal from '../components/FilterModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import NotificationModal from '../components/NotificationModal';
+import usePageTitle from '../hooks/usePageTitle';
 import { 
   ChatBubbleLeftRightIcon, 
   MagnifyingGlassIcon,
@@ -28,6 +29,10 @@ import '../styles/comment-management.css';
 
 const CommentManagement = () => {
   const { user, isAuthenticated } = useAuth();
+
+  // Set page title
+  usePageTitle('Comment Management');
+
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

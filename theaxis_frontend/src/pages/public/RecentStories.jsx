@@ -3,9 +3,12 @@ import { Link } from 'react-router-dom';
 import { CalendarIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { articlesAPI } from '../../services/apiService';
 import MediaDisplay from '../../components/MediaDisplay';
+import usePageTitle from '../../hooks/usePageTitle';
 import './recent-stories.css';
 
 const RecentStories = () => {
+  usePageTitle('Recent Stories');
+  
   const [recentArticles, setRecentArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,7 +49,6 @@ const RecentStories = () => {
           if (imageUrl.includes('unsplash.com')) {
             imageUrl = imageUrl.replace(/w=\d+&h=\d+/, 'w=300&h=200');
           } else if (imageUrl.includes('localhost:3001')) {
-            imageUrl = `${imageUrl}?w=300&h=200&fit=crop&quality=90`;
           }
         }
         
