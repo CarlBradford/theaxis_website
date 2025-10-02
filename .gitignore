@@ -21,6 +21,8 @@ out/
 # Logs
 logs/
 *.log
+backend/logs/
+backend/*.log
 
 # Runtime data
 pids/
@@ -30,6 +32,7 @@ pids/
 
 # Coverage directory used by tools like istanbul
 coverage/
+backend/coverage/
 *.lcov
 
 # nyc test coverage
@@ -113,3 +116,18 @@ playwright/.cache/
 # Production
 build/
 dist/
+
+# Development scripts (one-time use)
+backend/add-*.js
+backend/debug-*.js
+backend/diagnose-*.js
+backend/fix-*.js
+backend/test-*.js
+backend/verify-*.js
+backend/analyze-*.js
+backend/apply-*.js
+backend/comprehensive-*.js
+backend/simple-*.js
+backend/seed-with-*.js
+backend/*.bat
+backend/*.sql
