@@ -578,113 +578,117 @@ const UserManagement = () => {
             <UsersIconSolid className="h-8 w-8 text-black" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-black">
+            <div className="user-management-title">
               All Users <span className="user-count">{users.length}</span>
-            </h1>
-            <p className="text-gray-600">Manage user accounts, roles, and permissions</p>
+            </div>
+            <div className="user-management-subtitle">Manage user accounts, roles, and permissions</div>
           </div>
         </div>
         <div className="action-bar">
-          <div style={{ position: 'relative' }}>
-            <input
-              type="text"
-              placeholder="Search users, emails, or roles..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="search-input"
-            />
-            <MagnifyingGlassIcon className="search-icon" />
-          </div>
-          <div className="relative">
-            <button 
-              className={`filters-button ${getActiveFiltersCount() > 0 ? 'active' : ''}`}
-              onClick={(e) => {
-                setShowFilterDropdown(!showFilterDropdown);
-              }}
-              title={getFilterDisplayText()}
-            >
-              <FunnelIcon className="w-4 h-4" />
-              {getActiveFiltersCount() > 0 && (
-                <span className="filter-badge">{getActiveFiltersCount()}</span>
-              )}
-            </button>
-            
-            {showFilterDropdown && (
-              <div className="filter-dropdown">
-                <div className="filter-header">
-                  <span className="filter-title">Filters</span>
-                  {getActiveFiltersCount() > 0 && (
-                    <button 
-                      onClick={clearAllFilters}
-                      className="clear-filter-btn"
-                    >
-                      Clear All
-                    </button>
-                  )}
-          </div>
-                
-                {/* Role Filter Section */}
-                <div className="filter-section">
-                  <div className="filter-section-title">Role</div>
-                  <div className="filter-options">
-                    <button
-                      onClick={() => handleRoleFilter('')}
-                      className={`filter-option ${!roleFilter ? 'active' : ''}`}
-                    >
-                      All Roles
-                    </button>
-                    {allRoles.filter(role => {
-                      // Hide SYSTEM_ADMIN from EIC and ADMINISTRATOR
-                      if (['ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(currentUser?.role) && role.value === 'SYSTEM_ADMIN') {
-                        return false;
-                      }
-                      return true;
-                    }).map(role => (
-                      <button
-                        key={role.value}
-                        onClick={() => handleRoleFilter(role.value)}
-                        className={`filter-option ${roleFilter === role.value ? 'active' : ''}`}
+          <div className="action-bar-search-filter">
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="Search users, emails, or roles..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="search-input"
+              />
+              <MagnifyingGlassIcon className="search-icon" />
+            </div>
+            <div className="relative">
+              <button 
+                className={`filters-button ${getActiveFiltersCount() > 0 ? 'active' : ''}`}
+                onClick={(e) => {
+                  setShowFilterDropdown(!showFilterDropdown);
+                }}
+                title={getFilterDisplayText()}
+              >
+                <FunnelIcon className="w-4 h-4" />
+                {getActiveFiltersCount() > 0 && (
+                  <span className="filter-badge">{getActiveFiltersCount()}</span>
+                )}
+              </button>
+              
+              {showFilterDropdown && (
+                <div className="filter-dropdown">
+                  <div className="filter-header">
+                    <span className="filter-title">Filters</span>
+                    {getActiveFiltersCount() > 0 && (
+                      <button 
+                        onClick={clearAllFilters}
+                        className="clear-filter-btn"
                       >
-                        {role.label}
+                        Clear All
                       </button>
-                    ))}
-                  </div>
-        </div>
+                    )}
+            </div>
+                  
+                  {/* Role Filter Section */}
+                  <div className="filter-section">
+                    <div className="filter-section-title">Role</div>
+                    <div className="filter-options">
+                      <button
+                        onClick={() => handleRoleFilter('')}
+                        className={`filter-option ${!roleFilter ? 'active' : ''}`}
+                      >
+                        All Roles
+                      </button>
+                      {allRoles.filter(role => {
+                        // Hide SYSTEM_ADMIN from EIC and ADMINISTRATOR
+                        if (['ADMIN_ASSISTANT', 'ADMINISTRATOR'].includes(currentUser?.role) && role.value === 'SYSTEM_ADMIN') {
+                          return false;
+                        }
+                        return true;
+                      }).map(role => (
+                        <button
+                          key={role.value}
+                          onClick={() => handleRoleFilter(role.value)}
+                          className={`filter-option ${roleFilter === role.value ? 'active' : ''}`}
+                        >
+                          {role.label}
+                        </button>
+                      ))}
+                    </div>
+          </div>
 
-                {/* Status Filter Section */}
-                <div className="filter-section">
-                  <div className="filter-section-title">Status</div>
-                  <div className="filter-options">
-                    <button
-                      onClick={() => handleStatusFilter('')}
-                      className={`filter-option ${!statusFilter ? 'active' : ''}`}
-                    >
-                      All Status
-                    </button>
-                    <button
-                      onClick={() => handleStatusFilter('active')}
-                      className={`filter-option ${statusFilter === 'active' ? 'active' : ''}`}
-                    >
-                      Active
-                    </button>
-                    <button
-                      onClick={() => handleStatusFilter('inactive')}
-                      className={`filter-option ${statusFilter === 'inactive' ? 'active' : ''}`}
-                    >
-                      Inactive
-                    </button>
+                  {/* Status Filter Section */}
+                  <div className="filter-section">
+                    <div className="filter-section-title">Status</div>
+                    <div className="filter-options">
+                      <button
+                        onClick={() => handleStatusFilter('')}
+                        className={`filter-option ${!statusFilter ? 'active' : ''}`}
+                      >
+                        All Status
+                      </button>
+                      <button
+                        onClick={() => handleStatusFilter('active')}
+                        className={`filter-option ${statusFilter === 'active' ? 'active' : ''}`}
+                      >
+                        Active
+                      </button>
+                      <button
+                        onClick={() => handleStatusFilter('inactive')}
+                        className={`filter-option ${statusFilter === 'inactive' ? 'active' : ''}`}
+                      >
+                        Inactive
+                      </button>
+                    </div>
                   </div>
-                </div>
+            </div>
+          )}
+            </div>
           </div>
-        )}
+          <div className="action-bar-add-button">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="add-user-button"
+            >
+              <PlusIcon className="w-5 h-5" />
+              Add User
+            </button>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="add-user-button"
-          >
-            <PlusIcon className="w-5 h-5" />
-            Add User
-          </button>
         </div>
       </div>
 

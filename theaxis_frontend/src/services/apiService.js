@@ -158,6 +158,12 @@ export const articlesAPI = {
     return response.data;
   },
 
+  // Get article statistics
+  getStats: async (params = {}) => {
+    const response = await api.get('/articles/stats', { params });
+    return response.data;
+  },
+
   // Get published content
   getPublishedContent: async (params = {}) => {
     const response = await api.get('/articles', { 

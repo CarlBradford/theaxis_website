@@ -245,6 +245,40 @@ body {
   width: calc(100vw - 256px - 32px); /* Full width minus sidebar (256px) and margins (32px) */
 }
 
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbar-burger {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-direction: column;
+}
+
+.navbar-burger:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.burger-line {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #ffffff;
+  background-color: #ffffff;
+  margin: 3px 0;
+  border-radius: 2px;
+}
+
 .navbar-title {
   font-size: 28px;
   font-weight: 700;
@@ -570,44 +604,134 @@ body {
 /* Responsive Design for Notifications */
 @media (max-width: 768px) {
   .notification-dropdown {
-    width: 320px;
-    right: -20px;
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    top: 96px; /* below mobile navbar */
+    width: auto;
+    max-height: 40vh; /* further reduced */
+    border-radius: 8px; /* further reduced */
   }
   
   .notification-header {
-    padding: 16px 20px;
+    padding: 8px 10px; /* further reduced */
+  }
+  
+  .notification-title {
+    font-size: 13px; /* further reduced */
   }
   
   .notification-item {
-    padding: 14px 20px;
+    padding: 8px 10px; /* further reduced */
+  }
+  
+  .notification-icon {
+    width: 22px; /* further reduced */
+    height: 22px; /* further reduced */
+    font-size: 11px; /* further reduced */
+    border-radius: 6px;
+  }
+  
+  .notification-message-title {
+    font-size: 12px;
+  }
+  
+  /* Hide secondary text to reduce clutter on mobile */
+  .notification-message-body,
+  .notification-message-article {
+    display: none;
+  }
+  
+  .notification-time {
+    font-size: 10px;
   }
   
   .notification-footer {
-    padding: 16px 20px;
+    padding: 8px 10px; /* further reduced */
+  }
+  
+  .notification-mark-all {
+    min-height: 26px; /* further reduced */
+    font-size: 11px;
+    padding: 5px 10px; /* further reduced */
   }
   
   .navbar-right {
     gap: 12px;
   }
+  
+  /* Ensure navbar sits below the sidebar overlay on mobile */
+  .navbar-container {
+    z-index: 800;
+    padding: 0 8px 0 12px; /* reduce left padding on mobile */
+  }
 }
 
 @media (max-width: 480px) {
   .notification-dropdown {
-    width: 300px;
-    right: -40px;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: 80px; /* below smaller mobile navbar */
+    width: auto;
+    max-height: 38vh; /* further reduced */
+    border-radius: 8px; /* keep tight */
   }
   
   .notification-header {
-    padding: 14px 16px;
+    padding: 6px 8px; /* further reduced */
+  }
+  
+  .notification-title {
+    font-size: 12px; /* further reduced */
   }
   
   .notification-item {
-    padding: 12px 16px;
+    padding: 6px 8px; /* further reduced */
+  }
+  
+  .notification-icon {
+    width: 20px; /* further reduced */
+    height: 20px; /* further reduced */
+    font-size: 10px; /* further reduced */
+    border-radius: 6px;
+  }
+  
+  .notification-message-title {
+    font-size: 11px; /* further reduced */
   }
   
   .notification-footer {
-    padding: 14px 16px;
+    padding: 6px 8px; /* further reduced */
   }
+  
+  /* Smaller navbar on very small screens */
+  .navbar-container {
+    height: 64px;
+  }
+  
+  /* Adjust page content spacing under smaller navbar */
+  .main-content {
+    margin-top: 96px; /* 64px navbar + 16px top margin + 16px spacing */
+  }
+}
+
+/* Custom Scrollbar */
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 
@@ -778,16 +902,66 @@ body {
     transform: translateX(0);
   }
   
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 900;
+  }
+  
   .navbar-container {
     margin: 16px;
     left: 0;
     right: 0;
     width: calc(100vw - 32px);
+    top: 0;
+    position: fixed;
+    height: 72px;
+  }
+  
+  .navbar-left {
+    gap: 10px;
+  }
+  
+  .navbar-burger {
+    display: inline-flex;
+  }
+  
+  .navbar-title {
+    font-size: 20px;
+    line-height: 1.2;
+  }
+  
+  /* Hide user text on mobile to reduce clutter */
+  .user-info {
+    display: none;
+  }
+  
+  .user-profile {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+  
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  
+  /* Smaller notification bell on mobile */
+  .notification-bell {
+    width: 36px;
+    height: 36px;
+  }
+  .notification-bell svg,
+  .navbar-container .notification-bell svg,
+  .navbar-container .notification-bell .bell-icon {
+    width: 20px !important;
+    height: 20px !important;
   }
   
   .main-content {
     margin-left: 0;
-    margin-top: 112px;
+    margin-top: 104px; /* 72px navbar + 16px top margin + ~16px spacing */
   }
   
   /* Mobile footer item adjustments */
@@ -799,20 +973,31 @@ body {
   }
 }
 
-/* Custom Scrollbar */
-.sidebar-nav::-webkit-scrollbar {
-  width: 4px;
-}
-
-.sidebar-nav::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-}
-
-.sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+@media (max-width: 480px) {
+  .notification-dropdown {
+    width: 300px;
+    right: -40px;
+  }
+  
+  .notification-header {
+    padding: 14px 16px;
+  }
+  
+  .notification-item {
+    padding: 12px 16px;
+  }
+  
+  .notification-footer {
+    padding: 14px 16px;
+  }
+  
+  /* Smaller navbar on very small screens */
+  .navbar-container {
+    height: 64px;
+  }
+  
+  /* Adjust page content spacing under smaller navbar */
+  .main-content {
+    margin-top: 96px; /* 64px navbar + 16px top margin + 16px spacing */
+  }
 }

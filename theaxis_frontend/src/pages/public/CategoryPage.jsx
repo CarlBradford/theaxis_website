@@ -360,9 +360,89 @@ const CategoryPage = () => {
         <main className="flex-1">
           <div className="category-page">
             <div className="category-page-container">
-              <div className="category-page-loading">
-                <div className="category-page-loading-spinner"></div>
-                <p>Loading articles...</p>
+              {/* Header skeleton */}
+              <div className="category-page-header">
+                <div className="category-page-title-skeleton"></div>
+                <div className="category-page-separator"></div>
+              </div>
+
+              {/* Grid skeleton */}
+              <div className="category-page-grid">
+                <div className="category-page-left-column">
+                  <div className="category-page-story-card skeleton">
+                    <div className="category-page-story-image-skeleton"></div>
+                    <div className="category-page-story-content-skeleton">
+                      <div className="category-page-chip-skeleton"></div>
+                      <div className="category-page-line-skeleton wide"></div>
+                      <div className="category-page-line-skeleton"></div>
+                      <div className="category-page-meta-skeleton">
+                        <div className="category-page-dot-skeleton"></div>
+                        <div className="category-page-dot-skeleton"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="category-page-column-separator"></div>
+
+                <div className="category-page-right-column">
+                  {[...Array(3)].map((_, i) => (
+                    <React.Fragment key={i}>
+                      <div className="category-page-story-card skeleton">
+                        <div className="category-page-story-image-skeleton small"></div>
+                        <div className="category-page-story-content-skeleton">
+                          <div className="category-page-chip-skeleton small"></div>
+                          <div className="category-page-line-skeleton"></div>
+                          <div className="category-page-line-skeleton short"></div>
+                        </div>
+                      </div>
+                      {i < 2 && <div className="category-page-story-separator"></div>}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+
+              <div className="category-page-grid-separator"></div>
+
+              {/* Second grid skeleton */}
+              <div className="category-page-second-grid">
+                <div className="category-page-second-left-column">
+                  {[...Array(3)].map((_, i) => (
+                    <React.Fragment key={`sec-${i}`}>
+                      <div className="category-page-story-card skeleton">
+                        <div className="category-page-story-image-skeleton small"></div>
+                        <div className="category-page-story-content-skeleton">
+                          <div className="category-page-chip-skeleton small"></div>
+                          <div className="category-page-line-skeleton"></div>
+                          <div className="category-page-line-skeleton short"></div>
+                        </div>
+                      </div>
+                      <div className="category-page-story-separator"></div>
+                    </React.Fragment>
+                  ))}
+                </div>
+
+                <div className="category-page-column-separator"></div>
+
+                <div className="category-page-popular-column">
+                  <div className="category-page-popular-container-inner">
+                    <div className="category-page-popular-section-title">
+                      <div className="category-page-popular-green-line"></div>
+                      <span>&nbsp;</span>
+                    </div>
+                    <div className="category-page-popular-articles-list">
+                      {[...Array(5)].map((_, i) => (
+                        <React.Fragment key={`pop-${i}`}>
+                          <div className="category-page-popular-simple-card skeleton">
+                            <div className="category-page-popular-chip-skeleton"></div>
+                            <div className="category-page-line-skeleton"></div>
+                          </div>
+                          {i < 4 && <div className="category-page-popular-simple-separator"></div>}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

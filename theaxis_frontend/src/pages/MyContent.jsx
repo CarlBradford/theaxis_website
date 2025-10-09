@@ -6,6 +6,7 @@ import ArticlePreviewModal from '../components/ArticlePreviewModal';
 import NotificationModal from '../components/NotificationModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import FilterModal from '../components/FilterModal';
+import Pagination from '../components/Pagination';
 import usePageTitle from '../hooks/usePageTitle';
 import { 
   DocumentTextIcon, 
@@ -60,6 +61,14 @@ const MyContent = () => {
   const [articleToRestore, setArticleToRestore] = useState(null);
   const [stats, setStats] = useState({});
   const [statsLoading, setStatsLoading] = useState(true);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [paginationData, setPaginationData] = useState(null);
+  
   const { user } = useAuth();
 
   // Notification modal helper functions
@@ -118,6 +127,42 @@ const MyContent = () => {
     }
   }, [user?.id, searchTerm, activeFilter, selectedCategories, sortBy, sortOrder, dateRange, categories]);
 
+  // Handle pagination changes
+  useEffect(() => {
+    if (user?.id && currentPage > 1) {
+      // Convert category IDs to category slugs for backend filtering
+      let categoryParam = 'all';
+      if (selectedCategories.length === 1) {
+        const categorySlug = categories.find(cat => cat.id === selectedCategories[0])?.slug;
+        categoryParam = categorySlug || 'all';
+      } else if (selectedCategories.length > 1) {
+        // Multiple categories - send comma-separated slugs
+        const categorySlugs = selectedCategories
+          .map(catId => categories.find(cat => cat.id === catId)?.slug)
+          .filter(slug => slug);
+        categoryParam = categorySlugs.join(',');
+      }
+      
+      fetchMyContent({
+        search: searchTerm,
+        status: activeFilter,
+        category: categoryParam,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        publicationDateStart: dateRange.start,
+        publicationDateEnd: dateRange.end
+      }, false, currentPage, itemsPerPage); // Use current page and items per page
+    }
+  }, [currentPage, itemsPerPage]);
+
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+
   const fetchCategories = async () => {
     try {
       const response = await categoriesAPI.getCategories();
@@ -151,7 +196,13 @@ const MyContent = () => {
         authorId: user?.id, // Filter by current user's ID
       };
       
+      console.log('MyContent - API params:', params);
+      console.log('MyContent - User ID:', user?.id);
+      
       const response = await articlesAPI.getMyContent(params);
+      
+      console.log('MyContent - Response items count:', response.data?.items?.length);
+      console.log('MyContent - Response data:', response.data);
       
       const transformedArticles = (response.data?.items || []).map(article => ({
         id: article.id,
@@ -188,7 +239,7 @@ const MyContent = () => {
     }
   };
 
-  const fetchMyContent = async (filters = {}, showLoading = false) => {
+  const fetchMyContent = async (filters = {}, showLoading = false, page = currentPage, limit = itemsPerPage) => {
     try {
       if (showLoading) {
       setLoading(true);
@@ -197,7 +248,9 @@ const MyContent = () => {
       
       // Build API parameters
       const params = {
-        authorId: user?.id
+        authorId: user?.id,
+        page: page,
+        limit: limit
       };
       
       // Add filter parameters
@@ -234,10 +287,11 @@ const MyContent = () => {
         params.publicationDateEnd = filters.publicationDateEnd;
       }
       
-      console.log('MyContent API params:', params);
-      console.log('Selected categories:', selectedCategories);
-      console.log('Available categories:', categories);
-      console.log('Category param being sent:', params.category);
+      console.log('MyContent fetchMyContent - User ID:', user?.id);
+      console.log('MyContent fetchMyContent - API params:', params);
+      console.log('MyContent fetchMyContent - Selected categories:', selectedCategories);
+      console.log('MyContent fetchMyContent - Available categories:', categories);
+      console.log('MyContent fetchMyContent - Category param being sent:', params.category);
       const response = await articlesAPI.getMyContent(params);
       console.log('Fetched articles response:', response);
       console.log('Sample article with categories:', response.data?.items?.[0]);
@@ -264,11 +318,31 @@ const MyContent = () => {
       
       setArticles(transformedArticles);
       setFilteredArticles(transformedArticles);
+      
+      // Extract pagination data from response
+      const pagination = response.data?.pagination;
+      if (pagination) {
+        setTotalPages(pagination.totalPages || 1);
+        setTotalItems(pagination.total || pagination.totalCount || 0);
+        setCurrentPage(pagination.page || page);
+        setItemsPerPage(pagination.limit || limit);
+        setPaginationData(pagination);
+      } else {
+        // Calculate pagination from response data
+        setTotalPages(Math.ceil((response.data?.items || []).length / limit));
+        setTotalItems((response.data?.items || []).length);
+        setCurrentPage(page);
+        setItemsPerPage(limit);
+      }
     } catch (error) {
       console.error('Failed to fetch my content:', error);
       setError('Failed to load your content');
       setArticles([]); // Set empty array on error
       setFilteredArticles([]);
+      // Reset pagination on error
+      setTotalPages(1);
+      setTotalItems(0);
+      setCurrentPage(1);
     } finally {
       if (showLoading) {
       setLoading(false);
@@ -1102,6 +1176,15 @@ const MyContent = () => {
             })}
           </div>
         )}
+        
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
+        />
       </div>
 
       {/* Preview Modal */}

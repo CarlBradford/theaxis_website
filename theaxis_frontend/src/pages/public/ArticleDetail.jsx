@@ -583,10 +583,58 @@ const ArticleDetail = () => {
     return (
       <div className="article-detail-page">
         <PublicPageHeader />
-        <div className="article-detail-loading">
-          <div className="article-detail-loading-spinner"></div>
-          <p>Loading article...</p>
-        </div>
+        <main className="article-detail-main">
+          <div className="article-detail-container">
+            <header className="article-detail-header">
+              <div className="article-detail-category skeleton-chip"></div>
+              <div className="article-detail-title skeleton-line-extra-large"></div>
+              <div className="article-detail-featured-image skeleton-image"></div>
+              <div className="article-detail-excerpt skeleton-line-large"></div>
+              <div className="article-detail-meta">
+                <div className="article-detail-author-date">
+                  <div className="article-detail-authors skeleton-line-medium"></div>
+                  <div className="article-detail-publication-date skeleton-line-small"></div>
+                </div>
+                <div className="article-detail-social">
+                  <div className="article-detail-action-btn skeleton-dot"></div>
+                  <div className="article-detail-action-btn skeleton-dot"></div>
+                  <div className="article-detail-action-btn skeleton-dot"></div>
+                </div>
+              </div>
+            </header>
+            <article className="article-detail-content">
+              <div className="article-detail-body">
+                <div className="skeleton-line-large"></div>
+                <div className="skeleton-line-medium"></div>
+                <div className="skeleton-line-large"></div>
+                <div className="skeleton-line-small"></div>
+                <div className="skeleton-line-medium"></div>
+              </div>
+            </article>
+            <footer className="article-detail-footer">
+              <div className="article-detail-tags">
+                <div className="article-detail-tags-content">
+                  <div className="article-detail-tags-label skeleton-line-small"></div>
+                  <div className="article-detail-tags-list">
+                    <div className="article-detail-tag skeleton-chip"></div>
+                    <div className="article-detail-tag skeleton-chip"></div>
+                    <div className="article-detail-tag skeleton-chip"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="article-detail-engagement">
+                <div className="article-detail-engagement-content">
+                  <div className="article-detail-comments-info skeleton-button"></div>
+                  <div className="article-detail-engagement-actions">
+                    <div className="article-detail-like-btn skeleton-dot"></div>
+                    <div className="article-detail-dislike-btn skeleton-dot"></div>
+                  </div>
+                </div>
+              </div>
+            </footer>
+          </div>
+        </main>
+        <PublicFooter />
       </div>
     );
   }
@@ -762,7 +810,7 @@ const ArticleDetail = () => {
             {article.tags && article.tags.length > 0 && (
               <div className="article-detail-tags">
                 <div className="article-detail-tags-content">
-                  <span className="article-detail-tags-label">Related Topic:</span>
+                  <span className="article-detail-tags-label">RELATED TOPICS:</span>
                   <div className="article-detail-tags-list">
                     {article.tags.map((tag, index) => (
                       <React.Fragment key={tag.id}>
@@ -904,7 +952,7 @@ const ArticleDetail = () => {
             {/* Approved Comments Display */}
             <div className="article-detail-comments-section">
               <h3 className="article-detail-comments-title">
-                Comments ({commentsPagination?.totalCount !== undefined ? commentsPagination.totalCount : '...'})
+                COMMENTS ({commentsPagination?.totalCount !== undefined ? commentsPagination.totalCount : '...'})
               </h3>
               {comments.length > 0 ? (
                 <>

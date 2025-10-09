@@ -320,6 +320,100 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Skeleton Loading Styles */
+.offline-articles-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.offline-articles-item.skeleton {
+  background: var(--color-background);
+  border: 1px solid #e5e7eb;
+  border-radius: 0;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.offline-articles-title-skeleton {
+  height: 1.5rem;
+  width: 70%;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 37%, #e5e7eb 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  margin-bottom: 0.75rem;
+}
+
+.offline-articles-subtitle-skeleton {
+  height: 1rem;
+  width: 50%;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 37%, #e5e7eb 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  margin-bottom: 2rem;
+}
+
+.offline-articles-excerpt-skeleton {
+  margin-bottom: 1rem;
+}
+
+.offline-articles-line-skeleton {
+  height: 14px;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 37%, #e5e7eb 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  margin-bottom: 10px;
+}
+
+.offline-articles-line-skeleton.short {
+  width: 60%;
+}
+
+.offline-articles-meta-skeleton {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.offline-articles-dot-skeleton {
+  width: 80px;
+  height: 12px;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 37%, #e5e7eb 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+.offline-articles-button-skeleton {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 37%, #e5e7eb 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  border-radius: 0;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@media (max-width: 768px) {
+  .offline-articles-item.skeleton {
+    flex-direction: column;
+    gap: 0;
+    padding: 0.75rem;
+  }
+  
+  .offline-articles-meta-skeleton {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+}
+
 /* Empty State */
 .offline-articles-empty {
   text-align: center;

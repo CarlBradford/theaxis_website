@@ -29,6 +29,7 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [logoUrl, setLogoUrl] = useState(theaxisLogo);
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
     // Clear auth state first
@@ -60,6 +61,27 @@ const Sidebar = () => {
 
     loadAssets();
   }, []);
+
+  // Listen for global toggle/close events from navbar (mobile)
+  useEffect(() => {
+    const handleToggle = () => setIsOpen(prev => !prev);
+    const handleClose = () => setIsOpen(false);
+
+    window.addEventListener('sidebar:toggle', handleToggle);
+    window.addEventListener('sidebar:close', handleClose);
+
+    return () => {
+      window.removeEventListener('sidebar:toggle', handleToggle);
+      window.removeEventListener('sidebar:close', handleClose);
+    };
+  }, []);
+
+  // Close sidebar on route change for small screens
+  useEffect(() => {
+    if (window.innerWidth <= 768) {
+      setIsOpen(false);
+    }
+  }, [location.pathname]);
 
   // Define navigation items with permissions
   const navigationItems = [
@@ -159,6 +181,9 @@ const Sidebar = () => {
       if (hasSubItems) {
         e.preventDefault();
         setIsExpanded(!isExpanded);
+      } else {
+        // Close on mobile after navigation
+        if (window.innerWidth <= 768) setIsOpen(false);
       }
     };
 
@@ -185,6 +210,9 @@ const Sidebar = () => {
                 key={subItem.href}
                 to={subItem.href}
                 className={`nav-subitem ${isActive(subItem.href) ? 'active' : ''}`}
+                onClick={() => {
+                  if (window.innerWidth <= 768) setIsOpen(false);
+                }}
               >
                 {subItem.name}
               </Link>
@@ -196,7 +224,16 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="sidebar-container">
+    <>
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      <div className={`sidebar-container ${isOpen ? 'open' : ''}`}>
       {/* Logo */}
       <div className="sidebar-logo">
         <div className="sidebar-logo-container">
@@ -229,7 +266,8 @@ const Sidebar = () => {
           Log Out
         </button>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

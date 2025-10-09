@@ -713,52 +713,112 @@ router.get(
     // Role-based stats
     if (userRole === 'STAFF') {
       // Staff: Focus on their own content
-      const staffWhere = { ...baseWhere, authorId: userId };
+      // For staff, don't filter by publication date for drafts/in-review articles
+      const staffWhere = { authorId: userId };
+      const staffWhereWithDate = authorId ? { authorId: userId } : staffWhere;
+      
+      // Add publication date filter only if we're filtering by a specific author (not broader queries)
+      if (publicationDateStart || publicationDateEnd) {
+        const dateFilter = {};
+        if (publicationDateStart) {
+          dateFilter.gte = new Date(publicationDateStart);
+        }
+        if (publicationDateEnd) {
+          dateFilter.lte = new Date(publicationDateEnd);
+        }
+        
+        // Apply date filter only to published articles for staff
+        const publishedWhere = { ...staffWhere, status: 'PUBLISHED', publicationDate: dateFilter };
+        const allStaffWhere = { authorId: userId };
+        
+        stats = {
+          totalContent: await prisma.article.count({ where: allStaffWhere }),
+          drafts: await prisma.article.count({ where: { ...allStaffWhere, status: 'DRAFT' } }),
+          inReview: await prisma.article.count({ where: { ...allStaffWhere, status: 'IN_REVIEW' } }),
+          needsRevision: await prisma.article.count({ where: { ...allStaffWhere, status: 'NEEDS_REVISION' } }),
+          published: await prisma.article.count({ where: publishedWhere }),
+          archived: await prisma.article.count({ where: { ...allStaffWhere, status: 'ARCHIVED' } }),
+          totalViews: await prisma.article.aggregate({
+            where: publishedWhere,
+            _sum: { viewCount: true }
+          }).then(result => result._sum.viewCount || 0)
+        };
+      } else {
+        // No date filtering - count all staff articles
+        stats = {
+          totalContent: await prisma.article.count({ where: staffWhere }),
+          drafts: await prisma.article.count({ where: { ...staffWhere, status: 'DRAFT' } }),
+          inReview: await prisma.article.count({ where: { ...staffWhere, status: 'IN_REVIEW' } }),
+          needsRevision: await prisma.article.count({ where: { ...staffWhere, status: 'NEEDS_REVISION' } }),
+          published: await prisma.article.count({ where: { ...staffWhere, status: 'PUBLISHED' } }),
+          archived: await prisma.article.count({ where: { ...staffWhere, status: 'ARCHIVED' } }),
+          totalViews: await prisma.article.aggregate({
+            where: staffWhere,
+            _sum: { viewCount: true }
+          }).then(result => result._sum.viewCount || 0)
+        };
+      }
+    } else if (['ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(userRole) && authorId) {
+      // Admin roles viewing their own content: Personal stats
+      const adminWhere = { ...baseWhere, authorId: userId };
       
       stats = {
-        totalContent: await prisma.article.count({ where: staffWhere }),
-        drafts: await prisma.article.count({ where: { ...staffWhere, status: 'DRAFT' } }),
-        inReview: await prisma.article.count({ where: { ...staffWhere, status: 'IN_REVIEW' } }),
-        needsRevision: await prisma.article.count({ where: { ...staffWhere, status: 'NEEDS_REVISION' } }),
-        published: await prisma.article.count({ where: { ...staffWhere, status: 'PUBLISHED' } }),
-        archived: await prisma.article.count({ where: { ...staffWhere, status: 'ARCHIVED' } }),
+        totalContent: await prisma.article.count({ where: adminWhere }),
+        drafts: await prisma.article.count({ where: { ...adminWhere, status: 'DRAFT' } }),
+        inReview: await prisma.article.count({ where: { ...adminWhere, status: 'IN_REVIEW' } }),
+        needsRevision: await prisma.article.count({ where: { ...adminWhere, status: 'NEEDS_REVISION' } }),
+        published: await prisma.article.count({ where: { ...adminWhere, status: 'PUBLISHED' } }),
+        archived: await prisma.article.count({ where: { ...adminWhere, status: 'ARCHIVED' } }),
         totalViews: await prisma.article.aggregate({
-          where: staffWhere,
-          _sum: { viewCount: true }
-        }).then(result => result._sum.viewCount || 0)
-      };
-    } else if (userRole === 'ADMINISTRATOR' && authorId) {
-      // ADMINISTRATOR viewing their own content: Personal stats
-      const administratorWhere = { ...baseWhere, authorId: userId };
-      
-      stats = {
-        totalContent: await prisma.article.count({ where: administratorWhere }),
-        drafts: await prisma.article.count({ where: { ...administratorWhere, status: 'DRAFT' } }),
-        inReview: await prisma.article.count({ where: { ...administratorWhere, status: 'IN_REVIEW' } }),
-        needsRevision: await prisma.article.count({ where: { ...administratorWhere, status: 'NEEDS_REVISION' } }),
-        published: await prisma.article.count({ where: { ...administratorWhere, status: 'PUBLISHED' } }),
-        archived: await prisma.article.count({ where: { ...administratorWhere, status: 'ARCHIVED' } }),
-        totalViews: await prisma.article.aggregate({
-          where: administratorWhere,
+          where: adminWhere,
           _sum: { viewCount: true }
         }).then(result => result._sum.viewCount || 0)
       };
     } else if (['ADMIN_ASSISTANT', 'ADMINISTRATOR', 'SYSTEM_ADMIN'].includes(userRole)) {
-      // EIC and higher: All content stats
-      stats = {
-        totalContent: await prisma.article.count({ where: baseWhere }),
-        published: await prisma.article.count({ where: { ...baseWhere, status: 'PUBLISHED' } }),
-        approved: await prisma.article.count({ where: { ...baseWhere, status: 'APPROVED' } }),
-        archived: await prisma.article.count({ where: { ...baseWhere, status: 'ARCHIVED' } }),
-        totalViews: await prisma.article.aggregate({
-          where: baseWhere,
-          _sum: { viewCount: true }
-        }).then(result => result._sum.viewCount || 0),
-        avgViews: await prisma.article.aggregate({
-          where: baseWhere,
-          _avg: { viewCount: true }
-        }).then(result => Math.round(result._avg.viewCount || 0))
-      };
+      // EIC and higher: Review queue stats or general content stats
+      if (queueType === 'section-head') {
+        // Section Head Queue: Show articles submitted by publication staff for review
+        stats = {
+          totalArticles: await prisma.article.count({ 
+            where: { ...baseWhere, status: { in: ['IN_REVIEW', 'NEEDS_REVISION'] } }
+          }),
+          inReview: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'IN_REVIEW' }
+          }),
+          needsRevision: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'NEEDS_REVISION' }
+          })
+        };
+      } else if (queueType === 'eic') {
+        // EIC Queue: Show articles approved by section heads
+        stats = {
+          totalArticles: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'APPROVED' }
+          }),
+          readyForPublication: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'APPROVED' }
+          }),
+          needsRevision: await prisma.article.count({ 
+            where: { ...baseWhere, status: 'NEEDS_REVISION' }
+          })
+        };
+      } else {
+        // Default admin stats: All content
+        stats = {
+          totalContent: await prisma.article.count({ where: baseWhere }),
+          published: await prisma.article.count({ where: { ...baseWhere, status: 'PUBLISHED' } }),
+          approved: await prisma.article.count({ where: { ...baseWhere, status: 'APPROVED' } }),
+          archived: await prisma.article.count({ where: { ...baseWhere, status: 'ARCHIVED' } }),
+          totalViews: await prisma.article.aggregate({
+            where: baseWhere,
+            _sum: { viewCount: true }
+          }).then(result => result._sum.viewCount || 0),
+          avgViews: await prisma.article.aggregate({
+            where: baseWhere,
+            _avg: { viewCount: true }
+          }).then(result => Math.round(result._avg.viewCount || 0))
+        };
+      }
     } else if (['SECTION_HEAD'].includes(userRole)) {
       // Section Head: Review queue stats
       if (queueType === 'section-head') {
@@ -786,18 +846,74 @@ router.get(
           })
         };
       } else {
-        // Default section head stats
-        stats = {
-          totalArticles: await prisma.article.count({ 
-            where: { ...baseWhere, status: { in: ['IN_REVIEW', 'NEEDS_REVISION'] } }
-          }),
-          inReview: await prisma.article.count({ 
-            where: { ...baseWhere, status: 'IN_REVIEW' }
-          }),
-          needsRevision: await prisma.article.count({ 
-            where: { ...baseWhere, status: 'NEEDS_REVISION' }
-          })
-        };
+        // Default section head dashboard stats
+        // For dashboard: show their own content + review queue stats
+        const sectionHeadWhere = authorId ? { authorId: userId } : {};
+        
+        // Handle publication date filtering for Section Head's own content
+        if (publicationDateStart || publicationDateEnd) {
+          const dateFilter = {};
+          if (publicationDateStart) {
+            dateFilter.gte = new Date(publicationDateStart);
+          }
+          if (publicationDateEnd) {
+            dateFilter.lte = new Date(publicationDateEnd);
+          }
+          
+          // Apply date filter only to published articles for dashboard
+          const publishedWhere = { ...sectionHeadWhere, status: 'PUBLISHED', publicationDate: dateFilter };
+          const allWhere = { ...sectionHeadWhere };
+          
+          stats = {
+            // Dashboard fields
+            totalContent: await prisma.article.count({ where: allWhere }),
+            published: await prisma.article.count({ where: publishedWhere }),
+            totalViews: await prisma.article.aggregate({
+              where: publishedWhere,
+              _sum: { viewCount: true }
+            }).then(result => result._sum.viewCount || 0),
+            avgViews: await prisma.article.aggregate({
+              where: publishedWhere,
+              _avg: { viewCount: true }
+            }).then(result => Math.round(result._avg.viewCount || 0)),
+            
+            // Review queue fields
+            totalArticles: await prisma.article.count({ 
+              where: { status: { in: ['IN_REVIEW', 'NEEDS_REVISION'] } }
+            }),
+            inReview: await prisma.article.count({ 
+              where: { status: 'IN_REVIEW' }
+            }),
+            needsRevision: await prisma.article.count({ 
+              where: { status: 'NEEDS_REVISION' }
+            })
+          };
+        } else {
+          stats = {
+            // Dashboard fields
+            totalContent: await prisma.article.count({ where: sectionHeadWhere }),
+            published: await prisma.article.count({ where: { ...sectionHeadWhere, status: 'PUBLISHED' } }),
+            totalViews: await prisma.article.aggregate({
+              where: { ...sectionHeadWhere, status: 'PUBLISHED' },
+              _sum: { viewCount: true }
+            }).then(result => result._sum.viewCount || 0),
+            avgViews: await prisma.article.aggregate({
+              where: { ...sectionHeadWhere, status: 'PUBLISHED' },
+              _avg: { viewCount: true }
+            }).then(result => Math.round(result._avg.viewCount || 0)),
+            
+            // Review queue fields
+            totalArticles: await prisma.article.count({ 
+              where: { status: { in: ['IN_REVIEW', 'NEEDS_REVISION'] } }
+            }),
+            inReview: await prisma.article.count({ 
+              where: { status: 'IN_REVIEW' }
+            }),
+            needsRevision: await prisma.article.count({ 
+              where: { status: 'NEEDS_REVISION' }
+            })
+          };
+        }
       }
     } else {
       // Default fallback
@@ -915,7 +1031,7 @@ router.get(
     // Determine queue type based on user role if not specified
     let effectiveQueueType = queueType;
     if (!effectiveQueueType) {
-      if (req.user.role === 'ADMIN_ASSISTANT' || req.user.role === 'ADMINISTRATOR') {
+      if (req.user.role === 'ADMIN_ASSISTANT' || req.user.role === 'ADMINISTRATOR' || req.user.role === 'SYSTEM_ADMIN') {
         effectiveQueueType = 'eic';
       } else {
         effectiveQueueType = 'section-head';
@@ -1482,8 +1598,26 @@ router.get(
     const { q: searchQuery, page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
 
-    // Split search query into individual words for better multi-word search
-    const searchWords = searchQuery.trim().split(/\s+/).filter(word => word.length > 0);
+    // Require at least 2 characters to run a search to avoid per-letter noise
+    if (searchQuery.trim().length < 2) {
+      return sendSuccessResponse(res, {
+        items: [],
+        pagination: {
+          page,
+          limit,
+          totalCount: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPreviousPage: false
+        }
+      }, 'Search results retrieved');
+    }
+
+    // Split search query into individual words and ignore 1-letter tokens
+    const searchWords = searchQuery
+      .trim()
+      .split(/\s+/)
+      .filter(word => word.length >= 2);
     
     // Build comprehensive search query
     const where = {
@@ -1670,8 +1804,77 @@ router.get(
 
     const totalPages = Math.ceil(totalCount / limit);
 
+    // Prefer whole-word matches: compute a simple relevance score per article
+    const wordRegexes = searchWords.map((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\b`, 'i'));
+
+    const scoreArticle = (article) => {
+      const textFields = {
+        title: article.title || '',
+        content: article.content || '',
+        slug: article.slug || '',
+        mediaCaption: article.mediaCaption || ''
+      };
+
+      const authorText = [
+        article.author?.firstName,
+        article.author?.lastName,
+        article.author?.username
+      ].filter(Boolean).join(' ');
+
+      const coAuthorText = (article.articleAuthors || [])
+        .map(a => [a.user?.firstName, a.user?.lastName, a.user?.username].filter(Boolean).join(' '))
+        .join(' ');
+
+      const categoryText = (article.categories || []).map(c => `${c.name} ${c.slug} ${c.description || ''}`).join(' ');
+      const tagText = (article.tags || []).map(t => `${t.name} ${t.slug} ${t.description || ''}`).join(' ');
+
+      const fieldsForWholeWord = [textFields.title, categoryText, tagText, authorText, coAuthorText];
+      const fieldsForPartial = [textFields.title, textFields.content, textFields.slug, textFields.mediaCaption, categoryText, tagText, authorText, coAuthorText];
+
+      // Whole-word hits get higher weight
+      let wholeWordHits = 0;
+      for (const rx of wordRegexes) {
+        for (const f of fieldsForWholeWord) {
+          if (rx.test(f)) {
+            wholeWordHits += 1;
+            break; // Count at most once per word across whole-word fields
+          }
+        }
+      }
+
+      // Partial hits: case-insensitive substring
+      let partialHits = 0;
+      for (const w of searchWords) {
+        const lw = w.toLowerCase();
+        for (const f of fieldsForPartial) {
+          if (f.toLowerCase().includes(lw)) {
+            partialHits += 1;
+            break;
+          }
+        }
+      }
+
+      // Exact phrase bonus
+      const phraseRegex = new RegExp(`\\b${searchQuery.trim().replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\b`, 'i');
+      const phraseBonus = fieldsForWholeWord.some(f => phraseRegex.test(f)) ? 2 : 0;
+
+      // Weighted score
+      return wholeWordHits * 5 + partialHits * 1 + phraseBonus;
+    };
+
+    const scored = articles.map(a => ({ a, s: scoreArticle(a) }));
+    scored.sort((x, y) => {
+      if (y.s !== x.s) return y.s - x.s; // higher score first
+      // Tie-breakers: newer publicationDate, then createdAt
+      const yPub = y.a.publicationDate || y.a.createdAt || 0;
+      const xPub = x.a.publicationDate || x.a.createdAt || 0;
+      return new Date(yPub) - new Date(xPub);
+    });
+
+    const items = scored.map(({ a }) => a);
+
     sendSuccessResponse(res, {
-      items: articles,
+      items,
       pagination: {
         page,
         limit,

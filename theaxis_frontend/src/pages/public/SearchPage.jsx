@@ -31,7 +31,7 @@ const SearchPage = () => {
     const fetchSuggestedTopics = async () => {
       try {
         const response = await articlesAPI.getSuggestedTopics();
-        setSuggestedTopics(response.data?.topics || []);
+        setSuggestedTopics((response.data?.topics || []).slice(0, 5));
       } catch (error) {
         console.error('Error fetching suggested topics:', error);
       }
@@ -161,7 +161,7 @@ const SearchPage = () => {
       <div className="search-page-container">
         {/* Search Header */}
         <div className="search-page-header">
-          <h1 className="search-page-title">Search Articles</h1>
+          <h1 className="search-page-title">SEARCH ARTICLES</h1>
           
           {/* Search Form */}
           <form onSubmit={handleSearch} className="search-page-form">
@@ -206,9 +206,21 @@ const SearchPage = () => {
         {/* Search Results */}
         <div className="search-page-results">
           {loading && (
-            <div className="search-page-loading">
-              <div className="search-page-spinner"></div>
-              <p>Searching articles...</p>
+            <div className="search-page-skeleton-list">
+              {[...Array(5)].map((_, index) => (
+                <div key={index} className="search-page-skeleton-card">
+                  <div className="search-page-skeleton-image"></div>
+                  <div className="search-page-skeleton-content">
+                    <div className="search-page-skeleton-line short"></div>
+                    <div className="search-page-skeleton-line"></div>
+                    <div className="search-page-skeleton-line"></div>
+                    <div className="search-page-skeleton-meta">
+                      <div className="search-page-skeleton-dot"></div>
+                      <div className="search-page-skeleton-dot"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 

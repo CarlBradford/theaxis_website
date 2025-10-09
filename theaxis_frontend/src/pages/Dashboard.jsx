@@ -96,16 +96,33 @@ const Dashboard = () => {
 
         const dateRange = getDateRange();
 
-        // Fetch recent articles with publication date filtering
-        const articlesResponse = await articlesAPI.getRecentArticles({
-          authorId: user?.id, // Get user's own articles
-          sortBy: 'publicationDate', // Sort by publication date instead of creation date
-          sortOrder: 'desc',
-          ...(dateRange && {
-            publicationDateStart: dateRange.start,
-            publicationDateEnd: dateRange.end
-          })
-        });
+        // Fetch recent articles - ALL roles: show their own articles
+        let articlesParams = {
+          limit: 5,
+          authorId: user?.id, // ALL users see only their own articles
+        };
+
+        if (user?.role === 'STAFF' || user?.role === 'SECTION_HEAD') {
+          // Only show published articles for content creators (staff/section head)
+          articlesParams = {
+            ...articlesParams,
+            sortBy: 'publicationDate',
+            sortOrder: 'desc',
+            ...(dateRange && {
+              publicationDateStart: dateRange.start,
+              publicationDateEnd: dateRange.end
+            })
+          };
+        } else {
+          // Admin roles: Show their own articles sorted by creation date (includes drafts)
+          articlesParams = {
+            ...articlesParams,
+            sortBy: 'createdAt',
+            sortOrder: 'desc'
+          };
+        }
+
+        const articlesResponse = await articlesAPI.getArticles(articlesParams);
         
         // Transform articles for display
         const transformedArticles = articlesResponse.data?.items?.map(article => {
@@ -134,13 +151,21 @@ const Dashboard = () => {
         setRecentArticles(transformedArticles);
 
         // Fetch dashboard statistics with publication date filtering
-        const statsResponse = await articlesAPI.getArticleStats({
-          authorId: user?.id,
+        // ALL roles: get personal content only
+        const statsParams = {
+          authorId: user?.id, // ALL users see only their own content
           ...(dateRange && {
             publicationDateStart: dateRange.start,
             publicationDateEnd: dateRange.end
           })
-        });
+        };
+
+        const statsResponse = await articlesAPI.getArticleStats(statsParams);
+
+        console.log('Dashboard stats API response:', statsResponse);
+        console.log('Dashboard stats data:', statsResponse.data);
+        console.log('Dashboard user ID:', user?.id);
+        console.log('Dashboard user role:', user?.role);
 
         const stats = statsResponse.data;
         setDashboardStats({
@@ -148,6 +173,13 @@ const Dashboard = () => {
           totalViews: stats.totalViews || 0,
           pendingReviews: stats.inReview || 0,
           thisWeek: stats.published || 0 // Using published as "this week" for now
+        });
+
+        console.log('Dashboard final stats:', {
+          totalContent: stats.totalContent || 0,
+          totalViews: stats.totalViews || 0,
+          pendingReviews: stats.inReview || 0,
+          thisWeek: stats.published || 0
         });
 
       } catch (error) {
@@ -323,7 +355,7 @@ const Dashboard = () => {
                 </div>
                 <div className="dashboard-stat-content">
                   <div className="dashboard-stat-number">
-                    {statsLoading ? '...' : dashboardStats.totalContent}
+                    {statsLoading ? '...' : (dashboardStats.totalContent || 0)}
                   </div>
                   <div className="dashboard-stat-label">Articles Written</div>
                 </div>
@@ -335,7 +367,7 @@ const Dashboard = () => {
                 </div>
                 <div className="dashboard-stat-content">
                   <div className="dashboard-stat-number">
-                    {statsLoading ? '...' : dashboardStats.totalViews.toLocaleString()}
+                    {statsLoading ? '...' : (dashboardStats.totalViews || 0).toLocaleString()}
                   </div>
                   <div className="dashboard-stat-label">Total Views</div>
                 </div>
@@ -347,7 +379,7 @@ const Dashboard = () => {
                 </div>
                 <div className="dashboard-stat-content">
                   <div className="dashboard-stat-number">
-                    {statsLoading ? '...' : dashboardStats.pendingReviews}
+                    {statsLoading ? '...' : (dashboardStats.pendingReviews || 0)}
                   </div>
                   <div className="dashboard-stat-label">Pending Reviews</div>
                 </div>
@@ -359,7 +391,7 @@ const Dashboard = () => {
                 </div>
                 <div className="dashboard-stat-content">
                   <div className="dashboard-stat-number">
-                    {statsLoading ? '...' : dashboardStats.thisWeek}
+                    {statsLoading ? '...' : (dashboardStats.thisWeek || 0)}
                   </div>
                   <div className="dashboard-stat-label">This Week</div>
                 </div>

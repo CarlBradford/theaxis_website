@@ -519,20 +519,16 @@ const Settings = () => {
 
   return (
     <div className="dashboard-container">
-      <div className="dashboard-content">
+      <div className="dashboard-content settings-content-wrapper">
         {/* Header Section */}
-        <div className="dashboard-header">
-          <div className="dashboard-header-left">
-            <div className="flex items-center space-x-4">
-              <div>
-                 <ShieldCheckIcon className="h-8 w-8 text-teal-600" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-black">
-                  Site Settings
-                </h1>
-                 <p className="text-black">Manage website configuration and settings</p>
-              </div>
+        <div className="settings-header">
+          <div className="settings-header-content">
+            <div className="settings-header-icon">
+              <ShieldCheckIcon className="settings-icon" />
+            </div>
+            <div className="settings-header-text">
+              <h1>Site Settings</h1>
+              <p>Manage website configuration and settings</p>
             </div>
           </div>
         </div>
@@ -555,7 +551,7 @@ const Settings = () => {
         </div>
 
         {/* Main Content Area */}
-        <div className="dashboard-main-content">
+        <div className="settings-content">
           {activeTab === 'colors' && (
             <div className="settings-section">
               <h3 className="section-title">Color Customization</h3>
@@ -619,14 +615,16 @@ const Settings = () => {
                     onClick={resetColorsToDefault}
                     className="settings-btn settings-btn-secondary"
                   >
-                    Reset to Default
+                    <span className="desktop-text">Reset to Default</span>
+                    <span className="mobile-text">Reset</span>
                   </button>
                   <button
                     type="submit"
                     disabled={colorLoading || colorContextLoading}
                     className="settings-btn settings-btn-primary"
                   >
-                    {colorLoading ? 'Saving Colors...' : 'Save Colors'}
+                    <span className="desktop-text">{colorLoading ? 'Saving Colors...' : 'Save Colors'}</span>
+                    <span className="mobile-text">{colorLoading ? 'Saving...' : 'Save'}</span>
                   </button>
                 </div>
               </form>
@@ -862,16 +860,7 @@ const Settings = () => {
                   </div>
 
 
-                  <div className="form-group">
-                    <label htmlFor="year_copyright">Copyright Year</label>
-                    <input
-                      type="text"
-                      id="year_copyright"
-                      value={siteInfo.year_copyright}
-                      onChange={(e) => handleSiteInfoChange('year_copyright', e.target.value)}
-                      placeholder="2024"
-                    />
-                  </div>
+                  
 
                   <div className="form-group">
                     <label htmlFor="facebook_link">Facebook Link</label>

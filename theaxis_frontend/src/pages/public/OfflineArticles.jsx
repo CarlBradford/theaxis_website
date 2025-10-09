@@ -89,9 +89,32 @@ const OfflineArticles = () => {
         <PublicPageHeader />
         <main className="offline-articles-main">
           <div className="offline-articles-container">
-            <div className="offline-articles-loading">
-              <div className="offline-articles-spinner"></div>
-              <p>Loading offline articles...</p>
+            {/* Header skeleton */}
+            <div className="offline-articles-page-header">
+              <div className="offline-articles-title-skeleton"></div>
+              <div className="offline-articles-subtitle-skeleton"></div>
+            </div>
+
+            {/* Articles list skeleton */}
+            <div className="offline-articles-skeleton-list">
+              {[...Array(5)].map((_, index) => (
+                <div key={index} className="offline-articles-item skeleton">
+                  <div className="offline-articles-item-content">
+                    <div className="offline-articles-title-skeleton"></div>
+                    <div className="offline-articles-excerpt-skeleton">
+                      <div className="offline-articles-line-skeleton"></div>
+                      <div className="offline-articles-line-skeleton short"></div>
+                    </div>
+                    <div className="offline-articles-meta-skeleton">
+                      <div className="offline-articles-dot-skeleton"></div>
+                      <div className="offline-articles-dot-skeleton"></div>
+                    </div>
+                  </div>
+                  <div className="offline-articles-item-actions">
+                    <div className="offline-articles-button-skeleton"></div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </main>

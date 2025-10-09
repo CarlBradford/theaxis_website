@@ -1,4 +1,16 @@
 /* Comment Management Styles */
+
+/* Comment Management Content Wrapper */
+.comment-management-content-wrapper {
+  padding: 8px; /* Mobile padding */
+}
+
+@media (min-width: 769px) {
+  .comment-management-content-wrapper {
+    padding: 32px; /* Keep p-8 padding on desktop (32px = 8 * 4) */
+  }
+}
+
 .comment-management-container {
   background-color: #ffffff;
   height: calc(100vh - 112px);
@@ -338,11 +350,13 @@
 .comment-article-title {
   font-weight: 500;
   color: #3b82f6;
-  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
 }
 
 .comment-article-title:hover {
   text-decoration: underline;
+  color: #1d4ed8;
 }
 
 .comment-status {
@@ -590,43 +604,453 @@
 /* Responsive */
 @media (max-width: 768px) {
   .comment-management-container {
-    padding: 16px;
+    position: relative;
+    height: auto;
+    min-height: calc(100vh - 104px);
+    padding: 8px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .comment-management-content {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .comment-management-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Hide icon in mobile view */
+  .comment-management-header .flex.items-center.space-x-4 > div:first-child {
+    display: none;
+  }
+
+  /* Hide stats bar in mobile view */
+  .comment-management-stats {
+    display: none;
+  }
+
+  .comment-management-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+  }
+
+  .comment-management-header p {
+    font-size: 0.875rem;
+    margin-bottom: 0;
   }
 
   .comment-management-stats {
     width: 100%;
     justify-content: space-around;
+    padding: 6px 8px;
+    gap: 0;
+  }
+
+  .comment-management-stat-number {
+    font-size: 16px;
+  }
+
+  .comment-management-stat-label {
+    font-size: 9px;
+  }
+
+  .comment-management-stat-separator {
+    height: 20px;
+    margin: 0 8px;
   }
   
   .comment-management-control-bar {
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 6px 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
   }
   
+  .comment-management-controls-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  
+  .comment-management-search-container {
+    flex: 0 0 87%;
+    min-width: 0;
+    max-width: 87%;
+    box-sizing: border-box;
+  }
+
   .comment-management-search-input {
     width: 100%;
-    max-width: none;
+    max-width: 100%;
+    height: 32px;
+    font-size: 12px;
+    padding: 0 12px 0 36px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .comment-management-search-icon {
+    left: 10px;
+    width: 16px;
+    height: 16px;
+  }
+
+  .comment-management-filter-btn {
+    flex: 0 0 10%;
+    height: 32px;
+    width: auto;
+    min-width: 32px;
+    max-width: 20%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
+
+  .comment-management-filter-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .comment-list {
+    display: contents;
+    max-height: calc(100vh - 200px);
+    gap: 12px;
+  }
+
+  .comment-item {
+    padding: 8px;
+    border-radius: 6px;
   }
 
   .comment-header {
     flex-direction: column;
-    gap: 12px;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .comment-meta {
+    gap: 6px;
+  }
+
+  .comment-author,
+  .comment-article,
+  .comment-date {
+    font-size: 12px;
+    gap: 4px;
+  }
+
+  .comment-author-email {
+    font-size: 11px;
+  }
+
+  .comment-status-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .comment-content {
+    margin-bottom: 8px;
+  }
+
+  .comment-content p {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .comment-expand-btn {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  .comment-parent {
+    padding: 8px;
+    margin-bottom: 12px;
+  }
+
+  .comment-parent-header {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .comment-parent-content {
+    font-size: 12px;
+  }
+
+  .comment-replies-header {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .comment-reply {
+    padding: 8px;
+  }
+
+  .comment-reply-author {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .comment-reply-email {
+    font-size: 10px;
+  }
+
+  .comment-reply p {
+    font-size: 12px;
+  }
+
+  .comment-reply-status {
+    font-size: 9px;
+    padding: 1px 4px;
   }
 
   .comment-actions {
-    justify-content: flex-start;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .comment-action-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+    gap: 3px;
+  }
+
+  .comment-action-btn svg {
+    width: 14px;
+    height: 14px;
   }
 
   .comment-pagination {
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .comment-pagination-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .comment-pagination-info {
+    font-size: 12px;
+  }
+
+  .comment-moderation-warning {
+    font-size: 11px;
+    padding: 3px 5px;
+    margin-top: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .comment-management-container {
+    padding: 6px;
+  }
+
+  .comment-management-header {
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+  }
+
+  .comment-management-header h1 {
+    font-size: 1.25rem;
+    margin-bottom: 2px;
+  }
+
+  .comment-management-header p {
+    font-size: 0.75rem;
+  }
+
+  .comment-management-stats {
+    padding: 4px 6px;
+  }
+
+  .comment-management-stat-number {
+    font-size: 14px;
+  }
+
+  .comment-management-stat-label {
+    font-size: 8px;
+  }
+
+  .comment-management-stat-separator {
+    height: 18px;
+    margin: 0 6px;
+  }
+
+  .comment-management-control-bar {
+    gap: 6px;
+    margin-bottom: 10px;
+    padding: 4px 0 12px 0;
+  }
+
+  .comment-management-search-input {
+    height: 28px;
+    font-size: 11px;
+    padding: 0 10px 0 32px;
+  }
+
+  .comment-management-search-icon {
+    left: 8px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .comment-management-filter-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .comment-management-filter-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .comment-list {
+    gap: 8px;
+  }
+
+  .comment-item {
+    padding: 8px;
+    border-radius: 6px;
+  }
+
+  .comment-header {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .comment-meta {
+    gap: 4px;
+  }
+
+  .comment-author,
+  .comment-article,
+  .comment-date {
+    font-size: 11px;
+    gap: 3px;
+  }
+
+  .comment-author-email {
+    font-size: 10px;
+  }
+
+  .comment-status-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .comment-content {
+    margin-bottom: 10px;
+  }
+
+  .comment-content p {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .comment-expand-btn {
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  .comment-parent {
+    padding: 6px;
+    margin-bottom: 10px;
+  }
+
+  .comment-parent-header {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .comment-parent-content {
+    font-size: 11px;
+  }
+
+  .comment-replies-header {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .comment-reply {
+    padding: 6px;
+  }
+
+  .comment-reply-author {
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+
+  .comment-reply-email {
+    font-size: 9px;
+  }
+
+  .comment-reply p {
+    font-size: 11px;
+  }
+
+  .comment-reply-status {
+    font-size: 8px;
+    padding: 1px 3px;
+  }
+
+  .comment-actions {
+    gap: 4px;
+  }
+
+  .comment-action-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    gap: 3px;
+  }
+
+  .comment-action-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .comment-pagination {
+    gap: 6px;
+    margin-top: 16px;
+  }
+
+  .comment-pagination-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .comment-pagination-info {
+    font-size: 11px;
+  }
+
+  .comment-moderation-warning {
+    font-size: 11px;
+    padding: 2px 4px;
+    margin-top: 3px;
   }
 }
 
@@ -640,7 +1064,7 @@
   background: #fef3c7;
   border: 1px solid #f59e0b;
   border-radius: 6px;
-  font-size: 0.875rem;
+  font-size: 11px;
   color: #92400e;
 }
 

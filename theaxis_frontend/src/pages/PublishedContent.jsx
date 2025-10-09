@@ -31,6 +31,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { useAuth } from '../hooks/useAuth';
 import FilterModal from '../components/FilterModal';
+import Pagination from '../components/Pagination';
 import '../styles/published-content.css';
 import '../styles/media-display.css';
 import '../styles/filter-modal.css';
@@ -82,6 +83,7 @@ const PublishedContent = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [stats, setStats] = useState({
     totalArticles: 0,
+    published: 0,
     totalViews: 0,
     avgViews: 0
   });
@@ -96,6 +98,13 @@ const PublishedContent = () => {
   const [flipbookToDelete, setFlipbookToDelete] = useState(null);
   const [showToggleFlipbookModal, setShowToggleFlipbookModal] = useState(false);
   const [flipbookToToggle, setFlipbookToToggle] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [paginationData, setPaginationData] = useState(null);
 
   // Load categories from API
   useEffect(() => {
@@ -209,7 +218,7 @@ const PublishedContent = () => {
   };
 
   // Load published articles from API
-  const loadPublishedArticles = async (filters = {}, showLoading = false) => {
+  const loadPublishedArticles = async (filters = {}, showLoading = false, page = currentPage, limit = itemsPerPage) => {
     try {
       if (showLoading) {
         setLoading(true);
@@ -220,7 +229,10 @@ const PublishedContent = () => {
       console.log('Token:', localStorage.getItem('token'));
       
       // Build API parameters
-      const params = {};
+      const params = {
+        page: page,
+        limit: limit
+      };
       
       // Determine status filter based on active filter
       let statusFilter = 'PUBLISHED'; // Default to published
@@ -306,6 +318,22 @@ const PublishedContent = () => {
         console.log('Transformed articles:', finalArticles);
         setArticles(finalArticles);
         setFilteredArticles(finalArticles);
+        
+        // Extract pagination data from response
+        const pagination = response.data?.pagination;
+        if (pagination) {
+          setTotalPages(pagination.totalPages || 1);
+          setTotalItems(pagination.total || pagination.totalCount || 0);
+          setCurrentPage(pagination.page || page);
+          setItemsPerPage(pagination.limit || limit);
+          setPaginationData(pagination);
+        } else {
+          // Calculate pagination from response data
+          setTotalPages(Math.ceil(finalArticles.length / limit));
+          setTotalItems(finalArticles.length);
+          setCurrentPage(page);
+          setItemsPerPage(limit);
+        }
       } catch (error) {
         console.error('Error loading published articles:', error);
         console.error('Error details:', {
@@ -317,6 +345,11 @@ const PublishedContent = () => {
         setError(error);
         setArticles([]);
         setFilteredArticles([]);
+        // Reset pagination on error
+        setTotalPages(1);
+        setTotalItems(0);
+
+setCurrentPage(1);
       } finally {
         if (showLoading) {
         setLoading(false);
@@ -340,13 +373,51 @@ const PublishedContent = () => {
     }
   }, [user?.id, activeFilter]);
 
+  // Helper function to refresh stats
+  const refreshStats = async () => {
+    try {
+      // Get published articles data directly for accurate counts
+      const [publishedResponse, statsResponse] = await Promise.all([
+        articlesAPI.getPublishedContent({ status: 'PUBLISHED', limit: 10000 }), // Get all published articles
+        articlesAPI.getArticleStats()
+      ]);
+      
+      console.log('PublishedContent articles response:', publishedResponse);
+      console.log('PublishedContent stats API response:', statsResponse);
+      
+      const publishedArticles = publishedResponse.data?.items || [];
+      const statsData = statsResponse.data || {};
+      
+      // Calculate views only from published articles
+      const publishedViews = publishedArticles.reduce((sum, article) => sum + (article.viewCount || 0), 0);
+      const avgPublishedViews = publishedArticles.length > 0 ? Math.round(publishedViews / publishedArticles.length) : 0;
+      
+      // Map data for published content specifically
+      setStats({
+        totalArticles: publishedArticles.length, // Exact count of published articles
+        published: publishedArticles.length,
+        totalViews: publishedViews, // Views from published articles only
+        avgViews: avgPublishedViews // Average views of published articles
+      });
+      
+      console.log('PublishedContent final stats:', {
+        totalArticles: publishedArticles.length,
+        published: publishedArticles.length,
+        totalViews: publishedViews,
+        avgViews: avgPublishedViews
+      });
+    } catch (error) {
+      console.error('Error refreshing stats:', error);
+      console.error('Error details:', error.response?.data);
+    }
+  };
+
   // Load stats and filter counts
   useEffect(() => {
     const loadStatsAndCounts = async () => {
       try {
-        // Load database stats
-        const statsResponse = await articlesAPI.getArticleStats();
-        setStats(statsResponse.data);
+        // Refresh stats
+        await refreshStats();
 
         // Load filter counts
         const [publishedCount, archivedCount, onlineIssuesCount] = await Promise.all([
@@ -362,6 +433,7 @@ const PublishedContent = () => {
         });
       } catch (error) {
         console.error('Error loading stats and filter counts:', error);
+        console.error('Error details:', error.response?.data);
       }
     };
 
@@ -389,6 +461,27 @@ const PublishedContent = () => {
       }
     }
   }, [user?.id, searchTerm, sortBy, sortOrder, selectedCategory]);
+
+  // Handle pagination changes
+  useEffect(() => {
+    if (user?.id && currentPage > 1 && activeFilter !== 'online_issues') {
+      loadPublishedArticles({
+        activeFilter: activeFilter,
+        search: searchTerm,
+        category: selectedCategory,
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      }, false, currentPage, itemsPerPage);
+    }
+  }, [currentPage, itemsPerPage]);
+
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
 
   const handlePreview = async (article) => {
     console.log('Previewing article:', article);
@@ -509,6 +602,9 @@ const PublishedContent = () => {
         archived: archivedCount,
         online_issues: onlineIssuesCount
       });
+      
+      // Refresh stats after archiving
+      await refreshStats();
       
       showNotification('Success', 'Article archived successfully', 'success');
       
@@ -698,12 +794,22 @@ const PublishedContent = () => {
         statusFilter = 'PUBLISHED';
       }
       
-      const response = await articlesAPI.getPublishedContent({ status: statusFilter });
-      const articles = response.data?.items || [];
+      // Use stats API to get count for published/archived articles
+      const response = await articlesAPI.getStats();
+      const statsData = response.data || {};
       
-        return articles.length;
+      console.log('Filter count stats data:', statsData);
+      
+      if (filter === 'archived') {
+        return statsData.archived || 0;
+      } else if (filter === 'published') {
+        return statsData.published || statsData.totalArticles || 0;
+      }
+      
+      return 0;
     } catch (error) {
       console.error('Error getting filter count:', error);
+      console.error('Error details:', error.response?.data);
       return 0;
     }
   };
@@ -1254,21 +1360,17 @@ const PublishedContent = () => {
           ) : (
             <>
               <div className="published-content-stat">
-                <span className="published-content-stat-number">{stats.totalArticles || filteredArticles.length}</span>
+                <span className="published-content-stat-number">{stats.totalArticles}</span>
             <span className="published-content-stat-label">Published Articles</span>
           </div>
           <div className="published-content-stat-separator"></div>
           <div className="published-content-stat">
-            <span className="published-content-stat-number">
-                  {stats.totalViews || filteredArticles.reduce((sum, article) => sum + (article.viewCount || 0), 0)}
-            </span>
+            <span className="published-content-stat-number">{stats.totalViews}</span>
             <span className="published-content-stat-label">Total Views</span>
           </div>
           <div className="published-content-stat-separator"></div>
           <div className="published-content-stat">
-            <span className="published-content-stat-number">
-                  {stats.avgViews || (filteredArticles.length > 0 ? Math.round(filteredArticles.reduce((sum, article) => sum + (article.viewCount || 0), 0) / filteredArticles.length) : 0)}
-            </span>
+            <span className="published-content-stat-number">{stats.avgViews}</span>
             <span className="published-content-stat-label">Avg Views</span>
           </div>
             </>
@@ -1845,6 +1947,17 @@ const PublishedContent = () => {
             ))}
           </div>
           )
+        )}
+        
+        {/* Pagination - Only show for articles, not flipbooks */}
+        {activeFilter !== 'online_issues' && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+          />
         )}
       </div>
 

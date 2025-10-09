@@ -5,8 +5,23 @@ const ScrollToTop = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // Scroll to top when pathname changes
+    // Immediate jump to top to avoid flicker
     window.scrollTo(0, 0);
+
+    // Ensure scroll after paint/mount in case content affects layout
+    const rafId = requestAnimationFrame(() => {
+      if ('scrollBehavior' in document.documentElement.style) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo(0, 0);
+      }
+
+      // Fallback for some mobile browsers using both roots
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+
+    return () => cancelAnimationFrame(rafId);
   }, [pathname]);
 
   return null;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import commentService from '../services/commentService';
 import FilterModal from '../components/FilterModal';
@@ -552,7 +553,14 @@ const CommentManagement = () => {
                     </div>
                     <div className="comment-article">
                       <DocumentTextIcon className="w-4 h-4" />
-                      <span className="comment-article-title">{comment.article.title}</span>
+                      <Link 
+                        to={`/content/${comment.article.slug}`}
+                        className="comment-article-title"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {comment.article.title}
+                      </Link>
                     </div>
                     <div className="comment-date">
                       <CalendarIcon className="w-4 h-4" />

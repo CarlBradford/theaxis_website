@@ -48,12 +48,27 @@ const Navbar = () => {
     return 'Dashboard';
   };
 
+  const dispatchToggleSidebar = () => {
+    window.dispatchEvent(new Event('sidebar:toggle'));
+  };
+
   return (
     <nav className="navbar-container">
       {/* Page Title */}
-      <h1 className="navbar-title">
-        {getPageTitle()}
-      </h1>
+      <div className="navbar-left">
+        <button
+          className="navbar-burger"
+          aria-label="Toggle menu"
+          onClick={dispatchToggleSidebar}
+        >
+          <span className="burger-line" />
+          <span className="burger-line" />
+          <span className="burger-line" />
+        </button>
+        <h1 className="navbar-title">
+          {getPageTitle()}
+        </h1>
+      </div>
 
       {/* Right side - Notifications and User Profile */}
       <div className="navbar-right">

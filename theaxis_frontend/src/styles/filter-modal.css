@@ -301,7 +301,7 @@
   }
   
   .filter-modal-sections-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
   }
   
@@ -317,11 +317,13 @@
   }
   
   .filter-modal-footer {
-    flex-direction: column;
-    gap: 6px;
+    flex-direction: row; /* keep buttons in one line on mobile */
+    gap: 8px;
+    justify-content: space-between;
   }
   
   .filter-modal-button {
-    width: 100%;
+    width: auto;
+    flex: 1 1 50%; /* two buttons share the row */
   }
 }

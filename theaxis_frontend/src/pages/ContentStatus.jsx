@@ -26,6 +26,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { useAuth } from '../hooks/useAuth';
 import FilterModal from '../components/FilterModal';
+import Pagination from '../components/Pagination';
 import '../styles/content-status.css';
 import '../styles/filter-modal.css';
 
@@ -49,9 +50,16 @@ const ContentStatus = () => {
   const [previewArticle, setPreviewArticle] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [paginationData, setPaginationData] = useState(null);
 
   // Load articles from API
-  const loadArticles = async (filters = {}, showLoading = false) => {
+  const loadArticles = async (filters = {}, showLoading = false, page = currentPage, limit = itemsPerPage) => {
       try {
       if (showLoading) {
         setLoading(true);
@@ -60,7 +68,9 @@ const ContentStatus = () => {
       
       // Build API parameters
       const params = {
-        authorId: user?.id
+        authorId: user?.id,
+        page: page,
+        limit: limit
       };
       
       // Add filter parameters
@@ -86,7 +96,8 @@ const ContentStatus = () => {
         params.sortOrder = filters.sortOrder;
       }
       
-      console.log('ContentStatus API params:', params);
+      console.log('ContentStatus loadArticles - User ID:', user?.id);
+      console.log('ContentStatus loadArticles - API params:', params);
       const response = await articlesAPI.getMyContent(params);
         
         console.log('Article status articles loaded:', response.data.items);
@@ -120,11 +131,31 @@ const ContentStatus = () => {
         
         setArticles(transformedArticles);
         setFilteredArticles(transformedArticles);
+        
+        // Extract pagination data from response
+        const pagination = response.data?.pagination;
+        if (pagination) {
+          setTotalPages(pagination.totalPages || 1);
+          setTotalItems(pagination.total || pagination.totalCount || 0);
+          setCurrentPage(pagination.page || page);
+          setItemsPerPage(pagination.limit || limit);
+          setPaginationData(pagination);
+        } else {
+          // Calculate pagination from response data
+          setTotalPages(Math.ceil((response.data?.items || []).length / limit));
+          setTotalItems((response.data?.items || []).length);
+          setCurrentPage(page);
+          setItemsPerPage(limit);
+        }
       } catch (error) {
         console.error('Error loading articles:', error);
         setError(error);
         setArticles([]);
         setFilteredArticles([]);
+        // Reset pagination on error
+        setTotalPages(1);
+        setTotalItems(0);
+        setCurrentPage(1);
       } finally {
       if (showLoading) {
         setLoading(false);
@@ -142,6 +173,9 @@ const ContentStatus = () => {
   // Apply filters and reload articles
   useEffect(() => {
     if (user?.id) {
+      // Reset to first page when filters change
+      setCurrentPage(1);
+      
       loadArticles({
         search: searchTerm,
         status: selectedStatus,
@@ -150,6 +184,26 @@ const ContentStatus = () => {
       }, false); // Don't show loading on filter changes
     }
   }, [user?.id, searchTerm, selectedStatus, sortBy, sortOrder]);
+
+  // Handle pagination changes
+  useEffect(() => {
+    if (user?.id && currentPage > 1) {
+      loadArticles({
+        search: searchTerm,
+        status: selectedStatus,
+        sortBy: sortBy,
+        sortOrder: sortOrder
+      }, false, currentPage, itemsPerPage); // Use current page and items per page
+    }
+  }, [currentPage, itemsPerPage]);
+
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
 
   // No need for frontend filtering since we're using database filtering
 
@@ -899,6 +953,15 @@ const ContentStatus = () => {
             ))}
           </div>
         )}
+        
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
+        />
       </div>
 
       {/* Preview Modal */}

@@ -25,6 +25,7 @@ import RequestRevisionModal from './RequestRevisionModal';
 import ReturnToSectionModal from './ReturnToSectionModal';
 import ResubmitModal from './ResubmitModal';
 import FilterModal from './FilterModal';
+import Pagination from './Pagination';
 
 const ReviewQueue = ({ queueType = 'section-head' }) => {
   const navigate = useNavigate();
@@ -66,6 +67,21 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
   const [resubmitLoading, setResubmitLoading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [paginationData, setPaginationData] = useState(null);
+
+  // Stats state (total counts from database, not paginated)
+  const [stats, setStats] = useState({
+    totalArticles: 0,
+    inReview: 0,
+    needsRevision: 0,
+    readyForPublication: 0
+  });
 
   // Map frontend status values to backend database values
   const mapFrontendStatusToBackend = (frontendStatus) => {
@@ -101,33 +117,119 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
   }, []);
 
   // Load articles from API
-  useEffect(() => {
-    const loadArticles = async () => {
-      try {
-        setError(null);
-        const response = await reviewQueueService.getReviewQueue(queueType, {
-          status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
-          search: searchTerm || undefined,
-          category: selectedCategory !== 'all' ? selectedCategory : undefined,
-          sortBy: sortBy,
-          sortOrder: sortOrder
-        });
-        
-        console.log('Review queue articles loaded:', response.data.articles);
-        console.log('Sample article with reviewer info:', response.data.articles.find(a => a.status === 'approved'));
-        setArticles(response.data.articles);
-        setFilteredArticles(response.data.articles);
-      } catch (error) {
-        console.error('Error loading articles:', error);
-        setError(error);
-        // Fallback to empty array on error
-        setArticles([]);
-        setFilteredArticles([]);
+  const loadArticles = async (page = currentPage, limit = itemsPerPage) => {
+    try {
+      setError(null);
+      const response = await reviewQueueService.getReviewQueue(queueType, {
+        status: selectedStatus !== 'all' ? mapFrontendStatusToBackend(selectedStatus) : undefined,
+        search: searchTerm || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        page: page,
+        limit: limit
+      });
+      
+      console.log('Review queue articles loaded:', response.data.articles);
+      console.log('Sample article with reviewer info:', response.data.articles.find(a => a.status === 'approved'));
+      setArticles(response.data.articles);
+      setFilteredArticles(response.data.articles);
+      
+      // Extract pagination data from response
+      const pagination = response.data?.pagination;
+      if (pagination) {
+        setTotalPages(pagination.totalPages || 1);
+        setTotalItems(pagination.total || pagination.totalCount || 0);
+        setCurrentPage(pagination.page || page);
+        setItemsPerPage(pagination.limit || limit);
+        setPaginationData(pagination);
+      } else {
+        // Calculate pagination from response data
+        setTotalPages(Math.ceil((response.data?.articles || []).length / limit));
+        setTotalItems((response.data?.articles || []).length);
+        setCurrentPage(page);
+        setItemsPerPage(limit);
       }
-    };
+    } catch (error) {
+      console.error('Error loading articles:', error);
+      setError(error);
+      // Fallback to empty array on error
+      setArticles([]);
+      setFilteredArticles([]);
+      // Reset pagination on error
+      setTotalPages(1);
+      setTotalItems(0);
+      setCurrentPage(1);
+    }
+  };
 
-    loadArticles();
+  // Load stats from API (total counts, not paginated)
+  const loadStats = async () => {
+    try {
+      const response = await articlesAPI.getStats({ queueType });
+      console.log('Review queue stats API response:', response);
+      console.log('Stats data:', response.data);
+      console.log('Queue type:', queueType);
+      
+      // Handle different response structures based on role
+      const statsData = response.data || {};
+      
+      if (queueType === 'section-head') {
+        // Section head stats
+        setStats({
+          totalArticles: statsData.totalArticles || 0,
+          inReview: statsData.inReview || 0,
+          needsRevision: statsData.needsRevision || 0,
+          readyForPublication: 0
+        });
+      } else {
+        // EIC/Admin stats - check for different field names
+        setStats({
+          totalArticles: statsData.totalArticles || statsData.approved || 0,
+          inReview: 0,
+          needsRevision: statsData.needsRevision || 0,
+          readyForPublication: statsData.readyForPublication || statsData.approved || statsData.totalArticles || 0
+        });
+      }
+      
+      console.log('Final stats set:', {
+        totalArticles: queueType === 'section-head' ? statsData.totalArticles : (statsData.totalArticles || statsData.approved),
+        inReview: statsData.inReview,
+        needsRevision: statsData.needsRevision,
+        readyForPublication: queueType === 'eic' ? (statsData.readyForPublication || statsData.approved) : 0
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+      console.error('Error details:', error.response?.data);
+      // Keep default stats on error
+    }
+  };
+
+  // Load stats when queue type changes
+  useEffect(() => {
+    loadStats();
+  }, [queueType]);
+
+  // Load articles when component mounts and when filters change
+  useEffect(() => {
+    setCurrentPage(1); // Reset to first page when filters change
+    loadArticles(1, itemsPerPage);
   }, [queueType, selectedStatus, selectedCategory, searchTerm, sortBy, sortOrder]);
+
+  // Handle pagination changes
+  useEffect(() => {
+    if (currentPage > 1) {
+      loadArticles(currentPage, itemsPerPage);
+    }
+  }, [currentPage, itemsPerPage]);
+
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
 
   // No need for frontend filtering/sorting since we're using database operations
 
@@ -201,6 +303,9 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       });
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
+      
+      // Refresh stats
+      loadStats();
       setSelectedArticles([]);
       
     } catch (error) {
@@ -390,6 +495,9 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
       
+      // Refresh stats
+      loadStats();
+      
     } catch (error) {
       console.error('Error approving article:', error);
       console.error('Error response:', error.response?.data);
@@ -501,6 +609,9 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
       
+      // Refresh stats
+      loadStats();
+      
     } catch (error) {
       console.error('Error requesting revision:', error);
       console.error('Error response:', error.response?.data);
@@ -606,6 +717,9 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
       
+      // Refresh stats
+      loadStats();
+      
     } catch (error) {
       console.error('Error publishing article:', error);
       console.error('Error response:', error.response?.data);
@@ -695,6 +809,9 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
       
+      // Refresh stats
+      loadStats();
+      
     } catch (error) {
       console.error('Error returning article:', error);
       console.error('Error response:', error.response?.data);
@@ -754,6 +871,9 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       });
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
+      
+      // Refresh stats
+      loadStats();
       
     } catch (error) {
       console.error('Error resubmitting article:', error);
@@ -857,6 +977,9 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
       setArticles(response.data.articles);
       setFilteredArticles(response.data.articles);
       
+      // Refresh stats
+      loadStats();
+      
     } catch (error) {
       console.error('Error performing article action:', error);
       alert(`Error performing action: ${error.response?.data?.message || error.message}`);
@@ -951,41 +1074,33 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
         </div>
         <div className="review-queue-stats">
           <div className="review-queue-stat">
-            <span className="review-queue-stat-number">{filteredArticles.length}</span>
+            <span className="review-queue-stat-number">{stats.totalArticles}</span>
             <span className="review-queue-stat-label">Total Articles</span>
           </div>
           <div className="review-queue-stat-separator"></div>
           {queueType === 'section-head' ? (
             <>
               <div className="review-queue-stat">
-                <span className="review-queue-stat-number">
-                  {filteredArticles.filter(a => a.status === 'in-review').length}
-                </span>
+                <span className="review-queue-stat-number">{stats.inReview}</span>
                 <span className="review-queue-stat-label">In Review</span>
               </div>
               <div className="review-queue-stat-separator"></div>
               <div className="review-queue-stat">
-                <span className="review-queue-stat-number">
-                  {filteredArticles.filter(a => a.status === 'needs-revision').length}
-                </span>
+                <span className="review-queue-stat-number">{stats.needsRevision}</span>
                 <span className="review-queue-stat-label">Needs Revision</span>
               </div>
             </>
           ) : (
             <>
-          <div className="review-queue-stat">
-            <span className="review-queue-stat-number">
-                  {filteredArticles.filter(a => a.status === 'approved').length}
-            </span>
+              <div className="review-queue-stat">
+                <span className="review-queue-stat-number">{stats.readyForPublication || stats.totalArticles}</span>
                 <span className="review-queue-stat-label">Ready for Publication</span>
-          </div>
-          <div className="review-queue-stat-separator"></div>
-          <div className="review-queue-stat">
-            <span className="review-queue-stat-number">
-                  {filteredArticles.filter(a => a.status === 'needs-revision').length}
-            </span>
+              </div>
+              <div className="review-queue-stat-separator"></div>
+              <div className="review-queue-stat">
+                <span className="review-queue-stat-number">{stats.needsRevision}</span>
                 <span className="review-queue-stat-label">Needs Revision</span>
-          </div>
+              </div>
             </>
           )}
         </div>
@@ -1491,6 +1606,15 @@ const ReviewQueue = ({ queueType = 'section-head' }) => {
             ))}
           </div>
         )}
+        
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          itemsPerPage={itemsPerPage}
+          totalItems={totalItems}
+        />
       </div>
 
       {/* Confirmation Modal */}

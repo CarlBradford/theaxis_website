@@ -146,9 +146,15 @@ const AnnualEditions = () => {
           <div className="annual-editions-header">
             <h1 className="annual-editions-title">THE ANNUAL EDITIONS</h1>
           </div>
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p>Loading annual editions...</p>
+          <div className="annual-editions-skeleton-grid">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="flipbook-card skeleton">
+                <div className="flipbook-thumbnail-skeleton"></div>
+                <div className="flipbook-info-skeleton">
+                  <div className="flipbook-line-skeleton"></div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
         <PublicFooter />

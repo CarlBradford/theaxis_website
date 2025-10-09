@@ -244,8 +244,8 @@ const FeaturedArticlesPage = () => {
                 <StarIconSolid className="h-8 w-8 text-black" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-black">Manage Featured Articles</h1>
-                <p className="text-gray-600">Select up to 5 published articles from all categories to feature on the homepage</p>
+                <h1 className="featured-articles-page-title text-black">Manage Featured Articles</h1>
+                <p className="featured-articles-page-subtitle text-gray-600">Select up to 5 published articles from all categories to feature on the homepage</p>
               </div>
             </div>
             

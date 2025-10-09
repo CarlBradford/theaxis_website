@@ -20,6 +20,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
+  flex: 1; /* allow it to fill available space for vertical centering */
   gap: 16px;
 }
 
@@ -723,22 +724,25 @@
     padding: 24px;
   }
   
-  .profile-form-section,
-  .profile-password-section {
-    padding: 24px;
-  }
 }
 
 @media (max-width: 768px) {
   .profile-container {
-    padding: 16px;
-    width: calc(100vw - 32px);
-    max-width: calc(100vw - 32px);
+    position: relative; /* allow natural flow on mobile */
+    height: auto;
+    min-height: calc(100vh - 104px);
+    padding: 8px; /* full width */
+    width: 100%;
+    max-width: 100%;
     margin-right: 0;
   }
   
   .profile-content {
-    padding: 0 12px;
+    padding: 8px; /* full-bleed content on mobile */
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     gap: 24px;
   }
   
@@ -771,10 +775,7 @@
     font-size: 14px;
   }
   
-  .profile-form-section,
-  .profile-password-section {
-    padding: 20px;
-  }
+
   
   .profile-form-grid {
     grid-template-columns: 1fr;
@@ -830,11 +831,23 @@
   }
   
   .profile-form-actions {
-    flex-direction: column;
+    flex-direction: row; /* side by side on mobile */
+    gap: 8px;
+  }
+  .profile-form-actions .profile-btn {
+    flex: 1 1 50%;
+    justify-content: center;
+    font-size: 12px; /* smaller button text on mobile */
+    padding: 10px 16px; /* slightly tighter padding */
   }
   
   .profile-btn {
     justify-content: center;
+  }
+  /* Ensure loading state centers vertically on mobile */
+  .profile-loading {
+    min-height: calc(100vh - 104px);
+    width: 100%;
   }
 }
 

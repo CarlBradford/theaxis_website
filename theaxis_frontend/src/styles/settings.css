@@ -220,6 +220,17 @@
   margin: 0;
 }
 
+/* Settings Content Wrapper */
+.settings-content-wrapper {
+  padding: 0px; /* Mobile padding */
+}
+
+@media (min-width: 769px) {
+  .settings-content-wrapper {
+    padding: 0px; /* Keep p-8 padding on desktop (32px = 8 * 4) */
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .settings-content {
@@ -243,13 +254,377 @@
   .settings-main-header {
     padding: 1rem 1.5rem;
   }
+
+  /* Mobile Header Adjustments */
+  .settings-header {
+    padding: 0 0;
+    margin-bottom: 1rem;
+  }
+
+  .settings-header-content {
+    padding: 0 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .settings-header-icon {
+    display: none; /* Hide icon in mobile view */
+  }
+
+  .settings-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .settings-header-text h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.125rem;
+  }
+
+  .settings-header-text p {
+    font-size: 0.875rem;
+  }
+
+  /* Mobile Tabs */
+  .settings-tabs {
+    flex-direction: row;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0 0 0.5rem 0;
+    justify-content: space-around;
+  }
+  
+  .settings-tab {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    justify-content: center;
+    align-items: center;
+    min-height: auto;
+    flex: 1;
+    max-width: 60px;
+    display: flex;
+  }
+
+  .tab-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .tab-content {
+    display: none; /* Hide text content in mobile view */
+  }
+
+  .tab-name {
+    display: none; /* Hide tab name in mobile view */
+  }
+
+  .tab-description {
+    display: none; /* Hide tab description in mobile view */
+  }
+
+  /* Mobile Sections */
+  .settings-section {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .section-title {
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+
+  /* Mobile Content Container */
+  .settings-content {
+    padding: 0.5rem;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Mobile Color Customization */
+  .color-customization-info {
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .color-customization-info p {
+    font-size: 0.75rem;
+    margin-bottom: 0.375rem;
+    line-height: 1.3;
+  }
+
+  .color-customization-form {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .color-groups {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .color-group {
+    padding: 0.75rem;
+  }
+
+  .color-group h4 {
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+  }
+
+  .color-group-description {
+    font-size: 0.7rem;
+    line-height: 1.2;
+  }
+
+  .color-label {
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .color-picker-wrapper {
+    gap: 0.375rem;
+  }
+
+  .color-picker {
+    width: 36px;
+    height: 28px;
+  }
+
+  .color-text {
+    padding: 0.375rem;
+    font-size: 0.75rem;
+  }
+
+  .color-form-actions {
+    flex-direction: row;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+    justify-content: space-between;
+  }
+
+  .settings-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    flex: 1;
+  }
+
+  /* Mobile button text */
+  .desktop-text {
+    display: none;
+  }
+
+  .mobile-text {
+    display: inline;
+  }
+
+  /* Mobile Asset Management */
+  .asset-customization-info {
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .asset-customization-info p {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+
+  .logo-customization-form {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .logo-upload-sections {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .logo-upload-section {
+    padding: 0.75rem;
+  }
+
+  .upload-section-title {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+
+  .upload-section-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .preview-image {
+    max-width: 100px;
+    max-height: 60px;
+  }
+
+  .file-input-label {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .upload-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .upload-form-actions {
+    flex-direction: column;
+    padding-top: 0.5rem;
+  }
+
+  .current-assets-section {
+    padding: 0.75rem;
+  }
+
+  .current-assets-title {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .assets-group-title {
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+
+  .asset-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    min-width: auto;
+    padding: 0.5rem;
+  }
+
+  .asset-preview {
+    width: 100%;
+    height: 80px;
+  }
+
+  .asset-name {
+    font-size: 0.75rem;
+  }
+
+  .asset-details {
+    font-size: 0.65rem;
+  }
+
+  .delete-asset-btn {
+    align-self: flex-end;
+    width: 24px;
+    height: 24px;
+  }
+
+  .delete-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  /* Mobile Site Information */
+  .site-info-form {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-group {
+    margin-top: 0.75rem;
+  }
+
+  .form-group label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.375rem;
+  }
+
+  .form-group textarea {
+    min-height: 50px;
+    resize: vertical;
+  }
+
+  .form-actions {
+    justify-content: center;
+    padding-top: 0.5rem;
+  }
+
+  .save-button {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  /* Mobile Legal Content */
+  .legal-content-form {
+    padding: 0 0.75rem 0.75rem 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .legal-textarea {
+    font-size: 0.7rem;
+    min-height: 150px;
+    padding: 0.5rem;
+    line-height: 1.4;
+  }
+
+  /* Mobile Messages */
+  .settings-message {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.375rem;
+  }
+
+  .settings-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  /* Mobile Loading */
+  .loading-state {
+    padding: 1.5rem;
+  }
+
+  .loading-spinner {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .loading-state p {
+    font-size: 0.8rem;
+  }
 }
 
-/* Color Palette Integration */
-.color-palette-settings {
-  max-width: none;
-  margin: 0;
-  padding: 0;
+/* Desktop button text */
+@media (min-width: 769px) {
+  .desktop-text {
+    display: inline;
+  }
+
+  .mobile-text {
+    display: none;
+  }
 }
 
 .color-palette-settings .color-palette-header {
@@ -566,37 +941,6 @@
 }
 
 /* Responsive Design Updates */
-@media (max-width: 768px) {
-  .settings-tabs {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .settings-tab {
-    padding: 1rem;
-    border-radius: 0.5rem;
-  }
-  
-  .current-assets {
-    flex-direction: column;
-  }
-  
-  .asset-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-    min-width: auto;
-  }
-  
-  .asset-preview {
-    width: 100%;
-    height: 120px;
-  }
-  
-  .delete-asset-btn {
-    align-self: flex-end;
-  }
-}
 
 /* Button Styles */
 .settings-btn {
@@ -947,30 +1291,6 @@
   font-family: 'Poppins', system-ui, sans-serif;
 }
 
-/* Responsive Updates */
-@media (max-width: 768px) {
-  .logo-upload-sections {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .color-groups {
-    grid-template-columns: 1fr;
-  }
-  
-  .color-form-actions {
-    flex-direction: column;
-  }
-  
-  .upload-form-actions {
-    flex-direction: column;
-  }
-  
-  .preview-image {
-    max-width: 150px;
-    max-height: 100px;
-  }
-}
 
 /* Site Information Form Styles */
 .site-info-form {
@@ -1078,18 +1398,3 @@
   min-height: 300px;
 }
 
-/* Responsive Updates for Forms */
-@media (max-width: 768px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .form-actions {
-    justify-content: center;
-  }
-  
-  .save-button {
-    width: 100%;
-  }
-}

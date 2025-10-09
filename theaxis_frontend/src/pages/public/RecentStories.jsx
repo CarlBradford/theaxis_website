@@ -146,7 +146,7 @@ const RecentStories = () => {
       <section className="recent-stories">
         <div className="recent-stories-container">
           <div className="recent-stories-header">
-            <h2 className="recent-stories-title">Recent Stories</h2>
+            <h2 className="recent-stories-title">RECENT STORIES</h2>
             <div className="recent-stories-title-separator"></div>
           </div>
           <div className="recent-stories-grid">
@@ -169,7 +169,7 @@ const RecentStories = () => {
     <section className="recent-stories">
       <div className="recent-stories-container">
         <div className="recent-stories-header">
-          <h2 className="recent-stories-title">Recent Stories</h2>
+          <h2 className="recent-stories-title">RECENT STORIES</h2>
           <div className="recent-stories-title-separator"></div>
         </div>
         
